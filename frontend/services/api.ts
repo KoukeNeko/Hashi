@@ -2,7 +2,17 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { SystemStatus } from '@/types';
+import { FileItem, SystemStatus } from '@/types';
+
+export const FileService = {
+  listFiles: async (path: string = '/') => {
+    // 透過 query param 傳遞 path
+    const response = await api.get<FileItem[]>('/files/list', {
+      params: { path }
+    });
+    return response.data;
+  }
+};
 
 // WebSocket 連線函式
 export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => void) => {

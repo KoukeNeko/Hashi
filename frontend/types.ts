@@ -1,3 +1,11 @@
+export interface FileItem {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+  size: number;
+  permissions: string;
+  lastModified: string;
+}
 
 export interface DiskInfo {
   name: string;

@@ -1,10 +1,75 @@
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '../components/PageHeader';
-import { MOCK_FILES } from '../constants';
-import { FileText, Folder, HardDrive, MoreVertical, Search, Upload, Download, Trash2, Home, ChevronRight } from 'lucide-react';
+import { FileItem } from '../types';
+import { FileService } from '../services/api';
+import { FileText, Folder, MoreVertical, Search, Upload, Download, Trash2, Home, RefreshCw, ChevronRight, AlertCircle } from 'lucide-react';
+
+// 格式化檔案大小
+const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '-';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
+};
+
+// 計算總大小
+const calculateTotalSize = (files: FileItem[]): number => {
+    return files.reduce((acc, file) => acc + file.size, 0);
+};
 
 const FileManager: React.FC = () => {
+    const [files, setFiles] = useState<FileItem[]>([]);
+    const [currentPath, setCurrentPath] = useState('/');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // 載入檔案列表
+    const loadFiles = useCallback(async (path: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await FileService.listFiles(path);
+            // 排序：資料夾在前，檔案在後，同類型按名稱排序
+            const sorted = data.sort((a, b) => {
+                if (a.isDirectory && !b.isDirectory) return -1;
+                if (!a.isDirectory && b.isDirectory) return 1;
+                return a.name.localeCompare(b.name);
+            });
+            setFiles(sorted);
+        } catch (err) {
+            console.error('Failed to load files:', err);
+            setError('Failed to load files. Please check if the backend is running.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadFiles(currentPath);
+    }, [currentPath, loadFiles]);
+
+    // 導航到指定路徑
+    const navigateTo = (path: string) => {
+        setCurrentPath(path);
+    };
+
+    // 點擊資料夾進入
+    const handleItemClick = (file: FileItem) => {
+        if (file.isDirectory) {
+            navigateTo(file.path);
+        }
+    };
+
+    // 解析路徑成麵包屑
+    const breadcrumbs = currentPath.split('/').filter(Boolean);
+
+    // 篩選檔案
+    const filteredFiles = files.filter(file =>
+        file.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <div className="space-y-6 animate-fade-in">
             <PageHeader
@@ -18,9 +83,18 @@ const FileManager: React.FC = () => {
                             <input
                                 type="text"
                                 placeholder="Search files..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                                 className="bg-zinc-900 border border-zinc-700 text-zinc-300 pl-9 pr-4 py-2 rounded text-sm focus:outline-none focus:border-emerald-500 w-64 shadow-lg"
                             />
                         </div>
+                        <button 
+                            onClick={() => loadFiles(currentPath)}
+                            className="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 border border-zinc-700"
+                            title="Refresh"
+                        >
+                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                        </button>
                         <button className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 border border-zinc-700">
                             <Upload size={16} /> Upload
                         </button>
@@ -31,18 +105,43 @@ const FileManager: React.FC = () => {
             <div className="flex flex-col shadow-xl rounded-lg">
                 {/* Breadcrumb / Toolbar */}
                 <div className="bg-zinc-900 border border-border p-3 rounded-t-lg flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-zinc-400">
-                        <Home size={16} className="text-emerald-500" />
-                        <span className="text-zinc-600">/</span>
-                        <span className="hover:text-white cursor-pointer transition-colors">var</span>
-                        <span className="text-zinc-600">/</span>
-                        <span className="text-white font-medium">www</span>
+                    <div className="flex items-center gap-1 text-sm text-zinc-400 flex-wrap">
+                        <button
+                            onClick={() => navigateTo('/')}
+                            className="hover:text-emerald-400 transition-colors flex items-center gap-1"
+                        >
+                            <Home size={16} className="text-emerald-500" />
+                        </button>
+                        {breadcrumbs.map((crumb, index) => {
+                            const pathUpToCrumb = '/' + breadcrumbs.slice(0, index + 1).join('/');
+                            const isLast = index === breadcrumbs.length - 1;
+                            return (
+                                <React.Fragment key={index}>
+                                    <ChevronRight size={14} className="text-zinc-600" />
+                                    <button
+                                        onClick={() => !isLast && navigateTo(pathUpToCrumb)}
+                                        className={`hover:text-white transition-colors ${isLast ? 'text-white font-medium cursor-default' : 'cursor-pointer'}`}
+                                    >
+                                        {crumb}
+                                    </button>
+                                </React.Fragment>
+                            );
+                        })}
                     </div>
                     <div className="text-xs text-zinc-500">
-                        5 items | 24.1 GB
+                        {filteredFiles.length} items | {formatFileSize(calculateTotalSize(filteredFiles))}
                     </div>
                 </div>
 
+                {/* Error State */}
+                {error && (
+                    <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-4 flex items-center gap-3">
+                        <AlertCircle size={20} />
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                {/* File Table */}
                 <div className="bg-surface border border-border border-t-0 rounded-b-lg overflow-hidden overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
@@ -51,35 +150,99 @@ const FileManager: React.FC = () => {
                                 <th className="p-4 font-medium">Name</th>
                                 <th className="p-4 font-medium">Size</th>
                                 <th className="p-4 font-medium">Permissions</th>
-                                <th className="p-4 font-medium">Owner</th>
-                                <th className="p-4 font-medium">Updated</th>
+                                <th className="p-4 font-medium">Modified</th>
                                 <th className="p-4 font-medium text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="text-sm divide-y divide-border">
-                            {MOCK_FILES.map((file, idx) => (
-                                <tr key={idx} className="hover:bg-zinc-800/50 transition-colors group cursor-pointer">
+                            {/* 上層目錄連結 */}
+                            {currentPath !== '/' && (
+                                <tr 
+                                    className="hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                                    onClick={() => {
+                                        const parentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
+                                        navigateTo(parentPath);
+                                    }}
+                                >
                                     <td className="p-4 text-center">
-                                        {file.type === 'folder' ? (
+                                        <Folder size={20} className="text-zinc-500" />
+                                    </td>
+                                    <td className="p-4 font-medium text-zinc-400">..</td>
+                                    <td className="p-4 text-zinc-500">-</td>
+                                    <td className="p-4 text-zinc-500">-</td>
+                                    <td className="p-4 text-zinc-500">-</td>
+                                    <td className="p-4"></td>
+                                </tr>
+                            )}
+
+                            {/* Loading State */}
+                            {loading && (
+                                <tr>
+                                    <td colSpan={6} className="p-8 text-center text-zinc-500">
+                                        <RefreshCw size={24} className="animate-spin mx-auto mb-2" />
+                                        Loading files...
+                                    </td>
+                                </tr>
+                            )}
+
+                            {/* Empty State */}
+                            {!loading && !error && filteredFiles.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="p-8 text-center text-zinc-500">
+                                        {searchTerm ? 'No files match your search.' : 'This directory is empty.'}
+                                    </td>
+                                </tr>
+                            )}
+
+                            {/* File List */}
+                            {!loading && filteredFiles.map((file) => (
+                                <tr 
+                                    key={file.path} 
+                                    className="hover:bg-zinc-800/50 transition-colors group cursor-pointer"
+                                    onClick={() => handleItemClick(file)}
+                                >
+                                    <td className="p-4 text-center">
+                                        {file.isDirectory ? (
                                             <Folder size={20} className="text-amber-400 fill-amber-400/20" />
                                         ) : (
                                             <FileText size={20} className="text-zinc-400" />
                                         )}
                                     </td>
-                                    <td className="p-4 font-medium text-zinc-200">{file.name}</td>
-                                    <td className="p-4 text-zinc-400 font-mono text-xs">{file.size}</td>
-                                    <td className="p-4 text-zinc-500 font-mono text-xs">{file.permissions}</td>
-                                    <td className="p-4 text-zinc-400">{file.owner}</td>
-                                    <td className="p-4 text-zinc-500 text-xs">{file.updated}</td>
+                                    <td className="p-4 font-medium text-zinc-200">
+                                        {file.name}
+                                    </td>
+                                    <td className="p-4 text-zinc-400 font-mono text-xs">
+                                        {file.isDirectory ? '-' : formatFileSize(file.size)}
+                                    </td>
+                                    <td className="p-4 text-zinc-500 font-mono text-xs">
+                                        {file.permissions}
+                                    </td>
+                                    <td className="p-4 text-zinc-500 text-xs">
+                                        {file.lastModified}
+                                    </td>
                                     <td className="p-4 text-right">
-                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white" title="Download">
-                                                <Download size={16} />
-                                            </button>
-                                            <button className="p-1.5 hover:bg-rose-500/20 rounded text-zinc-400 hover:text-rose-400" title="Delete">
+                                        <div 
+                                            className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {!file.isDirectory && (
+                                                <button 
+                                                    className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white" 
+                                                    title="Download"
+                                                >
+                                                    <Download size={16} />
+                                                </button>
+                                            )}
+                                            <button 
+                                                className="p-1.5 hover:bg-rose-500/20 rounded text-zinc-400 hover:text-rose-400" 
+                                                title="Delete"
+                                            >
                                                 <Trash2 size={16} />
                                             </button>
-                                            <button className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white" title="More">
+                                            <button 
+                                                className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white" 
+                                                title="More"
+                                            >
                                                 <MoreVertical size={16} />
                                             </button>
                                         </div>

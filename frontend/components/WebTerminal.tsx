@@ -42,8 +42,9 @@ const WebTerminal = () => {
     
     termInstance.current = term;
 
-    // 2. 建立 WebSocket 連線到後端
-    const ws = new WebSocket('ws://localhost:8080/terminal');
+    // 2. 建立 WebSocket 連線到後端 (使用相對路徑，透過 Vite proxy)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/terminal`);
     wsRef.current = ws;
 
     ws.onopen = () => {

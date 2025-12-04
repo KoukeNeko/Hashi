@@ -18,6 +18,11 @@ export default defineConfig(({ mode }) => {
             changeOrigin: true,
             ws: true,
           },
+          '/terminal': {
+            target: 'ws://localhost:8080',
+            changeOrigin: true,
+            ws: true,
+          },
         },
       },
       plugins: [react()],

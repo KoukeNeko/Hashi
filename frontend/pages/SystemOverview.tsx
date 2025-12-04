@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { INITIAL_CPU_DATA, MOCK_NGINX_HOSTS, MOCK_CONTAINERS, MOCK_FIREWALL_RULES } from '../constants';
-import { Server, Database, ChevronRight, RefreshCw, Terminal, Power, Globe, Shield, Activity } from 'lucide-react';
-import { DashboardService } from '../services/api';
+import { Server, Database, ChevronRight, Terminal, Power, Globe, Shield, Activity } from 'lucide-react';
+import { connectWebSocket } from '../services/api';
 import { SystemStatus } from '../types';
 
 const CircularGauge = ({ value, label, subLabel, color = "#10b981" }: { value: number, label: string, subLabel: string, color?: string }) => {
@@ -97,31 +97,29 @@ const SystemOverview: React.FC = () => {
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [connected, setConnected] = useState(false);
 
-  // Fetch system status from API
-  const fetchSystemStatus = async () => {
-    try {
-      const data = await DashboardService.getSystemStatus();
-      setSystemStatus(data);
-      setError(null);
-    } catch (err) {
-      console.error('Failed to fetch system status:', err);
-      setError('Failed to load system status');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Initial fetch and polling
+  // Connect to WebSocket
   useEffect(() => {
-    fetchSystemStatus();
-    
-    // Poll every 5 seconds for real-time updates
-    const interval = setInterval(() => {
-      fetchSystemStatus();
-    }, 5000);
-    
-    return () => clearInterval(interval);
+    const client = connectWebSocket((status) => {
+      setSystemStatus(status);
+      setLoading(false);
+      setConnected(true);
+      setError(null);
+    });
+
+    // Handle connection error after timeout
+    const timeout = setTimeout(() => {
+      if (!connected && loading) {
+        setError('Failed to connect to server');
+        setLoading(false);
+      }
+    }, 10000);
+
+    return () => {
+      clearTimeout(timeout);
+      client.deactivate();
+    };
   }, []);
 
   // Update network chart when systemStatus changes
@@ -218,12 +216,10 @@ const SystemOverview: React.FC = () => {
                  </div>
              </div>
              <div className="flex gap-3 w-full lg:w-auto">
-                 <button 
-                    onClick={fetchSystemStatus}
-                    className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-all border border-zinc-700 hover:border-zinc-600 shadow-sm"
-                 >
-                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> <span className="hidden sm:inline">Refresh</span>
-                 </button>
+                 <div className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium border border-zinc-700 shadow-sm">
+                    <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`}></span>
+                    <span className="hidden sm:inline">{connected ? 'Live' : 'Connecting...'}</span>
+                 </div>
                  <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-all border border-zinc-700 hover:border-zinc-600 shadow-sm">
                     <Terminal size={16} /> <span className="hidden sm:inline">Fix</span>
                  </button>

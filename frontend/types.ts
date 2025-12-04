@@ -6,6 +6,17 @@ export enum ContainerStatus {
   RESTARTING = 'restarting'
 }
 
+// System status from dashboard API
+export interface SystemStatus {
+  cpuUsage: number;
+  coreCount: number;
+  totalMemory: number;
+  usedMemory: number;
+  memoryUsage: number;
+  osName: string;
+  systemLoad: number;
+}
+
 export enum VmStatus {
   RUNNING = 'running',
   SHUTOFF = 'shutoff',

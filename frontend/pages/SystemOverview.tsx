@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { INITIAL_CPU_DATA, MOCK_DISK_USAGE, MOCK_NGINX_HOSTS, MOCK_CONTAINERS, MOCK_FIREWALL_RULES } from '../constants';
 import { Server, Database, ChevronRight, RefreshCw, Terminal, Power, Globe, Shield, Activity } from 'lucide-react';
+import { DashboardService } from '../services/api';
+import { SystemStatus } from '../types';
 
 const CircularGauge = ({ value, label, subLabel, color = "#10b981" }: { value: number, label: string, subLabel: string, color?: string }) => {
     // Two layers: Track (gray) and Progress (colored)
@@ -92,25 +94,57 @@ const SoftwareCard = ({ name, version, status, icon: Icon, colorClass }: { name:
 
 const SystemOverview: React.FC = () => {
   const [cpuData, setCpuData] = useState(INITIAL_CPU_DATA);
-  const [load, setLoad] = useState(2);
-  const [cpu, setCpu] = useState(0.3);
-  const [ram, setRam] = useState(34.2);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simulate real-time updates
+  // Fetch system status from API
+  const fetchSystemStatus = async () => {
+    try {
+      const data = await DashboardService.getSystemStatus();
+      setSystemStatus(data);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch system status:', err);
+      setError('Failed to load system status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch and polling
   useEffect(() => {
+    fetchSystemStatus();
+    
+    // Poll every 5 seconds for real-time updates
     const interval = setInterval(() => {
-        setLoad(prev => Math.min(100, Math.max(1, prev + (Math.random() - 0.5) * 5)));
-        setCpu(prev => Math.min(100, Math.max(0, prev + (Math.random() - 0.5) * 2)));
-        setRam(prev => Math.min(100, Math.max(20, prev + (Math.random() - 0.5) * 1)));
-
-        setCpuData(prev => {
-            const newDown = Math.floor(Math.random() * 600) + 100;
-            const newUp = Math.floor(Math.random() * 300) + 50;
-            return [...prev.slice(1), { name: '', uv: 0, down: newDown, up: newUp }];
-        });
-    }, 2000);
+      fetchSystemStatus();
+      
+      // Update network traffic chart (simulated)
+      setCpuData(prev => {
+        const newDown = Math.floor(Math.random() * 600) + 100;
+        const newUp = Math.floor(Math.random() * 300) + 50;
+        return [...prev.slice(1), { name: '', uv: 0, down: newDown, up: newUp }];
+      });
+    }, 5000);
+    
     return () => clearInterval(interval);
   }, []);
+
+  // Helper function to format bytes to human readable
+  const formatBytes = (bytes: number): string => {
+    const mb = bytes / (1024 * 1024);
+    if (mb >= 1024) {
+      return `${(mb / 1024).toFixed(0)} GB`;
+    }
+    return `${mb.toFixed(0)} MB`;
+  };
+
+  // Calculate load percentage (assuming max load = number of cores)
+  const getLoadPercentage = (): number => {
+    if (!systemStatus) return 0;
+    return Math.min(100, (systemStatus.systemLoad / systemStatus.coreCount) * 100);
+  };
 
   const dbCount = MOCK_CONTAINERS.filter(c => c.name.includes('db') || c.name.includes('redis') || c.name.includes('sql')).length;
   
@@ -125,15 +159,21 @@ const SystemOverview: React.FC = () => {
                  <div>
                      <h2 className="text-2xl font-bold text-white">hashi-node-01</h2>
                      <p className="text-zinc-400 text-sm flex items-center gap-3 mt-1">
-                        <span className="flex items-center gap-1.5"><Activity size={14} className="text-emerald-500" /> Debian 12</span>
+                        <span className="flex items-center gap-1.5">
+                          <Activity size={14} className="text-emerald-500" /> 
+                          {loading ? 'Loading...' : (systemStatus?.osName || 'Unknown')}
+                        </span>
                         <span className="text-zinc-700">|</span>
-                        <span>Up Time: <span className="text-zinc-300 font-mono">14 Days 03:22:11</span></span>
+                        <span>{systemStatus?.coreCount || '--'} Core(s)</span>
                      </p>
                  </div>
              </div>
              <div className="flex gap-3 w-full lg:w-auto">
-                 <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-all border border-zinc-700 hover:border-zinc-600 shadow-sm">
-                    <RefreshCw size={16} /> <span className="hidden sm:inline">Update</span>
+                 <button 
+                    onClick={fetchSystemStatus}
+                    className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-all border border-zinc-700 hover:border-zinc-600 shadow-sm"
+                 >
+                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> <span className="hidden sm:inline">Refresh</span>
                  </button>
                  <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-all border border-zinc-700 hover:border-zinc-600 shadow-sm">
                     <Terminal size={16} /> <span className="hidden sm:inline">Fix</span>
@@ -150,25 +190,26 @@ const SystemOverview: React.FC = () => {
             <div className="xl:col-span-2 bg-surface border border-border rounded-xl p-6 shadow-lg">
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-lg font-bold text-white">Sys Status</h3>
+                    {error && <span className="text-rose-500 text-xs">{error}</span>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-zinc-800/50 mt-4">
                     <CircularGauge 
-                        value={load} 
-                        label="Smooth operation" 
+                        value={getLoadPercentage()} 
+                        label={systemStatus ? (getLoadPercentage() < 50 ? 'Smooth operation' : getLoadPercentage() < 80 ? 'Moderate load' : 'High load') : '--'}
                         subLabel="Load Status" 
-                        color="#10b981" 
+                        color={getLoadPercentage() < 50 ? '#10b981' : getLoadPercentage() < 80 ? '#f59e0b' : '#ef4444'} 
                     />
                     <CircularGauge 
-                        value={cpu} 
-                        label="8 Core(s)" 
+                        value={systemStatus?.cpuUsage || 0} 
+                        label={`${systemStatus?.coreCount || '--'} Core(s)`}
                         subLabel="CPU Usage" 
-                        color="#10b981" 
+                        color={systemStatus && systemStatus.cpuUsage > 80 ? '#ef4444' : systemStatus && systemStatus.cpuUsage > 50 ? '#f59e0b' : '#10b981'} 
                     />
                     <CircularGauge 
-                        value={ram} 
-                        label="5471 / 15991(MB)" 
+                        value={systemStatus?.memoryUsage || 0} 
+                        label={systemStatus ? `${formatBytes(systemStatus.usedMemory)} / ${formatBytes(systemStatus.totalMemory)}` : '-- / --'}
                         subLabel="RAM Usage" 
-                        color="#10b981" 
+                        color={systemStatus && systemStatus.memoryUsage > 80 ? '#ef4444' : systemStatus && systemStatus.memoryUsage > 50 ? '#f59e0b' : '#10b981'} 
                     />
                 </div>
             </div>

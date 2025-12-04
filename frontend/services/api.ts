@@ -5,6 +5,13 @@ import SockJS from 'sockjs-client';
 import { CronJob, FileItem, FirewallRule, ServiceItem, SystemStatus } from '@/types';
 
 export const FirewallService = {
+  getStatus: async () => {
+    const response = await api.get<{ enabled: boolean }>('/firewall/status');
+    return response.data.enabled;
+  },
+  setStatus: async (enabled: boolean) => {
+    await api.post('/firewall/status', null, { params: { enabled } });
+  },
   getRules: async () => {
     const response = await api.get<FirewallRule[]>('/firewall');
     return response.data;

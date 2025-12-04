@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/firewall")
@@ -15,6 +16,17 @@ import java.util.List;
 public class FirewallController {
 
     private final FirewallService firewallService;
+
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Boolean>> getStatus() {
+        return ResponseEntity.ok(Map.of("enabled", firewallService.isEnabled()));
+    }
+
+    @PostMapping("/status")
+    public ResponseEntity<Void> setStatus(@RequestParam boolean enabled) {
+        firewallService.setEnabled(enabled);
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping
     public ResponseEntity<List<FirewallRuleDTO>> getRules() {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { FirewallService } from '../services/api';
 import { FirewallRule } from '../types';
-import { Shield, ShieldAlert, Plus, Trash2, X, Save, AlertCircle, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
+import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, X, Save, AlertCircle, CheckCircle, Loader2, RefreshCw, Power } from 'lucide-react';
 
 // Toast 通知組件
 const Toast: React.FC<{
@@ -173,6 +173,22 @@ const FirewallManager: React.FC = () => {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [ruleToDelete, setRuleToDelete] = useState<FirewallRule | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [enabled, setEnabled] = useState<boolean | null>(null); // null = loading
+    const [togglingStatus, setTogglingStatus] = useState(false);
+    const [statusError, setStatusError] = useState(false);
+
+    // 載入防火牆狀態
+    const loadStatus = async () => {
+        try {
+            setStatusError(false);
+            const status = await FirewallService.getStatus();
+            setEnabled(status);
+        } catch (err: any) {
+            console.error('Failed to load firewall status:', err);
+            setStatusError(true);
+            setEnabled(false); // 預設為 false，避免卡在 loading
+        }
+    };
 
     // 載入防火牆規則
     const loadRules = async () => {
@@ -188,7 +204,34 @@ const FirewallManager: React.FC = () => {
         }
     };
 
+    // 切換防火牆狀態
+    const handleToggleStatus = async () => {
+        if (enabled === null) return;
+        
+        try {
+            setTogglingStatus(true);
+            await FirewallService.setStatus(!enabled);
+            setEnabled(!enabled);
+            setToast({ 
+                message: `Firewall ${!enabled ? 'enabled' : 'disabled'} successfully`, 
+                type: 'success' 
+            });
+        } catch (err: any) {
+            console.error('Failed to toggle firewall:', err);
+            let errorMsg = 'Failed to change firewall status';
+            if (err.response?.data) {
+                errorMsg = typeof err.response.data === 'string' 
+                    ? err.response.data 
+                    : err.response.data.message || JSON.stringify(err.response.data);
+            }
+            setToast({ message: errorMsg, type: 'error' });
+        } finally {
+            setTogglingStatus(false);
+        }
+    };
+
     useEffect(() => {
+        loadStatus();
         loadRules();
     }, []);
 
@@ -252,13 +295,46 @@ const FirewallManager: React.FC = () => {
         <div className="space-y-6 animate-fade-in">
             <PageHeader
                 title="Firewall (UFW)"
-                icon={Shield}
-                iconColor="text-emerald-500"
-                description={`${rules.length} rules configured (${ipv4Rules.length} IPv4, ${ipv6Rules.length} IPv6)`}
+                icon={enabled === false ? ShieldOff : Shield}
+                iconColor={enabled === false ? "text-rose-500" : "text-emerald-500"}
+                description={
+                    <span className="flex items-center gap-2">
+                        Status:{' '}
+                        {enabled === null ? (
+                            <span className="text-zinc-500 flex items-center gap-1">
+                                <Loader2 size={12} className="animate-spin" /> Loading...
+                            </span>
+                        ) : statusError ? (
+                            <span className="text-amber-400 font-bold">UNKNOWN</span>
+                        ) : enabled ? (
+                            <span className="text-emerald-400 font-bold">ACTIVE</span>
+                        ) : (
+                            <span className="text-rose-400 font-bold">INACTIVE</span>
+                        )}
+                        <span className="text-zinc-600 mx-1">|</span>
+                        <span className="text-zinc-400">{rules.length} rules ({ipv4Rules.length} IPv4, {ipv6Rules.length} IPv6)</span>
+                    </span>
+                }
                 actions={
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={loadRules}
+                            onClick={handleToggleStatus}
+                            disabled={enabled === null || togglingStatus}
+                            className={`flex items-center gap-2 px-4 py-2 rounded font-medium text-sm transition-colors border shadow-lg disabled:opacity-50 ${
+                                enabled
+                                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/50 hover:bg-rose-500/20'
+                                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/50 hover:bg-emerald-500/20'
+                            }`}
+                        >
+                            {togglingStatus ? (
+                                <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                                <Power size={16} />
+                            )}
+                            {enabled ? 'Disable' : 'Enable'}
+                        </button>
+                        <button
+                            onClick={() => { loadStatus(); loadRules(); }}
                             disabled={loading}
                             className="p-2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
                             title="Refresh"
@@ -267,7 +343,8 @@ const FirewallManager: React.FC = () => {
                         </button>
                         <button 
                             onClick={() => setAddDialogOpen(true)}
-                            className="bg-zinc-100 hover:bg-white text-zinc-900 px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 shadow-lg"
+                            disabled={enabled === false}
+                            className="bg-zinc-100 hover:bg-white text-zinc-900 px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 shadow-lg disabled:opacity-50"
                         >
                             <Plus size={16} /> Add Rule
                         </button>
@@ -382,12 +459,34 @@ const FirewallManager: React.FC = () => {
                 </div>
             )}
 
+            {/* API 錯誤提示 */}
+            {statusError && (
+                <div className="flex items-center gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-200 shadow-lg">
+                    <AlertCircle size={20} />
+                    <p className="text-sm">
+                        <strong>Error:</strong> Failed to get firewall status. Make sure <code className="bg-rose-500/20 px-1 rounded">ufw</code> is installed 
+                        and the backend has <code className="bg-rose-500/20 px-1 rounded">sudo</code> permission.
+                    </p>
+                </div>
+            )}
+
+            {/* 防火牆停用警告 */}
+            {enabled === false && !statusError && (
+                <div className="flex items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-200 shadow-lg">
+                    <ShieldAlert size={20} />
+                    <p className="text-sm">
+                        <strong>Warning:</strong> Firewall is currently <strong>inactive</strong>. All incoming traffic is allowed. 
+                        Click "Enable" to activate the firewall.
+                    </p>
+                </div>
+            )}
+
             {/* 資訊提示 */}
             <div className="flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-blue-200 shadow-lg">
                 <ShieldAlert size={20} />
                 <p className="text-sm">
                     Note: Rules are managed via <code className="bg-blue-500/20 px-1 rounded">ufw</code>. 
-                    Ensure the firewall is enabled with <code className="bg-blue-500/20 px-1 rounded">sudo ufw enable</code>.
+                    Changes take effect immediately.
                 </p>
             </div>
 

@@ -11,6 +11,42 @@ import java.util.List;
 @Service
 public class FirewallService {
 
+    // 0. 取得防火牆狀態
+    public boolean isEnabled() {
+        try {
+            ProcessBuilder builder = new ProcessBuilder("sudo", "-n", "ufw", "status");
+            Process process = builder.start();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line = reader.readLine();
+            process.waitFor();
+
+            // 輸出範例: "Status: active" 或 "Status: inactive"
+            return line != null && line.toLowerCase().contains("active") && !line.toLowerCase().contains("inactive");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // 啟用/停用防火牆
+    public void setEnabled(boolean enabled) {
+        try {
+            String action = enabled ? "enable" : "disable";
+            // 使用 yes | 來自動回答確認提示
+            ProcessBuilder builder = new ProcessBuilder("bash", "-c", "yes | sudo -n ufw " + action);
+            Process process = builder.start();
+            int exitCode = process.waitFor();
+            
+            if (exitCode != 0) {
+                String error = new String(process.getErrorStream().readAllBytes());
+                throw new RuntimeException("Failed to " + action + " firewall: " + error);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to change firewall status", e);
+        }
+    }
+
     // 1. 讀取規則列表
     public List<FirewallRuleDTO> getRules() {
         List<FirewallRuleDTO> rules = new ArrayList<>();

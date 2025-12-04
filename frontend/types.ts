@@ -1,3 +1,9 @@
+export interface CronJob {
+  id?: string; // 後端讀取時有，新增時可無
+  expression: string;
+  command: string;
+}
+
 export interface ServiceItem {
   name: string;
   description: string;
@@ -181,15 +187,6 @@ export interface Database {
   size: string;
   status: 'online' | 'offline';
   backup: string;
-}
-
-export interface CronJob {
-  id: string;
-  name: string;
-  schedule: string;
-  command: string;
-  status: 'active' | 'disabled';
-  lastRun: string;
 }
 
 export interface WafRule {

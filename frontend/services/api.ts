@@ -2,7 +2,17 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { FileItem, ServiceItem, SystemStatus } from '@/types';
+import { CronJob, FileItem, ServiceItem, SystemStatus } from '@/types';
+
+export const CronService = {
+  listJobs: async () => {
+    const response = await api.get<CronJob[]>('/cron');
+    return response.data;
+  },
+  saveJobs: async (jobs: CronJob[]) => {
+    await api.post('/cron', jobs);
+  }
+};
 
 export const SystemdService = {
   listServices: async () => {

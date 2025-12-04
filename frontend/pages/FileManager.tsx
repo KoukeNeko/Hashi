@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { FileItem } from '../types';
 import { FileService } from '../services/api';
-import { FileText, Folder, MoreVertical, Search, Upload, Download, Trash2, Home, RefreshCw, ChevronRight, AlertCircle } from 'lucide-react';
+import { FileText, Folder, MoreVertical, Search, Upload, Download, Trash2, Home, RefreshCw, ChevronRight, AlertCircle, Lock, ArrowLeft } from 'lucide-react';
 
 // 格式化檔案大小
 const formatFileSize = (bytes: number): string => {
@@ -24,11 +24,13 @@ const FileManager: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [accessDenied, setAccessDenied] = useState(false);
 
     // 載入檔案列表
     const loadFiles = useCallback(async (path: string) => {
         setLoading(true);
         setError(null);
+        setAccessDenied(false);
         try {
             const data = await FileService.listFiles(path);
             // 排序：資料夾在前，檔案在後，同類型按名稱排序
@@ -38,9 +40,23 @@ const FileManager: React.FC = () => {
                 return a.name.localeCompare(b.name);
             });
             setFiles(sorted);
-        } catch (err) {
+            
+            // 如果回傳空陣列且不是根目錄，可能是權限問題
+            if (sorted.length === 0 && path !== '/') {
+                setAccessDenied(true);
+            }
+        } catch (err: any) {
             console.error('Failed to load files:', err);
-            setError('Failed to load files. Please check if the backend is running.');
+            // 檢查是否為權限錯誤
+            if (err.response?.status === 403 || err.message?.includes('Access')) {
+                setAccessDenied(true);
+                setError('Permission denied. You do not have access to this directory.');
+            } else if (err.response?.status === 500) {
+                setAccessDenied(true);
+                setError('Cannot access this directory. Permission denied.');
+            } else {
+                setError('Failed to load files. Please check if the backend is running.');
+            }
         } finally {
             setLoading(false);
         }
@@ -53,6 +69,12 @@ const FileManager: React.FC = () => {
     // 導航到指定路徑
     const navigateTo = (path: string) => {
         setCurrentPath(path);
+    };
+
+    // 返回上層目錄
+    const goBack = () => {
+        const parentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
+        navigateTo(parentPath);
     };
 
     // 點擊資料夾進入
@@ -159,10 +181,7 @@ const FileManager: React.FC = () => {
                             {currentPath !== '/' && (
                                 <tr 
                                     className="hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                                    onClick={() => {
-                                        const parentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
-                                        navigateTo(parentPath);
-                                    }}
+                                    onClick={goBack}
                                 >
                                     <td className="p-4 text-center">
                                         <Folder size={20} className="text-zinc-500" />
@@ -185,8 +204,32 @@ const FileManager: React.FC = () => {
                                 </tr>
                             )}
 
+                            {/* Access Denied State */}
+                            {!loading && accessDenied && filteredFiles.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="p-12 text-center">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                                <Lock size={32} className="text-amber-500" />
+                                            </div>
+                                            <div>
+                                                <p className="text-zinc-300 font-medium mb-1">Permission Denied</p>
+                                                <p className="text-zinc-500 text-sm">You don't have permission to access this directory.</p>
+                                            </div>
+                                            <button
+                                                onClick={goBack}
+                                                className="mt-2 flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors text-sm"
+                                            >
+                                                <ArrowLeft size={16} />
+                                                Go Back
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+
                             {/* Empty State */}
-                            {!loading && !error && filteredFiles.length === 0 && (
+                            {!loading && !accessDenied && filteredFiles.length === 0 && (
                                 <tr>
                                     <td colSpan={6} className="p-8 text-center text-zinc-500">
                                         {searchTerm ? 'No files match your search.' : 'This directory is empty.'}

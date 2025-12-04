@@ -264,7 +264,7 @@ const SystemOverview: React.FC = () => {
             </div>
 
             {/* Disk Usage */}
-            <div className="bg-surface border border-border rounded-xl p-6 shadow-lg flex flex-col justify-center relative overflow-hidden">
+            <div className="bg-surface border border-border rounded-xl p-6 shadow-lg flex flex-col justify-start relative overflow-hidden">
                  <h3 className="text-lg font-bold text-white mb-6 relative z-10">Disk</h3>
                  <div className="space-y-6 relative z-10">
                     {systemStatus?.disks?.map((disk) => {

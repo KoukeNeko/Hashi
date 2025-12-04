@@ -1,10 +1,312 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../components/PageHeader';
-import { MOCK_CRON_JOBS } from '../constants';
-import { Clock, Play, Pause, Trash2, Edit } from 'lucide-react';
+import { CronService } from '../services/api';
+import { CronJob } from '../types';
+import { Clock, Play, Trash2, Edit, Plus, X, Save, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+
+// Toast 通知組件
+const Toast: React.FC<{
+    message: string;
+    type: 'success' | 'error';
+    onClose: () => void;
+}> = ({ message, type, onClose }) => {
+    useEffect(() => {
+        const timer = setTimeout(onClose, 4000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border animate-fade-in ${
+            type === 'success' 
+                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' 
+                : 'bg-rose-500/20 border-rose-500/50 text-rose-300'
+        }`}>
+            {type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+            <span className="text-sm font-medium">{message}</span>
+            <button onClick={onClose} className="ml-2 hover:opacity-70"><X size={16} /></button>
+        </div>
+    );
+};
+
+// 新增/編輯彈窗
+const CronDialog: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (job: CronJob) => void;
+    job: CronJob | null; // null = 新增, 有值 = 編輯
+}> = ({ isOpen, onClose, onSave, job }) => {
+    const [expression, setExpression] = useState('');
+    const [command, setCommand] = useState('');
+    const [comment, setComment] = useState('');
+
+    useEffect(() => {
+        if (job) {
+            setExpression(job.expression);
+            setCommand(job.command);
+            setComment(job.comment || '');
+        } else {
+            setExpression('');
+            setCommand('');
+            setComment('');
+        }
+    }, [job, isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!expression.trim() || !command.trim()) return;
+        onSave({
+            id: job?.id,
+            expression: expression.trim(),
+            command: command.trim(),
+            comment: comment.trim() || undefined,
+        });
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-surface border border-border rounded-lg shadow-2xl w-full max-w-lg mx-4">
+                <div className="flex items-center justify-between p-4 border-b border-border">
+                    <h2 className="text-lg font-bold text-zinc-100">
+                        {job ? 'Edit Cron Job' : 'Add Cron Job'}
+                    </h2>
+                    <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-zinc-400 mb-1">Cron Expression *</label>
+                        <input
+                            type="text"
+                            value={expression}
+                            onChange={(e) => setExpression(e.target.value)}
+                            placeholder="0 3 * * *"
+                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            required
+                        />
+                        <p className="mt-1 text-xs text-zinc-500">Format: minute hour day month weekday</p>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-zinc-400 mb-1">Command *</label>
+                        <input
+                            type="text"
+                            value={command}
+                            onChange={(e) => setCommand(e.target.value)}
+                            placeholder="/path/to/script.sh"
+                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-zinc-400 mb-1">Comment (optional)</label>
+                        <input
+                            type="text"
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            placeholder="Brief description"
+                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                        />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+                        >
+                            <Save size={16} />
+                            {job ? 'Update' : 'Create'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+// 刪除確認彈窗
+const DeleteConfirmDialog: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    job: CronJob | null;
+}> = ({ isOpen, onClose, onConfirm, job }) => {
+    if (!isOpen || !job) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-surface border border-border rounded-lg shadow-2xl w-full max-w-md mx-4 p-6">
+                <div className="flex items-center gap-3 text-rose-400 mb-4">
+                    <AlertCircle size={24} />
+                    <h2 className="text-lg font-bold">Delete Cron Job</h2>
+                </div>
+                <p className="text-zinc-300 text-sm mb-2">Are you sure you want to delete this cron job?</p>
+                <div className="bg-zinc-800/50 rounded p-3 mb-4">
+                    <p className="font-mono text-emerald-400 text-sm">{job.expression}</p>
+                    <p className="font-mono text-zinc-400 text-xs mt-1 truncate">{job.command}</p>
+                </div>
+                <div className="flex justify-end gap-2">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+                    >
+                        <Trash2 size={16} />
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// 解析 Cron 表達式為人類可讀的描述
+const parseCronExpression = (expression: string): string => {
+    const parts = expression.split(' ');
+    if (parts.length !== 5) return expression;
+
+    const [min, hour, day, month, weekday] = parts;
+    
+    // 簡單的解析邏輯
+    if (min === '*' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+        return 'Every minute';
+    }
+    if (min === '0' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+        return 'Every hour';
+    }
+    if (min === '0' && hour === '0' && day === '*' && month === '*' && weekday === '*') {
+        return 'Daily at midnight';
+    }
+    if (day === '*' && month === '*' && weekday === '*') {
+        return `Daily at ${hour.padStart(2, '0')}:${min.padStart(2, '0')}`;
+    }
+    if (weekday !== '*' && day === '*' && month === '*') {
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayName = days[parseInt(weekday)] || weekday;
+        return `Every ${dayName} at ${hour.padStart(2, '0')}:${min.padStart(2, '0')}`;
+    }
+    if (day !== '*' && month === '*' && weekday === '*') {
+        return `Monthly on day ${day} at ${hour.padStart(2, '0')}:${min.padStart(2, '0')}`;
+    }
+    
+    return expression;
+};
 
 const CronManager: React.FC = () => {
+    const [jobs, setJobs] = useState<CronJob[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editingJob, setEditingJob] = useState<CronJob | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [jobToDelete, setJobToDelete] = useState<CronJob | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    // 載入 Cron Jobs
+    const loadJobs = async () => {
+        try {
+            setLoading(true);
+            const data = await CronService.listJobs();
+            setJobs(data);
+        } catch (err: any) {
+            console.error('Failed to load cron jobs:', err);
+            setToast({ message: 'Failed to load cron jobs', type: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadJobs();
+    }, []);
+
+    // 儲存所有 Jobs (新增或更新後都要重新儲存)
+    const saveAllJobs = async (newJobs: CronJob[]) => {
+        try {
+            setSaving(true);
+            await CronService.saveJobs(newJobs);
+            setJobs(newJobs);
+            return true;
+        } catch (err: any) {
+            console.error('Failed to save cron jobs:', err);
+            let errorMsg = 'Failed to save cron jobs';
+            if (err.response?.data) {
+                errorMsg = typeof err.response.data === 'string' 
+                    ? err.response.data 
+                    : err.response.data.message || JSON.stringify(err.response.data);
+            }
+            setToast({ message: errorMsg, type: 'error' });
+            return false;
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // 新增 Job
+    const handleAddJob = () => {
+        setEditingJob(null);
+        setDialogOpen(true);
+    };
+
+    // 編輯 Job
+    const handleEditJob = (job: CronJob) => {
+        setEditingJob(job);
+        setDialogOpen(true);
+    };
+
+    // 儲存 Job (新增或更新)
+    const handleSaveJob = async (job: CronJob) => {
+        let newJobs: CronJob[];
+        
+        if (job.id) {
+            // 更新現有
+            newJobs = jobs.map(j => j.id === job.id ? job : j);
+        } else {
+            // 新增 (給一個臨時 ID，後端會重新分配)
+            newJobs = [...jobs, { ...job, id: crypto.randomUUID() }];
+        }
+
+        const success = await saveAllJobs(newJobs);
+        if (success) {
+            setDialogOpen(false);
+            setToast({ message: job.id ? 'Cron job updated' : 'Cron job created', type: 'success' });
+            // 重新載入以取得後端分配的 ID
+            loadJobs();
+        }
+    };
+
+    // 確認刪除
+    const handleDeleteClick = (job: CronJob) => {
+        setJobToDelete(job);
+        setDeleteDialogOpen(true);
+    };
+
+    // 執行刪除
+    const handleDeleteConfirm = async () => {
+        if (!jobToDelete) return;
+        
+        const newJobs = jobs.filter(j => j.id !== jobToDelete.id);
+        const success = await saveAllJobs(newJobs);
+        if (success) {
+            setDeleteDialogOpen(false);
+            setJobToDelete(null);
+            setToast({ message: 'Cron job deleted', type: 'success' });
+        }
+    };
+
     return (
         <div className="space-y-6 animate-fade-in">
             <PageHeader
@@ -12,51 +314,118 @@ const CronManager: React.FC = () => {
                 icon={Clock}
                 description="Manage scheduled tasks and recurring scripts."
                 actions={
-                    <button className="bg-zinc-100 hover:bg-white text-zinc-900 px-4 py-2 rounded font-medium text-sm transition-colors shadow-lg">
+                    <button 
+                        onClick={handleAddJob}
+                        disabled={saving}
+                        className="flex items-center gap-2 bg-zinc-100 hover:bg-white text-zinc-900 px-4 py-2 rounded font-medium text-sm transition-colors shadow-lg disabled:opacity-50"
+                    >
+                        <Plus size={16} />
                         Add Cron Job
                     </button>
                 }
             />
 
             <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-xl">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-zinc-900 border-b border-border text-xs uppercase text-zinc-500">
-                            <th className="p-4 font-medium">Job Name</th>
-                            <th className="p-4 font-medium">Schedule</th>
-                            <th className="p-4 font-medium">Command</th>
-                            <th className="p-4 font-medium">Status</th>
-                            <th className="p-4 font-medium">Last Run</th>
-                            <th className="p-4 font-medium text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-sm divide-y divide-border">
-                        {MOCK_CRON_JOBS.map(job => (
-                            <tr key={job.id} className="hover:bg-zinc-800/50 transition-colors">
-                                <td className="p-4 font-bold text-zinc-200">{job.name}</td>
-                                <td className="p-4 font-mono text-emerald-400 bg-emerald-500/5 w-fit rounded px-2">{job.schedule}</td>
-                                <td className="p-4 font-mono text-zinc-400 text-xs truncate max-w-xs" title={job.command}>{job.command}</td>
-                                <td className="p-4">
-                                    <span className={`flex items-center gap-1.5 text-xs font-bold uppercase ${job.status === 'active' ? 'text-emerald-500' : 'text-zinc-500'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${job.status === 'active' ? 'bg-emerald-500' : 'bg-zinc-500'}`}></span>
-                                        {job.status}
-                                    </span>
-                                </td>
-                                <td className="p-4 text-zinc-500 text-xs">{job.lastRun}</td>
-                                <td className="p-4 text-right">
-                                    <div className="flex justify-end gap-2 text-zinc-500">
-                                        <button className="hover:text-white transition-colors"><Edit size={16} /></button>
-                                        <button className={`transition-colors ${job.status === 'active' ? 'hover:text-amber-400' : 'hover:text-emerald-400'}`}>
-                                            {job.status === 'active' ? <Pause size={16} /> : <Play size={16} />}
-                                        </button>
-                                        <button className="hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
-                                    </div>
-                                </td>
+                {loading ? (
+                    <div className="flex items-center justify-center py-16">
+                        <Loader2 size={32} className="animate-spin text-zinc-500" />
+                    </div>
+                ) : jobs.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+                        <Clock size={48} className="mb-4 opacity-50" />
+                        <p className="text-sm">No cron jobs configured</p>
+                        <button 
+                            onClick={handleAddJob}
+                            className="mt-4 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                        >
+                            Create your first cron job
+                        </button>
+                    </div>
+                ) : (
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-zinc-900 border-b border-border text-xs uppercase text-zinc-500">
+                                <th className="p-4 font-medium">Expression</th>
+                                <th className="p-4 font-medium">Schedule</th>
+                                <th className="p-4 font-medium">Command</th>
+                                <th className="p-4 font-medium text-right">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="text-sm divide-y divide-border">
+                            {jobs.map(job => (
+                                <tr key={job.id} className="hover:bg-zinc-800/50 transition-colors">
+                                    <td className="p-4 font-mono text-emerald-400 bg-emerald-500/5">{job.expression}</td>
+                                    <td className="p-4 text-zinc-400 text-xs">{parseCronExpression(job.expression)}</td>
+                                    <td className="p-4 font-mono text-zinc-300 text-xs truncate max-w-xs" title={job.command}>
+                                        {job.command}
+                                        {job.comment && (
+                                            <span className="ml-2 text-zinc-500">#{job.comment}</span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-right">
+                                        <div className="flex justify-end gap-2 text-zinc-500">
+                                            <button 
+                                                onClick={() => handleEditJob(job)}
+                                                disabled={saving}
+                                                className="hover:text-white transition-colors disabled:opacity-50"
+                                                title="Edit"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDeleteClick(job)}
+                                                disabled={saving}
+                                                className="hover:text-rose-400 transition-colors disabled:opacity-50"
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
+
+            {/* 儲存中的遮罩 */}
+            {saving && (
+                <div className="fixed inset-0 z-40 bg-black/30 flex items-center justify-center">
+                    <div className="bg-surface border border-border rounded-lg px-6 py-4 flex items-center gap-3">
+                        <Loader2 size={20} className="animate-spin text-emerald-400" />
+                        <span className="text-zinc-300">Saving...</span>
+                    </div>
+                </div>
+            )}
+
+            {/* 新增/編輯彈窗 */}
+            <CronDialog
+                isOpen={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                onSave={handleSaveJob}
+                job={editingJob}
+            />
+
+            {/* 刪除確認彈窗 */}
+            <DeleteConfirmDialog
+                isOpen={deleteDialogOpen}
+                onClose={() => {
+                    setDeleteDialogOpen(false);
+                    setJobToDelete(null);
+                }}
+                onConfirm={handleDeleteConfirm}
+                job={jobToDelete}
+            />
+
+            {/* Toast 通知 */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };

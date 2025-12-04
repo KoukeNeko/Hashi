@@ -49,8 +49,16 @@ public class FileController {
         try {
             fileService.deleteFile(path);
             return ResponseEntity.ok("Deleted");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(e.getMessage());
+        } catch (RuntimeException e) {
+            String message = e.getMessage();
+            if (message != null && message.contains("Permission denied")) {
+                return ResponseEntity.status(403).body("Permission denied");
+            } else if (message != null && message.contains("system directories")) {
+                return ResponseEntity.status(403).body("Cannot delete system directories");
+            } else if (message != null && message.contains("does not exist")) {
+                return ResponseEntity.status(404).body("File not found");
+            }
+            return ResponseEntity.internalServerError().body(message != null ? message : "Failed to delete");
         }
     }
 

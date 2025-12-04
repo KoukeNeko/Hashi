@@ -27,6 +27,13 @@ import java.util.stream.Stream;
 @Slf4j
 public class FileService {
 
+    // 禁止刪除的系統關鍵目錄
+    private static final List<String> PROTECTED_PATHS = List.of(
+            "/", "/home", "/root", "/etc", "/var", "/usr",
+            "/bin", "/sbin", "/boot", "/lib", "/lib64",
+            "/proc", "/sys", "/dev", "/run", "/tmp"
+    );
+
     // 列出指定路徑下的檔案
     public List<FileItemDTO> listFiles(String pathString) {
         Path path = Paths.get(pathString);
@@ -132,14 +139,57 @@ public class FileService {
         }
     }
 
-    // 刪除檔案
+    // 刪除檔案或資料夾
     public void deleteFile(String pathString) {
         Path path = Paths.get(pathString);
-        // TODO: 這裡可以加一些安全檢查
+        
+        // 安全檢查：不允許刪除根目錄或系統關鍵目錄
+        String absPath = path.toAbsolutePath().toString();
+        if (PROTECTED_PATHS.contains(absPath)) {
+            throw new RuntimeException("Cannot delete system directories");
+        }
+        
+        if (!Files.exists(path)) {
+            throw new RuntimeException("File or directory does not exist");
+        }
+        
         try {
-            Files.delete(path);
+            if (Files.isDirectory(path)) {
+                // 遞迴刪除資料夾及其內容
+                deleteDirectoryRecursively(path);
+            } else {
+                Files.delete(path);
+            }
+            log.info("Deleted: {}", pathString);
+        } catch (AccessDeniedException e) {
+            log.error("Permission denied when deleting: {}", pathString);
+            throw new RuntimeException("Permission denied", e);
         } catch (IOException e) {
+            log.error("Failed to delete: {}", pathString, e);
             throw new RuntimeException("Failed to delete file", e);
+        }
+    }
+    
+    // 遞迴刪除資料夾
+    private void deleteDirectoryRecursively(Path directory) throws IOException {
+        File dir = directory.toFile();
+        File[] files = dir.listFiles();
+        
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteDirectoryRecursively(file.toPath());
+                } else {
+                    if (!file.delete()) {
+                        throw new IOException("Failed to delete file: " + file.getAbsolutePath());
+                    }
+                }
+            }
+        }
+        
+        // 刪除空資料夾
+        if (!dir.delete()) {
+            throw new IOException("Failed to delete directory: " + directory);
         }
     }
 }

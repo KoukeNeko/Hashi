@@ -17,6 +17,16 @@ export interface SystemStatus {
   systemLoad: number;
 }
 
+// Container data from Docker API
+export interface ContainerDTO {
+  id: string;
+  name: string;
+  image: string;
+  state: string;
+  status: string;
+  portMapping: string;
+}
+
 export enum VmStatus {
   RUNNING = 'running',
   SHUTOFF = 'shutoff',

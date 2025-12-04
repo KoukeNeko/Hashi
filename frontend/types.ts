@@ -1,3 +1,11 @@
+export interface ServiceItem {
+  name: string;
+  description: string;
+  loadState: string;
+  activeState: string;
+  subState: string;
+}
+
 export interface FileItem {
   name: string;
   path: string;

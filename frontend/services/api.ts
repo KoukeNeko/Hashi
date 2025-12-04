@@ -2,7 +2,17 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { FileItem, SystemStatus } from '@/types';
+import { FileItem, ServiceItem, SystemStatus } from '@/types';
+
+export const SystemdService = {
+  listServices: async () => {
+    const response = await api.get<ServiceItem[]>('/services');
+    return response.data;
+  },
+  controlService: async (name: string, action: 'start' | 'stop' | 'restart') => {
+    await api.post(`/services/${name}/${action}`);
+  }
+};
 
 export const FileService = {
   listFiles: async (path: string = '/') => {

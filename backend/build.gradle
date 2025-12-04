@@ -22,6 +22,9 @@ configurations {
 
 repositories {
     mavenCentral()
+//    加入 JetBrains 官方依賴庫，這裡才有完整的 Pty4J 和它的快樂夥伴
+    maven { url "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies"}
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -35,6 +38,10 @@ dependencies {
     implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.7.0'
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // PTY 支援 (模擬終端機核心)
+    implementation 'org.jetbrains.pty4j:pty4j:0.12.13'
+    implementation 'org.jetbrains.pty4j:purejavacomm:0.0.11.1'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

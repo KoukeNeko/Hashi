@@ -1,14 +1,20 @@
 package dev.koukeneko.hashi.config;
 
+import dev.koukeneko.hashi.TerminalSocketHandler;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.*;
+
 
 @Configuration
-@EnableWebSocketMessageBroker // 啟用 STOMP 訊息代理
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+@EnableWebSocketMessageBroker // 啟用 STOMP (給 Dashboard 用)
+@EnableWebSocket              // 啟用 Raw WebSocket (給 Terminal 用)
+@RequiredArgsConstructor
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSocketConfigurer {
+
+    private final TerminalSocketHandler terminalSocketHandler;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -25,4 +31,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*") // 允許跨域 (React 開發環境)
                 .withSockJS(); // 啟用 SockJS fallback (萬一瀏覽器不支援 WS，會自動降級成 HTTP)
     }
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        // 註冊 /terminal 路徑，交給 TerminalSocketHandler 處理
+        registry.addHandler(terminalSocketHandler, "/terminal")
+                .setAllowedOrigins("*");
+    }
 }
+

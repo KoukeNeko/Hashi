@@ -119,17 +119,21 @@ const SystemOverview: React.FC = () => {
     // Poll every 5 seconds for real-time updates
     const interval = setInterval(() => {
       fetchSystemStatus();
-      
-      // Update network traffic chart (simulated)
-      setCpuData(prev => {
-        const newDown = Math.floor(Math.random() * 600) + 100;
-        const newUp = Math.floor(Math.random() * 300) + 50;
-        return [...prev.slice(1), { name: '', uv: 0, down: newDown, up: newUp }];
-      });
     }, 5000);
     
     return () => clearInterval(interval);
   }, []);
+
+  // Update network chart when systemStatus changes
+  useEffect(() => {
+    if (systemStatus?.network) {
+      setCpuData(prev => {
+        const newDown = systemStatus.network.downloadRate / 1024; // Convert to KB
+        const newUp = systemStatus.network.uploadRate / 1024; // Convert to KB
+        return [...prev.slice(1), { name: '', uv: 0, down: newDown, up: newUp }];
+      });
+    }
+  }, [systemStatus]);
 
   // Helper function to format bytes to human readable
   const formatBytes = (bytes: number): string => {

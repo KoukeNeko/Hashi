@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -96,6 +97,49 @@ public class FileService {
         } catch (Exception e) {
             log.warn("Failed to read file info: {}", path, e);
             return null; // 回傳 null，之後會被 filter 過濾掉
+        }
+    }
+
+    //讀取檔案內容
+    public String getFileContent(String pathString) {
+        Path path = Paths.get(pathString);
+
+        if (!Files.exists(path) || Files.isDirectory(path)) {
+            throw new RuntimeException("File not found or is a directory");
+        }
+
+        try {
+            // 防呆：超過 1MB 的檔案不給編輯，避免 OOM
+            if (Files.size(path) > 1024 * 1024) {
+                throw new RuntimeException("File is too large to edit (Max 1MB)");
+            }
+            // 讀取字串 (假設是 UTF-8)
+            return Files.readString(path, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read file", e);
+        }
+    }
+
+    // 儲存檔案內容
+    public void saveFileContent(String pathString, String content) {
+        Path path = Paths.get(pathString);
+
+        // TODO: 這裡可以加一些安全檢查，例如禁止寫入 /proc 或 /sys
+        try {
+            Files.writeString(path, content, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save file", e);
+        }
+    }
+
+    // 刪除檔案
+    public void deleteFile(String pathString) {
+        Path path = Paths.get(pathString);
+        // TODO: 這裡可以加一些安全檢查
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to delete file", e);
         }
     }
 }

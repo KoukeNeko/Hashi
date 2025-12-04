@@ -11,8 +11,25 @@ export const FileService = {
       params: { path }
     });
     return response.data;
+  },
+
+  getFileContent: async (path: string) => {
+    const response = await api.get<string>('/files/content', {
+      params: { path },
+      responseType: 'text' // 重要：告訴 Axios 回傳的是純文字，不是 JSON
+    });
+    return response.data;
+  },
+
+  saveFileContent: async (path: string, content: string) => {
+    await api.post('/files/content', { path, content });
+  },
+
+  deleteFile: async (path: string) => {
+    await api.delete('/files/delete', { params: { path } });
   }
 };
+
 
 // WebSocket 連線函式
 export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => void) => {

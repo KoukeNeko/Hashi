@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '../components/PageHeader';
+import FileEditor from '../components/FileEditor';
 import { FileItem } from '../types';
 import { FileService } from '../services/api';
 import { FileText, Folder, MoreVertical, Search, Upload, Download, Trash2, Home, RefreshCw, ChevronRight, AlertCircle, Lock, ArrowLeft } from 'lucide-react';
@@ -25,6 +26,10 @@ const FileManager: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [accessDenied, setAccessDenied] = useState(false);
+    
+    // File Editor 狀態
+    const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+    const [isEditorOpen, setIsEditorOpen] = useState(false);
 
     // 載入檔案列表
     const loadFiles = useCallback(async (path: string) => {
@@ -77,11 +82,26 @@ const FileManager: React.FC = () => {
         navigateTo(parentPath);
     };
 
-    // 點擊資料夾進入
+    // 點擊項目
     const handleItemClick = (file: FileItem) => {
         if (file.isDirectory) {
             navigateTo(file.path);
+        } else {
+            // 開啟檔案編輯器
+            setSelectedFile(file);
+            setIsEditorOpen(true);
         }
+    };
+
+    // 關閉編輯器
+    const handleCloseEditor = () => {
+        setIsEditorOpen(false);
+        setSelectedFile(null);
+    };
+
+    // 儲存檔案
+    const handleSaveFile = async (path: string, content: string) => {
+        await FileService.saveFileContent(path, content);
     };
 
     // 解析路徑成麵包屑
@@ -296,6 +316,14 @@ const FileManager: React.FC = () => {
                     </table>
                 </div>
             </div>
+
+            {/* File Editor Dialog */}
+            <FileEditor
+                file={selectedFile}
+                isOpen={isEditorOpen}
+                onClose={handleCloseEditor}
+                onSave={handleSaveFile}
+            />
         </div>
     );
 };

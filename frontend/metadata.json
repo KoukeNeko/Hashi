@@ -1,0 +1,5 @@
+{
+  "name": "Hashi Dashboard",
+  "description": "A high-performance, dark-themed Linux server management dashboard featuring real-time system monitoring, Docker container orchestration, KVM virtualization management, and an AI-powered SysAdmin assistant.",
+  "requestFramePermissions": []
+}

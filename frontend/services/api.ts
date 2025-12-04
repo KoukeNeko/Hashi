@@ -2,7 +2,21 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { CronJob, FileItem, ServiceItem, SystemStatus } from '@/types';
+import { CronJob, FileItem, FirewallRule, ServiceItem, SystemStatus } from '@/types';
+
+export const FirewallService = {
+  getRules: async () => {
+    const response = await api.get<FirewallRule[]>('/firewall');
+    return response.data;
+  },
+  addRule: async (port: string, protocol: string) => {
+    // 傳送 Query Params
+    await api.post(`/firewall/allow`, null, { params: { port, protocol } });
+  },
+  deleteRule: async (index: number) => {
+    await api.delete(`/firewall/${index}`);
+  }
+};
 
 export const CronService = {
   listJobs: async () => {

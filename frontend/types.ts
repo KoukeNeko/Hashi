@@ -1,3 +1,11 @@
+export interface FirewallRule {
+  index: number;
+  to: string;
+  action: string;
+  from: string;
+  ipv6: boolean;
+}
+
 export interface CronJob {
   id?: string;        // 後端讀取時有，新增時可無
   expression: string; // Cron 表達式，例如 "0 3 * * *"

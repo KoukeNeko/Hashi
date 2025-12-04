@@ -12,9 +12,10 @@ interface SidebarProps {
   onTabChange: (tab: TabView) => void;
   isOpen: boolean;
   onClose: () => void;
+  onLogout?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, isOpen, onClose, onLogout }) => {
   
   const navGroups = [
     {
@@ -123,7 +124,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, isOpen, onCl
            <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors">
               <Settings size={18} /> Settings
            </button>
-           <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-rose-900/70 hover:text-rose-500 hover:bg-rose-900/10 transition-colors">
+           <button 
+              onClick={onLogout}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-rose-900/70 hover:text-rose-500 hover:bg-rose-900/10 transition-colors"
+           >
               <LogOut size={18} /> Logout
            </button>
         </div>

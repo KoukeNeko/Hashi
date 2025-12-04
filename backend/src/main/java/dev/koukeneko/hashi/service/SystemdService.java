@@ -70,14 +70,23 @@ public class SystemdService {
         try {
             // 這裡未來可能需要 sudo，如果 Spring Boot 不是以 root 執行
             ProcessBuilder builder = new ProcessBuilder("systemctl", action, serviceName);
+            builder.redirectErrorStream(true); // 合併 stdout 和 stderr
             Process process = builder.start();
+            
+            // 讀取輸出
+            String output = new String(process.getInputStream().readAllBytes()).trim();
             int exitCode = process.waitFor();
 
             if (exitCode != 0) {
-                throw new RuntimeException("Command failed with exit code: " + exitCode);
+                String errorMsg = output.isEmpty() 
+                    ? "Permission denied or service not found" 
+                    : output;
+                throw new RuntimeException(errorMsg);
             }
+        } catch (RuntimeException e) {
+            throw e; // 重新拋出已處理的錯誤
         } catch (Exception e) {
-            throw new RuntimeException("Failed to " + action + " service " + serviceName, e);
+            throw new RuntimeException("Failed to " + action + " service: " + e.getMessage(), e);
         }
     }
 }

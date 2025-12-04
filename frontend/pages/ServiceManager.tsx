@@ -2,14 +2,22 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { ServiceItem } from '../types';
 import { SystemdService } from '../services/api';
-import { Settings2, Play, Square, RefreshCw, Search, AlertCircle, Loader2 } from 'lucide-react';
+import { Settings2, Play, Square, RefreshCw, Search, AlertCircle, Loader2, CheckCircle, X } from 'lucide-react';
+
+// Toast 通知類型
+interface Toast {
+    id: number;
+    type: 'success' | 'error';
+    message: string;
+}
 
 const ServiceManager: React.FC = () => {
     const [services, setServices] = useState<ServiceItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [actionLoading, setActionLoading] = useState<string | null>(null); // 正在執行操作的服務名稱
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [toasts, setToasts] = useState<Toast[]>([]);
 
     // 載入服務列表
     const loadServices = useCallback(async () => {
@@ -38,18 +46,43 @@ const ServiceManager: React.FC = () => {
         loadServices();
     }, [loadServices]);
 
+    // 顯示 Toast 通知
+    const showToast = (type: 'success' | 'error', message: string) => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, type, message }]);
+        // 自動消失
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+        }, 5000);
+    };
+
+    // 移除 Toast
+    const removeToast = (id: number) => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+    };
+
     // 控制服務
     const handleControl = async (name: string, action: 'start' | 'stop' | 'restart') => {
         setActionLoading(`${name}-${action}`);
         try {
             await SystemdService.controlService(name, action);
+            showToast('success', `Successfully ${action}ed ${name}`);
             // 等一下再重新載入，讓 systemd 有時間更新狀態
             setTimeout(() => {
                 loadServices();
             }, 500);
         } catch (err: any) {
             console.error(`Failed to ${action} service:`, err);
-            setError(`Failed to ${action} ${name}. ${err.response?.data || ''}`);
+            // 處理錯誤訊息，確保是字串
+            let errorMsg = 'Unknown error';
+            if (err.response?.data) {
+                errorMsg = typeof err.response.data === 'string' 
+                    ? err.response.data 
+                    : err.response.data.message || err.response.data.error || JSON.stringify(err.response.data);
+            } else if (err.message) {
+                errorMsg = err.message;
+            }
+            showToast('error', `Failed to ${action} ${name}: ${errorMsg}`);
         } finally {
             setActionLoading(null);
         }
@@ -256,6 +289,33 @@ const ServiceManager: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Toast Notifications */}
+            <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+                {toasts.map((toast) => (
+                    <div
+                        key={toast.id}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border animate-fade-in max-w-md ${
+                            toast.type === 'success'
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                        }`}
+                    >
+                        {toast.type === 'success' ? (
+                            <CheckCircle size={20} className="flex-shrink-0" />
+                        ) : (
+                            <AlertCircle size={20} className="flex-shrink-0" />
+                        )}
+                        <span className="text-sm flex-1">{toast.message}</span>
+                        <button
+                            onClick={() => removeToast(toast.id)}
+                            className="p-1 hover:bg-white/10 rounded transition-colors flex-shrink-0"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                ))}
             </div>
         </div>
     );

@@ -15,8 +15,9 @@ public class DockerConfig {
 
     @Bean
     public DockerClient dockerClient() {
-        // 1. 設定連線資訊 (預設會讀取環境變數 DOCKER_HOST，沒設就讀本機 Socket)
+        // 1. 強制指定 Docker Socket 路徑，避免它去連 localhost:2375
         DefaultDockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+                .withDockerHost("unix:///var/run/docker.sock")
                 .build();
 
         // 2. 設定傳輸層 (使用 Apache HttpClient 5)

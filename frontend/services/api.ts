@@ -7,8 +7,8 @@ import { SystemStatus } from '@/types';
 // WebSocket 連線函式
 export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => void) => {
   const client = new Client({
-    // 使用 SockJS 建立連線工廠
-    webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+    // 使用 SockJS 建立連線工廠 (透過 Vite proxy)
+    webSocketFactory: () => new SockJS('/ws'),
     
     // 連線成功時的回呼
     onConnect: () => {
@@ -34,8 +34,8 @@ export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => vo
   return client; // 回傳 client 實例以便之後斷線用
 };
 
-// 設定後端的基礎 URL
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+// 設定後端的基礎 URL (透過 Vite proxy)
+const API_BASE_URL = '/api/v1';
 
 export const api = axios.create({
     baseURL: API_BASE_URL,

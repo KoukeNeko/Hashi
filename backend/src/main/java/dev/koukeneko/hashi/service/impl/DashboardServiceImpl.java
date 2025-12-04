@@ -15,8 +15,8 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class DashboardServiceImpl implements DashboardService {
 
-    // 直接初始化 SystemInfo，作為 Singleton Bean 的一部分長駐記憶體
-    private final SystemInfo systemInfo = new SystemInfo();
+    // 依賴 Spring 注入 Config 定義好的 Bean
+    private final SystemInfo systemInfo;
 
     @Override
     public SystemStatusDTO getSystemStatus() {

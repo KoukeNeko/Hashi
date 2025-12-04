@@ -30,6 +30,11 @@ const FileManager: React.FC = () => {
     // File Editor 狀態
     const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
+    
+    // Delete Dialog 狀態
+    const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     // 載入檔案列表
     const loadFiles = useCallback(async (path: string) => {
@@ -102,6 +107,41 @@ const FileManager: React.FC = () => {
     // 儲存檔案
     const handleSaveFile = async (path: string, content: string) => {
         await FileService.saveFileContent(path, content);
+    };
+
+    // 開啟刪除確認對話框
+    const handleDeleteClick = (file: FileItem) => {
+        setFileToDelete(file);
+        setIsDeleteDialogOpen(true);
+    };
+
+    // 確認刪除
+    const handleConfirmDelete = async () => {
+        if (!fileToDelete) return;
+        
+        setDeleting(true);
+        try {
+            await FileService.deleteFile(fileToDelete.path);
+            // 刪除成功後重新載入檔案列表
+            await loadFiles(currentPath);
+            setIsDeleteDialogOpen(false);
+            setFileToDelete(null);
+        } catch (err: any) {
+            console.error('Failed to delete:', err);
+            if (err.response?.status === 403) {
+                setError('Permission denied. Cannot delete this item.');
+            } else {
+                setError('Failed to delete. Please try again.');
+            }
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    // 取消刪除
+    const handleCancelDelete = () => {
+        setIsDeleteDialogOpen(false);
+        setFileToDelete(null);
     };
 
     // 解析路徑成麵包屑
@@ -297,6 +337,7 @@ const FileManager: React.FC = () => {
                                                 </button>
                                             )}
                                             <button 
+                                                onClick={() => handleDeleteClick(file)}
                                                 className="p-1.5 hover:bg-rose-500/20 rounded text-zinc-400 hover:text-rose-400" 
                                                 title="Delete"
                                             >
@@ -324,6 +365,70 @@ const FileManager: React.FC = () => {
                 onClose={handleCloseEditor}
                 onSave={handleSaveFile}
             />
+
+            {/* Delete Confirmation Dialog */}
+            {isDeleteDialogOpen && fileToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                        onClick={handleCancelDelete}
+                    />
+                    
+                    {/* Dialog */}
+                    <div className="relative bg-zinc-900 rounded-lg border border-zinc-700 shadow-2xl p-6 max-w-md w-full mx-4 animate-fade-in">
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center flex-shrink-0">
+                                <Trash2 size={24} className="text-rose-500" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-medium text-white mb-1">
+                                    Delete {fileToDelete.isDirectory ? 'Folder' : 'File'}?
+                                </h3>
+                                <p className="text-sm text-zinc-400 mb-2">
+                                    Are you sure you want to delete{' '}
+                                    <span className="text-zinc-200 font-medium">{fileToDelete.name}</span>?
+                                </p>
+                                <p className="text-xs text-zinc-500 font-mono bg-zinc-800 px-2 py-1 rounded">
+                                    {fileToDelete.path}
+                                </p>
+                                {fileToDelete.isDirectory && (
+                                    <p className="text-xs text-amber-400 mt-2">
+                                        ⚠️ Warning: This will delete all contents inside this folder.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={handleCancelDelete}
+                                disabled={deleting}
+                                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded text-sm font-medium transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDelete}
+                                disabled={deleting}
+                                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {deleting ? (
+                                    <>
+                                        <RefreshCw size={16} className="animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 size={16} />
+                                        Delete
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

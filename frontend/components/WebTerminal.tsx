@@ -50,6 +50,20 @@ const WebTerminal = () => {
     ws.onopen = () => {
       term.writeln('\x1b[1;32mConnected to Hashi Backend Terminal...\x1b[0m');
       term.writeln('---------------------------------------------');
+      
+      // 連線後立即發送終端機大小
+      setTimeout(() => {
+        if (fitAddonRef.current) {
+          fitAddonRef.current.fit();
+        }
+        if (term.cols && term.rows) {
+          ws.send(JSON.stringify({ 
+            type: 'resize', 
+            cols: term.cols, 
+            rows: term.rows 
+          }));
+        }
+      }, 100);
     };
 
     ws.onmessage = (event) => {
@@ -73,18 +87,40 @@ const WebTerminal = () => {
       }
     });
 
-    // 4. 處理視窗大小調整
+    // 4. 發送終端機大小到後端的函數
+    const sendResize = () => {
+      if (ws.readyState === WebSocket.OPEN && term.cols && term.rows) {
+        // 發送 resize 指令給後端，格式: \x1b[8;{rows};{cols}t 或自定義 JSON
+        // 這裡使用 JSON 格式，後端需要解析
+        ws.send(JSON.stringify({ 
+          type: 'resize', 
+          cols: term.cols, 
+          rows: term.rows 
+        }));
+      }
+    };
+
+    // 5. 處理視窗大小調整
     const handleResize = () => {
       if (fitAddonRef.current) {
         fitAddonRef.current.fit();
+        sendResize();
       }
     };
     window.addEventListener('resize', handleResize);
+
+    // 監聽終端機大小變化事件
+    term.onResize(({ cols, rows }) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+      }
+    });
 
     // 使用 ResizeObserver 監聽容器大小變化
     const resizeObserver = new ResizeObserver(() => {
       if (fitAddonRef.current) {
         fitAddonRef.current.fit();
+        // onResize 事件會自動觸發，不需要在這裡再次 sendResize
       }
     });
     if (containerRef.current) {

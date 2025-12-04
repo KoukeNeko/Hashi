@@ -1,7 +1,10 @@
 package dev.koukeneko.hashi.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pty4j.PtyProcess;
 import com.pty4j.PtyProcessBuilder;
+import com.pty4j.WinSize;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
@@ -25,6 +28,8 @@ public class TerminalService {
     private final Map<String, PtyProcess> processMap = new ConcurrentHashMap<>();
     // 執行緒池，用來非同步讀取 Linux 的輸出
     private final ExecutorService executorService = Executors.newCachedThreadPool();
+    // JSON 解析器
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 當前端連上 WebSocket 時，啟動一個新的 Bash
@@ -40,6 +45,8 @@ public class TerminalService {
             String[] command = {"/bin/bash"};
             PtyProcess process = new PtyProcessBuilder(command)
                     .setEnvironment(envs)
+                    .setInitialColumns(80)
+                    .setInitialRows(24)
                     .start();
 
             processMap.put(session.getId(), process);
@@ -59,12 +66,52 @@ public class TerminalService {
         PtyProcess process = processMap.get(sessionId);
         if (process != null) {
             try {
+                // 先檢查是否為 resize 指令 (JSON 格式)
+                if (command.startsWith("{") && command.contains("\"type\"")) {
+                    handleJsonCommand(sessionId, command);
+                    return;
+                }
+                
                 OutputStream os = process.getOutputStream();
                 // 把前端的指令寫入 Bash 的 Standard Input
                 os.write(command.getBytes(StandardCharsets.UTF_8));
                 os.flush();
             } catch (IOException e) {
                 log.error("Failed to write to terminal", e);
+            }
+        }
+    }
+
+    /**
+     * 處理 JSON 格式的指令 (如 resize)
+     */
+    private void handleJsonCommand(String sessionId, String json) {
+        try {
+            JsonNode node = objectMapper.readTree(json);
+            String type = node.has("type") ? node.get("type").asText() : "";
+            
+            if ("resize".equals(type)) {
+                int cols = node.get("cols").asInt();
+                int rows = node.get("rows").asInt();
+                resizeTerminal(sessionId, cols, rows);
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse JSON command: {}", json, e);
+        }
+    }
+
+    /**
+     * 調整終端機大小
+     */
+    public void resizeTerminal(String sessionId, int cols, int rows) {
+        PtyProcess process = processMap.get(sessionId);
+        if (process != null) {
+            try {
+                WinSize winSize = new WinSize(cols, rows);
+                process.setWinSize(winSize);
+                log.debug("Terminal resized to {}x{} for session {}", cols, rows, sessionId);
+            } catch (Exception e) {
+                log.error("Failed to resize terminal", e);
             }
         }
     }

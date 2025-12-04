@@ -28,6 +28,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    implementation 'com.github.oshi:oshi-core:6.9.1'
+    implementation 'com.github.docker-java:docker-java-core:3.7.0'
+    implementation 'com.github.docker-java:docker-java-api:3.4.0'
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'

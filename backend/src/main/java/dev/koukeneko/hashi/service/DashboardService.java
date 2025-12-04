@@ -1,4 +1,7 @@
 package dev.koukeneko.hashi.service;
 
-public class DashboardService {
+import dev.koukeneko.hashi.model.dto.SystemStatusDTO;
+
+public interface DashboardService {
+    SystemStatusDTO getSystemStatus();
 }

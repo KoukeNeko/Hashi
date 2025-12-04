@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ContainerStatus } from '../types';
 import { MOCK_CONTAINERS, MOCK_IMAGES, MOCK_NETWORKS, MOCK_VOLUMES } from '../constants';
 import { PageHeader } from '../components/PageHeader';
-import { Tabs } from './Tabs';
+import { Tabs } from '../components/Tabs';
 import { Box, Play, Square, RefreshCw, Activity, Cpu, HardDrive, Layers, Network, Database, Search, Plus, Trash2 } from 'lucide-react';
 
 type DockerTab = 'containers' | 'images' | 'networks' | 'volumes';

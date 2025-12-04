@@ -1,18 +1,18 @@
 
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
-import SystemOverview from './components/SystemOverview';
-import DockerManager from './components/DockerManager';
-import KvmManager from './components/KvmManager';
-import FirewallManager from './components/FirewallManager';
-import ServiceManager from './components/ServiceManager';
-import NginxManager from './components/NginxManager';
-import FileManager from './components/FileManager';
-import DatabaseManager from './components/DatabaseManager';
-import CronManager from './components/CronManager';
-import WafManager from './components/WafManager';
-import LogManager from './components/LogManager';
-import Login from './components/Login';
+import SystemOverview from './pages/SystemOverview';
+import DockerManager from './pages/DockerManager';
+import KvmManager from './pages/KvmManager';
+import FirewallManager from './pages/FirewallManager';
+import ServiceManager from './pages/ServiceManager';
+import NginxManager from './pages/NginxManager';
+import FileManager from './pages/FileManager';
+import DatabaseManager from './pages/DatabaseManager';
+import CronManager from './pages/CronManager';
+import WafManager from './pages/WafManager';
+import LogManager from './pages/LogManager';
+import Login from './pages/Login';
 import { TabView } from './types';
 import { TerminalSquare, Menu, Command, Construction } from 'lucide-react';
 

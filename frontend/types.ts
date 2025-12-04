@@ -1,4 +1,19 @@
 
+export interface DiskInfo {
+  name: string;
+  mount: string;
+  totalSpace: number;
+  usedSpace: number;
+  usableSpace: number;
+}
+
+export interface NetworkInfo {
+  uploadRate: number;   // Bytes/sec
+  downloadRate: number; // Bytes/sec
+  totalSent: number;
+  totalRecv: number;
+}
+
 export enum ContainerStatus {
   RUNNING = 'running',
   STOPPED = 'exited',
@@ -15,6 +30,8 @@ export interface SystemStatus {
   memoryUsage: number;
   osName: string;
   systemLoad: number;
+  disks: DiskInfo[];
+  network: NetworkInfo;
 }
 
 // Container data from Docker API

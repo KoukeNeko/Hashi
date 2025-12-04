@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { INITIAL_CPU_DATA, MOCK_DISK_USAGE, MOCK_NGINX_HOSTS, MOCK_CONTAINERS, MOCK_FIREWALL_RULES } from '../constants';
+import { INITIAL_CPU_DATA, MOCK_NGINX_HOSTS, MOCK_CONTAINERS, MOCK_FIREWALL_RULES } from '../constants';
 import { Server, Database, ChevronRight, RefreshCw, Terminal, Power, Globe, Shield, Activity } from 'lucide-react';
 import { DashboardService } from '../services/api';
 import { SystemStatus } from '../types';
@@ -140,6 +140,51 @@ const SystemOverview: React.FC = () => {
     return `${mb.toFixed(0)} MB`;
   };
 
+  // Helper function to format bytes for disk (GB)
+  const formatDiskSize = (bytes: number): string => {
+    const gb = bytes / (1024 * 1024 * 1024);
+    if (gb >= 1024) {
+      return `${(gb / 1024).toFixed(2)} TB`;
+    }
+    return `${gb.toFixed(1)} GB`;
+  };
+
+  // Helper function to format network rate
+  const formatNetworkRate = (bytesPerSec: number): string => {
+    if (bytesPerSec >= 1024 * 1024) {
+      return `${(bytesPerSec / (1024 * 1024)).toFixed(2)} MB/s`;
+    }
+    if (bytesPerSec >= 1024) {
+      return `${(bytesPerSec / 1024).toFixed(2)} KB/s`;
+    }
+    return `${bytesPerSec} B/s`;
+  };
+
+  // Helper function to format total network traffic
+  const formatNetworkTotal = (bytes: number): string => {
+    const gb = bytes / (1024 * 1024 * 1024);
+    if (gb >= 1024) {
+      return `${(gb / 1024).toFixed(2)} TB`;
+    }
+    if (gb >= 1) {
+      return `${gb.toFixed(2)} GB`;
+    }
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  // Get disk usage percentage
+  const getDiskPercent = (used: number, total: number): number => {
+    if (total === 0) return 0;
+    return Math.round((used / total) * 100);
+  };
+
+  // Get color based on percentage
+  const getDiskColor = (percent: number): string => {
+    if (percent >= 90) return '#ef4444'; // red
+    if (percent >= 70) return '#f59e0b'; // amber
+    return '#10b981'; // green
+  };
+
   // Calculate load percentage (assuming max load = number of cores)
   const getLoadPercentage = (): number => {
     if (!systemStatus) return 0;
@@ -218,25 +263,31 @@ const SystemOverview: React.FC = () => {
             <div className="bg-surface border border-border rounded-xl p-6 shadow-lg flex flex-col justify-center relative overflow-hidden">
                  <h3 className="text-lg font-bold text-white mb-6 relative z-10">Disk</h3>
                  <div className="space-y-6 relative z-10">
-                    {MOCK_DISK_USAGE.map((disk) => (
-                        <div key={disk.path}>
-                            <div className="flex justify-between mb-2 items-end">
-                                <span className="text-xs font-mono font-bold bg-zinc-800 px-2 py-1 rounded text-zinc-400">{disk.path}</span>
-                                <div className="text-right">
-                                    <span className="text-sm font-bold mr-1.5" style={{ color: disk.color }}>{disk.percent}%</span>
-                                    <span className="text-[10px] text-zinc-500">{disk.used}GB / {disk.total}GB</span>
+                    {systemStatus?.disks?.map((disk) => {
+                        const percent = getDiskPercent(disk.usedSpace, disk.totalSpace);
+                        const color = getDiskColor(percent);
+                        return (
+                            <div key={disk.mount}>
+                                <div className="flex justify-between mb-2 items-end">
+                                    <span className="text-xs font-mono font-bold bg-zinc-800 px-2 py-1 rounded text-zinc-400">{disk.mount}</span>
+                                    <div className="text-right">
+                                        <span className="text-sm font-bold mr-1.5" style={{ color }}>{percent}%</span>
+                                        <span className="text-[10px] text-zinc-500">{formatDiskSize(disk.usedSpace)} / {formatDiskSize(disk.totalSpace)}</span>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-zinc-900 rounded-full h-2.5 overflow-hidden border border-zinc-800/50">
+                                    <div 
+                                        className="h-full rounded-full transition-all duration-1000 ease-out relative" 
+                                        style={{ width: `${percent}%`, backgroundColor: color }}
+                                    >
+                                        <div className="absolute inset-0 bg-white/20"></div>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="w-full bg-zinc-900 rounded-full h-2.5 overflow-hidden border border-zinc-800/50">
-                                <div 
-                                    className="h-full rounded-full transition-all duration-1000 ease-out relative" 
-                                    style={{ width: `${disk.percent}%`, backgroundColor: disk.color }}
-                                >
-                                    <div className="absolute inset-0 bg-white/20"></div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    }) || (
+                        <div className="text-zinc-500 text-sm">Loading disk info...</div>
+                    )}
                  </div>
                  {/* Decorative background element */}
                  <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-zinc-800/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -273,16 +324,20 @@ const SystemOverview: React.FC = () => {
                      <h3 className="text-lg font-bold text-white">Network Traffic</h3>
                      <div className="flex flex-wrap gap-4 sm:gap-6 text-sm">
                          <div className="flex flex-col min-w-[80px]">
-                             <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide flex items-center gap-1.5 mb-1"><span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span> Upstream</span>
-                             <span className="font-mono text-zinc-200 font-bold text-lg">0.56 <span className="text-xs text-zinc-500 font-normal">KB/s</span></span>
+                             <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide flex items-center gap-1.5 mb-1"><span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span> Upload</span>
+                             <span className="font-mono text-zinc-200 font-bold text-lg">{systemStatus?.network ? formatNetworkRate(systemStatus.network.uploadRate) : '--'}</span>
                          </div>
                          <div className="flex flex-col min-w-[80px]">
-                             <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide flex items-center gap-1.5 mb-1"><span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]"></span> Downstream</span>
-                             <span className="font-mono text-zinc-200 font-bold text-lg">1.28 <span className="text-xs text-zinc-500 font-normal">KB/s</span></span>
+                             <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide flex items-center gap-1.5 mb-1"><span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]"></span> Download</span>
+                             <span className="font-mono text-zinc-200 font-bold text-lg">{systemStatus?.network ? formatNetworkRate(systemStatus.network.downloadRate) : '--'}</span>
                          </div>
                           <div className="flex flex-col min-w-[80px] border-l border-zinc-800 pl-4">
                              <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide mb-1">Total Sent</span>
-                             <span className="font-mono text-zinc-200 font-bold">3.92 TB</span>
+                             <span className="font-mono text-zinc-200 font-bold">{systemStatus?.network ? formatNetworkTotal(systemStatus.network.totalSent) : '--'}</span>
+                         </div>
+                         <div className="flex flex-col min-w-[80px]">
+                             <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide mb-1">Total Recv</span>
+                             <span className="font-mono text-zinc-200 font-bold">{systemStatus?.network ? formatNetworkTotal(systemStatus.network.totalRecv) : '--'}</span>
                          </div>
                      </div>
                 </div>

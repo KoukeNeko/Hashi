@@ -34,7 +34,10 @@ const WebTerminal = () => {
     // 掛載到 DOM
     if (terminalRef.current) {
       term.open(terminalRef.current);
-      fitAddon.fit();
+      // 延遲 fit 確保 DOM 完全渲染
+      setTimeout(() => {
+        fitAddon.fit();
+      }, 50);
     }
     
     termInstance.current = term;
@@ -108,8 +111,7 @@ const WebTerminal = () => {
     >
       <div 
         ref={terminalRef} 
-        className="w-full h-full"
-        style={{ padding: '8px' }}
+        className="w-full h-full [&_.xterm]:h-full [&_.xterm-viewport]:h-full [&_.xterm-screen]:h-full"
       />
     </div>
   );

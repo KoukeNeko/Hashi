@@ -1,7 +1,6 @@
 package dev.koukeneko.hashi.service.impl;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.model.Container;
 import dev.koukeneko.hashi.model.dto.ContainerDTO;
 import dev.koukeneko.hashi.service.DockerService;

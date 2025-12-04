@@ -41,21 +41,32 @@ public class FileService {
             return Collections.emptyList();
         }
 
-        try (Stream<Path> stream = Files.list(path)) {
-            return stream
-                    .map(this::mapToDTO)
-                    .filter(dto -> dto != null) // 過濾掉無法讀取的檔案
-                    // 排序優化：資料夾排在前面，然後依檔名排序
-                    .sorted(Comparator.comparing(FileItemDTO::isDirectory).reversed()
-                            .thenComparing(FileItemDTO::name))
-                    .collect(Collectors.toList());
-        } catch (AccessDeniedException e) {
-            log.warn("Access denied for directory: {}", pathString);
+        // 使用 File.listFiles() 替代 Files.list()，更能處理權限問題
+        File dir = path.toFile();
+        File[] files = dir.listFiles();
+        
+        if (files == null) {
+            log.warn("Cannot list files in directory (permission denied or I/O error): {}", pathString);
             return Collections.emptyList();
-        } catch (IOException e) {
-            log.error("Failed to list files in: {}", pathString, e);
-            throw new RuntimeException("Failed to list files: " + e.getMessage(), e);
         }
+
+        List<FileItemDTO> result = new ArrayList<>();
+        for (File file : files) {
+            try {
+                FileItemDTO dto = mapToDTO(file.toPath());
+                if (dto != null) {
+                    result.add(dto);
+                }
+            } catch (Exception e) {
+                log.warn("Skipping file due to error: {}", file.getAbsolutePath());
+            }
+        }
+
+        // 排序：資料夾在前面，然後依檔名排序
+        result.sort(Comparator.comparing(FileItemDTO::isDirectory).reversed()
+                .thenComparing(FileItemDTO::name));
+
+        return result;
     }
 
     private FileItemDTO mapToDTO(Path path) {

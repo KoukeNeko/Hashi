@@ -49,4 +49,21 @@ public class DockerServiceImpl implements DockerService {
                 .portMapping(ports)
                 .build();
     }
+
+    @Override
+    public void startContainer(String containerId) {
+        dockerClient.startContainerCmd(containerId).exec();
+    }
+
+    @Override
+    public void stopContainer(String containerId) {
+        // 這裡可以不用參數，預設就是等待 10 秒後強殺
+        dockerClient.stopContainerCmd(containerId).exec();
+    }
+
+    @Override
+    public void restartContainer(String containerId) {
+        // 重啟通常也包含「等待停止」的過程，這裡設定等待 5 秒
+        dockerClient.restartContainerCmd(containerId).withTimeout(5).exec();
+    }
 }

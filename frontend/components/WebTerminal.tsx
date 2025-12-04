@@ -4,9 +4,11 @@ import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css'; // 務必引入 CSS，不然終端機樣式會爛掉
 
 const WebTerminal = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const termInstance = useRef<Terminal | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
 
   useEffect(() => {
     // 防止 React Strict Mode 重複渲染導致開啟兩個終端機
@@ -21,10 +23,13 @@ const WebTerminal = () => {
         background: '#1a1b23', // 配合 Dark Mode 背景色
         foreground: '#ffffff',
       },
+      scrollback: 10000,
+      convertEol: true,
     });
 
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
+    fitAddonRef.current = fitAddon;
 
     // 掛載到 DOM
     if (terminalRef.current) {
@@ -65,26 +70,47 @@ const WebTerminal = () => {
     });
 
     // 4. 處理視窗大小調整
-    const handleResize = () => fitAddon.fit();
+    const handleResize = () => {
+      if (fitAddonRef.current) {
+        fitAddonRef.current.fit();
+      }
+    };
     window.addEventListener('resize', handleResize);
+
+    // 使用 ResizeObserver 監聽容器大小變化
+    const resizeObserver = new ResizeObserver(() => {
+      if (fitAddonRef.current) {
+        fitAddonRef.current.fit();
+      }
+    });
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
 
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       if (ws.readyState === WebSocket.OPEN) {
         ws.close();
       }
       term.dispose();
       termInstance.current = null;
+      fitAddonRef.current = null;
     };
   }, []);
 
   return (
     <div 
-      className="w-full h-full p-4 bg-[#0f0f13] rounded-lg border border-gray-800"
-      style={{ minHeight: '500px' }} // 給個高度，不然可能會縮成一條線
+      ref={containerRef}
+      className="w-full h-full bg-[#1a1b23] rounded-lg border border-gray-800 overflow-hidden"
+      style={{ minHeight: '500px', height: 'calc(100vh - 250px)' }}
     >
-      <div ref={terminalRef} className="w-full h-full" />
+      <div 
+        ref={terminalRef} 
+        className="w-full h-full"
+        style={{ padding: '8px' }}
+      />
     </div>
   );
 };

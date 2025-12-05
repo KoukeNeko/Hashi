@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AuthResponse, CronJob, FileItem, FirewallRule, GroupInfo, ServiceItem, SystemStatus, UserInfo } from '@/types';
+import { AuthResponse, CreateGroupOptions, CreateUserOptions, CronJob, FileItem, FirewallRule, GroupInfo, PasswordInfo, ServiceItem, SystemStatus, UserInfo } from '@/types';
 
 // 認證相關 API
 export const AuthService = {
@@ -21,36 +21,133 @@ export const AuthService = {
 
 // 使用者管理 API
 export const UserManagementService = {
+  // ==================== 使用者查詢 ====================
   listUsers: async (): Promise<UserInfo[]> => {
     const response = await api.get<UserInfo[]>('/users');
     return response.data;
   },
-  createUser: async (username: string, password: string, shell: string = '/bin/bash', createHome: boolean = true) => {
-    const response = await api.post('/users', { username, password, shell, createHome: String(createHome) });
+  getUser: async (username: string): Promise<UserInfo> => {
+    const response = await api.get<UserInfo>(`/users/${username}`);
     return response.data;
   },
-  deleteUser: async (username: string, removeHome: boolean = false) => {
-    const response = await api.delete(`/users/${username}`, { params: { removeHome } });
+  getPasswordInfo: async (username: string): Promise<PasswordInfo> => {
+    const response = await api.get<PasswordInfo>(`/users/${username}/password-info`);
     return response.data;
   },
-  changePassword: async (username: string, password: string) => {
-    const response = await api.put(`/users/${username}/password`, { password });
+  getAvailableShells: async (): Promise<string[]> => {
+    const response = await api.get<string[]>('/users/shells');
+    return response.data;
+  },
+
+  // ==================== 使用者管理 ====================
+  createUser: async (options: CreateUserOptions) => {
+    const response = await api.post('/users', options);
+    return response.data;
+  },
+  deleteUser: async (username: string, removeHome: boolean = false, force: boolean = false) => {
+    const response = await api.delete(`/users/${username}`, { params: { removeHome, force } });
+    return response.data;
+  },
+  renameUser: async (username: string, newUsername: string) => {
+    const response = await api.put(`/users/${username}/rename`, { newUsername });
+    return response.data;
+  },
+  changeUid: async (username: string, uid: number) => {
+    const response = await api.put(`/users/${username}/uid`, { uid });
+    return response.data;
+  },
+  changePrimaryGroup: async (username: string, group: string) => {
+    const response = await api.put(`/users/${username}/primary-group`, { group });
+    return response.data;
+  },
+  changeHomeDir: async (username: string, homeDir: string, moveContents: boolean = false) => {
+    const response = await api.put(`/users/${username}/home`, { homeDir, moveContents });
     return response.data;
   },
   changeShell: async (username: string, shell: string) => {
     const response = await api.put(`/users/${username}/shell`, { shell });
     return response.data;
   },
+  changeGecos: async (username: string, gecos: string) => {
+    const response = await api.put(`/users/${username}/gecos`, { gecos });
+    return response.data;
+  },
+
+  // ==================== 密碼管理 ====================
+  changePassword: async (username: string, password: string) => {
+    const response = await api.put(`/users/${username}/password`, { password });
+    return response.data;
+  },
+  deletePassword: async (username: string) => {
+    const response = await api.delete(`/users/${username}/password`);
+    return response.data;
+  },
+  expirePassword: async (username: string) => {
+    const response = await api.post(`/users/${username}/expire-password`);
+    return response.data;
+  },
+  setPasswordPolicy: async (username: string, policy: { minDays?: number; maxDays?: number; warnDays?: number; inactiveDays?: number }) => {
+    const response = await api.put(`/users/${username}/password-policy`, policy);
+    return response.data;
+  },
+
+  // ==================== 帳號鎖定 ====================
+  lockUser: async (username: string) => {
+    const response = await api.post(`/users/${username}/lock`);
+    return response.data;
+  },
+  unlockUser: async (username: string) => {
+    const response = await api.post(`/users/${username}/unlock`);
+    return response.data;
+  },
+  setExpireDate: async (username: string, expireDate: string | null) => {
+    const response = await api.put(`/users/${username}/expire-date`, { expireDate });
+    return response.data;
+  },
+
+  // ==================== 群組查詢 ====================
   listGroups: async (): Promise<GroupInfo[]> => {
     const response = await api.get<GroupInfo[]>('/users/groups');
     return response.data;
   },
-  createGroup: async (name: string) => {
-    const response = await api.post('/users/groups', { name });
+  getGroup: async (groupName: string): Promise<GroupInfo> => {
+    const response = await api.get<GroupInfo>(`/users/groups/${groupName}`);
     return response.data;
   },
-  deleteGroup: async (groupName: string) => {
-    const response = await api.delete(`/users/groups/${groupName}`);
+  getUserGroups: async (username: string): Promise<string[]> => {
+    const response = await api.get<string[]>(`/users/${username}/groups`);
+    return response.data;
+  },
+
+  // ==================== 群組成員管理 ====================
+  setUserGroups: async (username: string, groups: string[]) => {
+    const response = await api.put(`/users/${username}/groups`, { groups });
+    return response.data;
+  },
+  addUserToGroups: async (username: string, groups: string[]) => {
+    const response = await api.post(`/users/${username}/groups`, { groups });
+    return response.data;
+  },
+
+  // ==================== 群組管理 ====================
+  createGroup: async (options: CreateGroupOptions) => {
+    const response = await api.post('/users/groups', options);
+    return response.data;
+  },
+  deleteGroup: async (groupName: string, force: boolean = false) => {
+    const response = await api.delete(`/users/groups/${groupName}`, { params: { force } });
+    return response.data;
+  },
+  renameGroup: async (groupName: string, newName: string) => {
+    const response = await api.put(`/users/groups/${groupName}/rename`, { newName });
+    return response.data;
+  },
+  changeGroupGid: async (groupName: string, gid: number) => {
+    const response = await api.put(`/users/groups/${groupName}/gid`, { gid });
+    return response.data;
+  },
+  setGroupMembers: async (groupName: string, members: string[]) => {
+    const response = await api.put(`/users/groups/${groupName}/members`, { members });
     return response.data;
   },
   addMemberToGroup: async (groupName: string, username: string) => {
@@ -61,12 +158,8 @@ export const UserManagementService = {
     const response = await api.delete(`/users/groups/${groupName}/members/${username}`);
     return response.data;
   },
-  getUserGroups: async (username: string): Promise<string[]> => {
-    const response = await api.get<string[]>(`/users/${username}/groups`);
-    return response.data;
-  },
-  setUserGroups: async (username: string, groups: string[]) => {
-    const response = await api.put(`/users/${username}/groups`, { groups });
+  setGroupAdmins: async (groupName: string, admins: string[]) => {
+    const response = await api.put(`/users/groups/${groupName}/admins`, { admins });
     return response.data;
   }
 };

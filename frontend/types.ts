@@ -3,14 +3,51 @@ export interface UserInfo {
   username: string;
   uid: number;
   gid: number;
+  gecos?: string;       // 使用者全名/註解
   homeDir: string;
   shell: string;
+  groups?: string[];    // 所屬群組列表
+  locked?: boolean;     // 帳號是否被鎖定
+  expireDate?: string;  // 帳號過期日期
+  lastLogin?: string;   // 最後登入時間
 }
 
 export interface GroupInfo {
   name: string;
   gid: number;
   members: string[];
+}
+
+export interface PasswordInfo {
+  username: string;
+  minDays: number;      // 密碼最短使用天數
+  maxDays: number;      // 密碼最長使用天數
+  warnDays: number;     // 過期前警告天數
+  inactiveDays: number; // 過期後停用天數
+  expireDate?: string;  // 帳號過期日期
+  lastChange?: string;  // 最後變更日期
+  locked: boolean;      // 帳號是否被鎖定
+}
+
+export interface CreateUserOptions {
+  username: string;
+  password: string;
+  shell?: string;
+  createHome?: boolean;
+  uid?: number;
+  gid?: number;
+  groups?: string[];
+  gecos?: string;
+  homeDir?: string;
+  system?: boolean;
+  expireDate?: string;
+}
+
+export interface CreateGroupOptions {
+  name: string;
+  gid?: number;
+  system?: boolean;
+  users?: string[];
 }
 
 export interface AuthResponse {

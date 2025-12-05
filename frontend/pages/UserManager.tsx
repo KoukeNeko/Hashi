@@ -5,7 +5,7 @@ import { UserManagementService } from '../services/api';
 import { UserInfo, GroupInfo } from '../types';
 import { 
     Users, UsersRound, Plus, Trash2, Key, Terminal, Save, 
-    Loader2, Shield, Home, UserPlus, UserMinus
+    Loader2, Shield, Home, UserPlus, UserMinus, Lock, Unlock, Edit3
 } from 'lucide-react';
 import {
     Dialog, DialogBody, DialogFooter,
@@ -489,7 +489,10 @@ const UsersTab: React.FC<{
     onCreateUser: () => void;
     onChangePassword: (user: UserInfo) => void;
     onDeleteUser: (user: UserInfo) => void;
-}> = ({ users, loading, onChangePassword, onDeleteUser }) => {
+    onLockUser: (user: UserInfo) => void;
+    onUnlockUser: (user: UserInfo) => void;
+    onEditUser: (user: UserInfo) => void;
+}> = ({ users, loading, onChangePassword, onDeleteUser, onLockUser, onUnlockUser, onEditUser }) => {
     // 過濾掉系統使用者 (UID < 1000)，可以選擇顯示
     const [showSystem, setShowSystem] = useState(false);
     const displayUsers = showSystem ? users : users.filter(u => u.uid >= 1000 || u.uid === 0);
@@ -530,6 +533,7 @@ const UsersTab: React.FC<{
                             <th className="p-4 font-medium">UID / GID</th>
                             <th className="p-4 font-medium">Home Directory</th>
                             <th className="p-4 font-medium">Shell</th>
+                            <th className="p-4 font-medium">Status</th>
                             <th className="p-4 font-medium text-right">Actions</th>
                         </tr>
                     </thead>
@@ -548,16 +552,26 @@ const UsersTab: React.FC<{
                                             {user.uid === 0 ? <Shield size={16} /> : <Users size={16} />}
                                         </div>
                                         <div>
-                                            <span className="font-medium text-zinc-100">{user.username}</span>
-                                            {user.uid === 0 && (
-                                                <span className="ml-2 text-xs bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">
-                                                    root
-                                                </span>
-                                            )}
-                                            {user.uid > 0 && user.uid < 1000 && (
-                                                <span className="ml-2 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
-                                                    system
-                                                </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-medium text-zinc-100">{user.username}</span>
+                                                {user.uid === 0 && (
+                                                    <span className="text-xs bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">
+                                                        root
+                                                    </span>
+                                                )}
+                                                {user.uid > 0 && user.uid < 1000 && (
+                                                    <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
+                                                        system
+                                                    </span>
+                                                )}
+                                                {user.locked && (
+                                                    <span className="text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                        <Lock size={10} /> locked
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {user.gecos && (
+                                                <span className="text-xs text-zinc-500">{user.gecos}</span>
                                             )}
                                         </div>
                                     </div>
@@ -578,7 +592,30 @@ const UsersTab: React.FC<{
                                     </div>
                                 </td>
                                 <td className="p-4">
+                                    {user.groups && user.groups.length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                            {user.groups.slice(0, 3).map(g => (
+                                                <span key={g} className="text-xs bg-zinc-700 px-1.5 py-0.5 rounded">
+                                                    {g}
+                                                </span>
+                                            ))}
+                                            {user.groups.length > 3 && (
+                                                <span className="text-xs text-zinc-500">+{user.groups.length - 3}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="p-4">
                                     <div className="flex items-center justify-end gap-1">
+                                        {user.uid >= 1000 && (
+                                            <button
+                                                onClick={() => onEditUser(user)}
+                                                className="p-2 hover:bg-blue-500/20 hover:text-blue-400 rounded transition-colors"
+                                                title="Edit User"
+                                            >
+                                                <Edit3 size={16} />
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => onChangePassword(user)}
                                             className="p-2 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors"
@@ -587,13 +624,32 @@ const UsersTab: React.FC<{
                                             <Key size={16} />
                                         </button>
                                         {user.uid !== 0 && user.uid >= 1000 && (
-                                            <button
-                                                onClick={() => onDeleteUser(user)}
-                                                className="p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
-                                                title="Delete User"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <>
+                                                {user.locked ? (
+                                                    <button
+                                                        onClick={() => onUnlockUser(user)}
+                                                        className="p-2 hover:bg-emerald-500/20 hover:text-emerald-400 rounded transition-colors"
+                                                        title="Unlock User"
+                                                    >
+                                                        <Unlock size={16} />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => onLockUser(user)}
+                                                        className="p-2 hover:bg-orange-500/20 hover:text-orange-400 rounded transition-colors"
+                                                        title="Lock User"
+                                                    >
+                                                        <Lock size={16} />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => onDeleteUser(user)}
+                                                    className="p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
+                                                    title="Delete User"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </>
                                         )}
                                     </div>
                                 </td>
@@ -782,7 +838,7 @@ const UserManager: React.FC = () => {
 
     // User handlers
     const handleCreateUser = async (username: string, password: string, shell: string, createHome: boolean) => {
-        await UserManagementService.createUser(username, password, shell, createHome);
+        await UserManagementService.createUser({ username, password, shell, createHome });
         setToast({ message: `User "${username}" created successfully`, type: 'success' });
         loadUsers();
     };
@@ -796,7 +852,7 @@ const UserManager: React.FC = () => {
     const handleDeleteUser = async (removeHome: boolean) => {
         if (!selectedUser) return;
         try {
-            await UserManagementService.deleteUser(selectedUser.username, removeHome);
+            await UserManagementService.deleteUser(selectedUser.username, removeHome, false);
             setToast({ message: `User "${selectedUser.username}" deleted`, type: 'success' });
             setDeleteUserDialogOpen(false);
             loadUsers();
@@ -805,9 +861,29 @@ const UserManager: React.FC = () => {
         }
     };
 
+    const handleLockUser = async (user: UserInfo) => {
+        try {
+            await UserManagementService.lockUser(user.username);
+            setToast({ message: `User "${user.username}" locked`, type: 'success' });
+            loadUsers();
+        } catch {
+            setToast({ message: 'Failed to lock user', type: 'error' });
+        }
+    };
+
+    const handleUnlockUser = async (user: UserInfo) => {
+        try {
+            await UserManagementService.unlockUser(user.username);
+            setToast({ message: `User "${user.username}" unlocked`, type: 'success' });
+            loadUsers();
+        } catch {
+            setToast({ message: 'Failed to unlock user', type: 'error' });
+        }
+    };
+
     // Group handlers
     const handleCreateGroup = async (name: string) => {
-        await UserManagementService.createGroup(name);
+        await UserManagementService.createGroup({ name });
         setToast({ message: `Group "${name}" created successfully`, type: 'success' });
         loadGroups();
     };
@@ -870,6 +946,13 @@ const UserManager: React.FC = () => {
                         onDeleteUser={(user) => {
                             setSelectedUser(user);
                             setDeleteUserDialogOpen(true);
+                        }}
+                        onLockUser={handleLockUser}
+                        onUnlockUser={handleUnlockUser}
+                        onEditUser={(user) => {
+                            setSelectedUser(user);
+                            // TODO: Open edit user dialog
+                            setToast({ message: 'Edit user feature coming soon', type: 'success' });
                         }}
                     />
                 ) : (

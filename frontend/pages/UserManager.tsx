@@ -482,6 +482,158 @@ const ManageMembersDialog: React.FC<{
     );
 };
 
+// ==================== Edit User Dialog ====================
+const EditUserDialog: React.FC<{
+    isOpen: boolean;
+    user: UserInfo | null;
+    onClose: () => void;
+    onSave: (updates: {
+        shell?: string;
+        gecos?: string;
+        homeDir?: string;
+        expireDate?: string | null;
+    }) => Promise<void>;
+    onRefresh: () => void;
+}> = ({ isOpen, user, onClose, onSave, onRefresh }) => {
+    const [shell, setShell] = useState('');
+    const [gecos, setGecos] = useState('');
+    const [homeDir, setHomeDir] = useState('');
+    const [expireDate, setExpireDate] = useState('');
+    const [shells, setShells] = useState<string[]>([]);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (isOpen && user) {
+            setShell(user.shell || '/bin/bash');
+            setGecos(user.gecos || '');
+            setHomeDir(user.homeDir || '');
+            setExpireDate(user.expireDate || '');
+            setError('');
+            
+            // 載入可用的 shells
+            UserManagementService.getAvailableShells()
+                .then(setShells)
+                .catch(() => setShells(['/bin/bash', '/bin/sh', '/usr/sbin/nologin']));
+        }
+    }, [isOpen, user]);
+
+    if (!user) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSaving(true);
+
+        try {
+            const updates: { shell?: string; gecos?: string; homeDir?: string; expireDate?: string | null } = {};
+            
+            if (shell !== user.shell) updates.shell = shell;
+            if (gecos !== (user.gecos || '')) updates.gecos = gecos;
+            if (homeDir !== user.homeDir) updates.homeDir = homeDir;
+            if (expireDate !== (user.expireDate || '')) {
+                updates.expireDate = expireDate || null;
+            }
+
+            if (Object.keys(updates).length === 0) {
+                onClose();
+                return;
+            }
+
+            await onSave(updates);
+            onRefresh();
+            onClose();
+        } catch {
+            setError('Failed to update user');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            title={`Edit User: ${user.username}`}
+            titleIcon={<Edit3 size={20} className="text-blue-400" />}
+        >
+            <form onSubmit={handleSubmit}>
+                <DialogBody>
+                    {error && <FormError message={error} />}
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="bg-zinc-800/50 p-3 rounded border border-border">
+                            <span className="text-xs text-zinc-500">UID</span>
+                            <p className="font-mono text-sm">{user.uid}</p>
+                        </div>
+                        <div className="bg-zinc-800/50 p-3 rounded border border-border">
+                            <span className="text-xs text-zinc-500">GID</span>
+                            <p className="font-mono text-sm">{user.gid}</p>
+                        </div>
+                    </div>
+
+                    <FormInput
+                        label="Full Name (GECOS)"
+                        value={gecos}
+                        onChange={setGecos}
+                        placeholder="John Doe"
+                    />
+
+                    <FormSelect
+                        label="Shell"
+                        value={shell}
+                        onChange={setShell}
+                        options={shells.map(s => ({ value: s, label: s }))}
+                    />
+
+                    <FormInput
+                        label="Home Directory"
+                        value={homeDir}
+                        onChange={setHomeDir}
+                        placeholder="/home/username"
+                    />
+
+                    <FormInput
+                        label="Account Expire Date"
+                        type="date"
+                        value={expireDate}
+                        onChange={setExpireDate}
+                        hint="Leave empty for no expiration"
+                    />
+
+                    {user.groups && user.groups.length > 0 && (
+                        <div>
+                            <label className="block text-xs font-medium text-zinc-400 mb-2">
+                                Groups
+                            </label>
+                            <div className="flex flex-wrap gap-1">
+                                {user.groups.map(g => (
+                                    <span key={g} className="text-xs bg-zinc-700 px-2 py-1 rounded">
+                                        {g}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </DialogBody>
+                <DialogFooter>
+                    <ActionButton variant="ghost" onClick={onClose}>
+                        Cancel
+                    </ActionButton>
+                    <ActionButton
+                        type="submit"
+                        variant="primary"
+                        loading={saving}
+                        icon={<Save size={16} />}
+                    >
+                        Save Changes
+                    </ActionButton>
+                </DialogFooter>
+            </form>
+        </Dialog>
+    );
+};
+
 // ==================== Users Tab Content ====================
 const UsersTab: React.FC<{
     users: UserInfo[];
@@ -533,7 +685,7 @@ const UsersTab: React.FC<{
                             <th className="p-4 font-medium">UID / GID</th>
                             <th className="p-4 font-medium">Home Directory</th>
                             <th className="p-4 font-medium">Shell</th>
-                            <th className="p-4 font-medium">Status</th>
+                            <th className="p-4 font-medium">Groups</th>
                             <th className="p-4 font-medium text-right">Actions</th>
                         </tr>
                     </thead>
@@ -797,6 +949,7 @@ const UserManager: React.FC = () => {
     const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
     const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
     const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
+    const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserInfo | null>(null);
 
     // Group dialogs
@@ -881,6 +1034,30 @@ const UserManager: React.FC = () => {
         }
     };
 
+    const handleEditUser = async (updates: { shell?: string; gecos?: string; homeDir?: string; expireDate?: string | null }) => {
+        if (!selectedUser) return;
+        
+        try {
+            if (updates.shell) {
+                await UserManagementService.changeShell(selectedUser.username, updates.shell);
+            }
+            if (updates.gecos !== undefined) {
+                await UserManagementService.changeGecos(selectedUser.username, updates.gecos);
+            }
+            if (updates.homeDir) {
+                await UserManagementService.changeHomeDir(selectedUser.username, updates.homeDir, false);
+            }
+            if (updates.expireDate !== undefined) {
+                await UserManagementService.setExpireDate(selectedUser.username, updates.expireDate);
+            }
+            
+            setToast({ message: `User "${selectedUser.username}" updated`, type: 'success' });
+        } catch {
+            setToast({ message: 'Failed to update user', type: 'error' });
+            throw new Error('Failed to update user');
+        }
+    };
+
     // Group handlers
     const handleCreateGroup = async (name: string) => {
         await UserManagementService.createGroup({ name });
@@ -951,8 +1128,7 @@ const UserManager: React.FC = () => {
                         onUnlockUser={handleUnlockUser}
                         onEditUser={(user) => {
                             setSelectedUser(user);
-                            // TODO: Open edit user dialog
-                            setToast({ message: 'Edit user feature coming soon', type: 'success' });
+                            setEditUserDialogOpen(true);
                         }}
                     />
                 ) : (
@@ -989,6 +1165,13 @@ const UserManager: React.FC = () => {
                 user={selectedUser}
                 onClose={() => setDeleteUserDialogOpen(false)}
                 onConfirm={handleDeleteUser}
+            />
+            <EditUserDialog
+                isOpen={editUserDialogOpen}
+                user={selectedUser}
+                onClose={() => setEditUserDialogOpen(false)}
+                onSave={handleEditUser}
+                onRefresh={loadUsers}
             />
 
             {/* Group Dialogs */}

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import SystemOverview from './pages/SystemOverview';
 import DockerManager from './pages/DockerManager';
@@ -14,8 +14,9 @@ import WafManager from './pages/WafManager';
 import LogManager from './pages/LogManager';
 import TerminalManager from './pages/TerminalManager';
 import Login from './pages/Login';
-import { TabView } from './types';
-import { Menu, Command, Construction } from 'lucide-react';
+import { TabView, UserInfo } from './types';
+import { AuthService, SessionStorage } from './services/api';
+import { Menu, Command, Construction, Loader2 } from 'lucide-react';
 
 // Placeholder for items not yet fully implemented
 const ConstructionView: React.FC<{ title: string }> = ({ title }) => (
@@ -29,20 +30,63 @@ const ConstructionView: React.FC<{ title: string }> = ({ title }) => (
 );
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentTab, setCurrentTab] = useState<TabView>(TabView.DASHBOARD);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
+  // 頁面載入時檢查 localStorage 中的登入狀態
+  useEffect(() => {
+    const checkSession = async () => {
+      const storedUser = SessionStorage.getUser();
+      if (storedUser) {
+        try {
+          // 驗證用戶是否仍然有效
+          const response = await AuthService.validateSession(storedUser.username);
+          if (response.success && response.user) {
+            setUser(response.user);
+          } else {
+            // Session 無效，清除 localStorage
+            SessionStorage.clearUser();
+          }
+        } catch (error) {
+          console.error('Session validation failed:', error);
+          // 如果後端無法連接，暫時保留登入狀態
+          setUser(storedUser);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    checkSession();
+  }, []);
+
+  const handleLogin = (loggedInUser: UserInfo) => {
+    setUser(loggedInUser);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentTab(TabView.DASHBOARD);
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      SessionStorage.clearUser();
+      setUser(null);
+      setCurrentTab(TabView.DASHBOARD);
+    }
   };
 
-  if (!isAuthenticated) {
+  // 載入中畫面
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 size={48} className="animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  if (!user) {
     return <Login onLogin={handleLogin} />;
   }
 
@@ -101,6 +145,7 @@ const App: React.FC = () => {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onLogout={handleLogout}
+        user={user}
       />
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">

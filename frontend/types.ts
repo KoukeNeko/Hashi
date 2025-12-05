@@ -1,3 +1,18 @@
+// 用戶認證相關
+export interface UserInfo {
+  username: string;
+  uid: number;
+  gid: number;
+  homeDir: string;
+  shell: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  message: string;
+  user: UserInfo | null;
+}
+
 export interface FirewallRule {
   index: number;
   to: string;
@@ -142,15 +157,6 @@ export interface SystemStats {
   networkIn: number;
   networkOut: number;
   loadAverage: [number, number, number];
-}
-
-export interface FirewallRule {
-  id: string;
-  port: string;
-  protocol: 'TCP' | 'UDP' | 'ANY';
-  action: 'ALLOW' | 'DENY';
-  source: string; // IP or 'Anywhere'
-  comment: string;
 }
 
 export interface SystemService {

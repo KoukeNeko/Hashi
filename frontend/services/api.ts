@@ -2,7 +2,45 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { CronJob, FileItem, FirewallRule, ServiceItem, SystemStatus } from '@/types';
+import { AuthResponse, CronJob, FileItem, FirewallRule, ServiceItem, SystemStatus, UserInfo } from '@/types';
+
+// 認證相關 API
+export const AuthService = {
+  login: async (username: string, password: string): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/login', { username, password });
+    return response.data;
+  },
+  logout: async (): Promise<void> => {
+    await api.post('/auth/logout');
+  },
+  validateSession: async (username: string): Promise<AuthResponse> => {
+    const response = await api.get<AuthResponse>('/auth/validate', { params: { username } });
+    return response.data;
+  }
+};
+
+// localStorage 存儲用戶資訊的 key
+const USER_STORAGE_KEY = 'hashi_user';
+
+export const SessionStorage = {
+  getUser: (): UserInfo | null => {
+    const stored = localStorage.getItem(USER_STORAGE_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  },
+  setUser: (user: UserInfo): void => {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  },
+  clearUser: (): void => {
+    localStorage.removeItem(USER_STORAGE_KEY);
+  }
+};
 
 export const FirewallService = {
   getStatus: async () => {

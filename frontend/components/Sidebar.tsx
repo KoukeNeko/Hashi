@@ -3,9 +3,9 @@ import React from 'react';
 import { 
   LayoutDashboard, Box, Monitor, TerminalSquare, Settings, LogOut, 
   Command, Shield, Settings2, Globe, X, Database, FileText, 
-  Clock, ScrollText, HardDrive, Lock, Server, Network
+  Clock, ScrollText, HardDrive, Lock, Server, Network, User
 } from 'lucide-react';
-import { TabView } from '../types';
+import { TabView, UserInfo } from '../types';
 
 interface SidebarProps {
   currentTab: TabView;
@@ -13,9 +13,10 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onLogout?: () => void;
+  user?: UserInfo | null;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, isOpen, onClose, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, isOpen, onClose, onLogout, user }) => {
   
   const navGroups = [
     {
@@ -120,7 +121,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, isOpen, onCl
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border/50 space-y-1">
+        <div className="p-4 border-t border-border/50 space-y-2">
+           {/* 用戶資訊 */}
+           {user && (
+             <div className="flex items-center gap-3 px-4 py-2.5 bg-zinc-900/50 rounded-lg mb-2">
+               <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                 <User size={16} className="text-emerald-400" />
+               </div>
+               <div className="flex-1 min-w-0">
+                 <p className="text-sm font-medium text-zinc-200 truncate">{user.username}</p>
+                 <p className="text-xs text-zinc-500">UID: {user.uid}</p>
+               </div>
+             </div>
+           )}
            <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors">
               <Settings size={18} /> Settings
            </button>

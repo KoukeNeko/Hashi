@@ -1,9 +1,11 @@
 
 import React, { useState } from 'react';
 import { Command, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import { AuthService, SessionStorage } from '../services/api';
+import { UserInfo } from '../types';
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (user: UserInfo) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -12,7 +14,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
@@ -23,12 +25,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // Mock validation (accept anything for demo)
+    try {
+      const response = await AuthService.login(username, password);
+      
+      if (response.success && response.user) {
+        // 儲存用戶資訊到 localStorage
+        SessionStorage.setUser(response.user);
+        onLogin(response.user);
+      } else {
+        setError(response.message || 'Invalid credentials');
+      }
+    } catch (err: unknown) {
+      console.error('Login error:', err);
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        setError(axiosError.response?.data?.message || 'Authentication failed. Please check your credentials.');
+      } else {
+        setError('Authentication failed. Please check your credentials.');
+      }
+    } finally {
       setIsLoading(false);
-      onLogin();
-    }, 1500);
+    }
   };
 
   return (
@@ -46,13 +63,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <Command size={32} strokeWidth={2.5} className="text-zinc-900" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Welcome back</h1>
-          <p className="text-zinc-500 text-sm">Sign in to Hashi Dashboard</p>
+          <p className="text-zinc-500 text-sm">Sign in with your Linux account</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
           {error && (
-            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm p-3 rounded-lg animate-pulse">
+            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm p-3 rounded-lg">
               {error}
             </div>
           )}
@@ -66,16 +83,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-zinc-950 border border-zinc-800 text-white pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-zinc-600"
-                placeholder="admin"
+                placeholder="root"
+                autoComplete="username"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-             <div className="flex justify-between items-center ml-1">
-                <label className="text-xs font-bold uppercase text-zinc-500">Password</label>
-                <a href="#" className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors">Forgot password?</a>
-             </div>
+             <label className="text-xs font-bold uppercase text-zinc-500 ml-1">Password</label>
             <div className="relative group">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-500 transition-colors" size={18} />
               <input
@@ -84,17 +99,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-zinc-950 border border-zinc-800 text-white pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-zinc-600"
                 placeholder="••••••••"
+                autoComplete="current-password"
               />
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 ml-1">
-            <input 
-                type="checkbox" 
-                id="remember" 
-                className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0"
-            />
-            <label htmlFor="remember" className="text-sm text-zinc-400 cursor-pointer select-none">Remember me</label>
           </div>
 
           <button
@@ -114,7 +121,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         <div className="bg-zinc-900/50 p-4 border-t border-border/50 text-center">
             <p className="text-xs text-zinc-500">
-                Don't have an account? <a href="#" className="text-zinc-300 hover:text-white transition-colors">Contact Administrator</a>
+                Use your Linux system credentials to sign in
             </p>
         </div>
       </div>

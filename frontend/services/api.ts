@@ -2,8 +2,18 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AuthResponse, CreateGroupOptions, CreateUserOptions, CronJob, FileItem, FirewallRule, GroupInfo, PasswordInfo, ServiceItem, SystemStatus, UserInfo } from '@/types';
+import { AuthResponse, CreateGroupOptions, CreateUserOptions, CronJob, FileItem, FirewallRule, GroupInfo, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM } from '@/types';
 
+export const VirtService = {
+  listVms: async () => {
+    const response = await api.get<VM[]>('/virt/vms');
+    return response.data;
+  },
+  controlVm: async (name: string, action: 'start' | 'stop' | 'force-stop' | 'reboot') => {
+    await api.post(`/virt/vms/${name}/${action}`);
+  }
+};
+  
 // 認證相關 API
 export const AuthService = {
   login: async (username: string, password: string): Promise<AuthResponse> => {

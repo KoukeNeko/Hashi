@@ -1,3 +1,12 @@
+export interface VM {
+  id: number;
+  uuid: string;
+  name: string;
+  state: string; // VIR_DOMAIN_RUNNING, VIR_DOMAIN_SHUTOFF
+  vcpu: number;
+  memory: number;
+}
+
 // 使用者認證相關
 export interface UserInfo {
   username: string;

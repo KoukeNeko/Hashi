@@ -55,6 +55,10 @@ const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => {
         {
             title: 'Start & enable libvirtd',
             cmd: 'sudo systemctl enable --now libvirtd'
+        },
+        {
+            title: 'Set images directory permissions (for VM disk creation)',
+            cmd: 'sudo chown root:libvirt /var/lib/libvirt/images && sudo chmod 775 /var/lib/libvirt/images'
         }
     ];
 

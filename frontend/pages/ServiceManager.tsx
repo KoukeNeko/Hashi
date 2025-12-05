@@ -3,9 +3,10 @@ import { PageHeader } from '../components/PageHeader';
 import { ServiceItem } from '../types';
 import { SystemdService } from '../services/api';
 import { Settings2, Play, Square, RefreshCw, Search, AlertCircle, Loader2, CheckCircle, X } from 'lucide-react';
+import { Toast } from '../components/ui';
 
 // Toast 通知類型
-interface Toast {
+interface ToastItem {
     id: number;
     type: 'success' | 'error';
     message: string;
@@ -17,7 +18,7 @@ const ServiceManager: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
-    const [toasts, setToasts] = useState<Toast[]>([]);
+    const [toasts, setToasts] = useState<ToastItem[]>([]);
 
     // 載入服務列表
     const loadServices = useCallback(async () => {
@@ -294,27 +295,14 @@ const ServiceManager: React.FC = () => {
             {/* Toast Notifications */}
             <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
                 {toasts.map((toast) => (
-                    <div
+                    <Toast
                         key={toast.id}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border animate-fade-in max-w-md ${
-                            toast.type === 'success'
-                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-                        }`}
-                    >
-                        {toast.type === 'success' ? (
-                            <CheckCircle size={20} className="flex-shrink-0" />
-                        ) : (
-                            <AlertCircle size={20} className="flex-shrink-0" />
-                        )}
-                        <span className="text-sm flex-1">{toast.message}</span>
-                        <button
-                            onClick={() => removeToast(toast.id)}
-                            className="p-1 hover:bg-white/10 rounded transition-colors flex-shrink-0"
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => removeToast(toast.id)}
+                        autoClose={false}
+                        position="relative"
+                    />
                 ))}
             </div>
         </div>

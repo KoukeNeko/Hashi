@@ -3,38 +3,19 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { CronService } from '../services/api';
 import { CronJob } from '../types';
-import { Clock, Play, Trash2, Edit, Plus, X, Save, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-
-// Toast 通知組件
-const Toast: React.FC<{
-    message: string;
-    type: 'success' | 'error';
-    onClose: () => void;
-}> = ({ message, type, onClose }) => {
-    useEffect(() => {
-        const timer = setTimeout(onClose, 4000);
-        return () => clearTimeout(timer);
-    }, [onClose]);
-
-    return (
-        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border animate-fade-in ${
-            type === 'success' 
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' 
-                : 'bg-rose-500/20 border-rose-500/50 text-rose-300'
-        }`}>
-            {type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-            <span className="text-sm font-medium">{message}</span>
-            <button onClick={onClose} className="ml-2 hover:opacity-70"><X size={16} /></button>
-        </div>
-    );
-};
+import { Clock, Trash2, Edit, Plus, Save, Loader2 } from 'lucide-react';
+import {
+    Dialog, DialogBody, DialogFooter,
+    ConfirmDialog, FormInput, 
+    Toast, ActionButton
+} from '../components/ui';
 
 // 新增/編輯彈窗
 const CronDialog: React.FC<{
     isOpen: boolean;
     onClose: () => void;
     onSave: (job: CronJob) => void;
-    job: CronJob | null; // null = 新增, 有值 = 編輯
+    job: CronJob | null;
 }> = ({ isOpen, onClose, onSave, job }) => {
     const [expression, setExpression] = useState('');
     const [command, setCommand] = useState('');
@@ -52,8 +33,6 @@ const CronDialog: React.FC<{
         }
     }, [job, isOpen]);
 
-    if (!isOpen) return null;
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!expression.trim() || !command.trim()) return;
@@ -66,69 +45,52 @@ const CronDialog: React.FC<{
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-surface border border-border rounded-lg shadow-2xl w-full max-w-lg mx-4">
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                    <h2 className="text-lg font-bold text-zinc-100">
-                        {job ? 'Edit Cron Job' : 'Add Cron Job'}
-                    </h2>
-                    <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Cron Expression *</label>
-                        <input
-                            type="text"
-                            value={expression}
-                            onChange={(e) => setExpression(e.target.value)}
-                            placeholder="0 3 * * *"
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            required
-                        />
-                        <p className="mt-1 text-xs text-zinc-500">Format: minute hour day month weekday</p>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Command *</label>
-                        <input
-                            type="text"
-                            value={command}
-                            onChange={(e) => setCommand(e.target.value)}
-                            placeholder="/path/to/script.sh"
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Comment (optional)</label>
-                        <input
-                            type="text"
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            placeholder="Brief description"
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                        />
-                    </div>
-                    <div className="flex justify-end gap-2 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-                        >
-                            <Save size={16} />
-                            {job ? 'Update' : 'Create'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            title={job ? 'Edit Cron Job' : 'Add Cron Job'}
+            titleIcon={<Clock size={20} className="text-emerald-400" />}
+        >
+            <form onSubmit={handleSubmit}>
+                <DialogBody>
+                    <FormInput
+                        label="Cron Expression"
+                        value={expression}
+                        onChange={setExpression}
+                        placeholder="0 3 * * *"
+                        required
+                        hint="Format: minute hour day month weekday"
+                        mono
+                    />
+                    <FormInput
+                        label="Command"
+                        value={command}
+                        onChange={setCommand}
+                        placeholder="/path/to/script.sh"
+                        required
+                        mono
+                    />
+                    <FormInput
+                        label="Comment (optional)"
+                        value={comment}
+                        onChange={setComment}
+                        placeholder="Brief description"
+                    />
+                </DialogBody>
+                <DialogFooter>
+                    <ActionButton variant="ghost" onClick={onClose}>
+                        Cancel
+                    </ActionButton>
+                    <ActionButton
+                        type="submit"
+                        variant="primary"
+                        icon={<Save size={16} />}
+                    >
+                        {job ? 'Update' : 'Create'}
+                    </ActionButton>
+                </DialogFooter>
+            </form>
+        </Dialog>
     );
 };
 
@@ -139,37 +101,23 @@ const DeleteConfirmDialog: React.FC<{
     onConfirm: () => void;
     job: CronJob | null;
 }> = ({ isOpen, onClose, onConfirm, job }) => {
-    if (!isOpen || !job) return null;
+    if (!job) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-surface border border-border rounded-lg shadow-2xl w-full max-w-md mx-4 p-6">
-                <div className="flex items-center gap-3 text-rose-400 mb-4">
-                    <AlertCircle size={24} />
-                    <h2 className="text-lg font-bold">Delete Cron Job</h2>
-                </div>
-                <p className="text-zinc-300 text-sm mb-2">Are you sure you want to delete this cron job?</p>
-                <div className="bg-zinc-800/50 rounded p-3 mb-4">
-                    <p className="font-mono text-emerald-400 text-sm">{job.expression}</p>
-                    <p className="font-mono text-zinc-400 text-xs mt-1 truncate">{job.command}</p>
-                </div>
-                <div className="flex justify-end gap-2">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-                    >
-                        <Trash2 size={16} />
-                        Delete
-                    </button>
-                </div>
+        <ConfirmDialog
+            isOpen={isOpen}
+            onClose={onClose}
+            onConfirm={onConfirm}
+            title="Delete Cron Job"
+            message="Are you sure you want to delete this cron job?"
+            confirmText="Delete"
+            confirmIcon={<Trash2 size={16} />}
+        >
+            <div className="bg-zinc-800/50 rounded p-3">
+                <p className="font-mono text-emerald-400 text-sm">{job.expression}</p>
+                <p className="font-mono text-zinc-400 text-xs mt-1 truncate">{job.command}</p>
             </div>
-        </div>
+        </ConfirmDialog>
     );
 };
 
@@ -315,14 +263,14 @@ const CronManager: React.FC = () => {
                 icon={Clock}
                 description="Manage scheduled tasks and recurring scripts."
                 actions={
-                    <button 
+                    <ActionButton
                         onClick={handleAddJob}
                         disabled={saving}
-                        className="flex items-center gap-2 bg-zinc-100 hover:bg-white text-zinc-900 px-4 py-2 rounded font-medium text-sm transition-colors shadow-lg disabled:opacity-50"
+                        icon={<Plus size={16} />}
+                        className="shadow-lg"
                     >
-                        <Plus size={16} />
                         Add Cron Job
-                    </button>
+                    </ActionButton>
                 }
             />
 

@@ -2,31 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { FirewallService } from '../services/api';
 import { FirewallRule } from '../types';
-import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, X, Save, AlertCircle, CheckCircle, Loader2, RefreshCw, Power } from 'lucide-react';
-
-// Toast 通知組件
-const Toast: React.FC<{
-    message: string;
-    type: 'success' | 'error';
-    onClose: () => void;
-}> = ({ message, type, onClose }) => {
-    useEffect(() => {
-        const timer = setTimeout(onClose, 4000);
-        return () => clearTimeout(timer);
-    }, [onClose]);
-
-    return (
-        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border animate-fade-in ${
-            type === 'success' 
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' 
-                : 'bg-rose-500/20 border-rose-500/50 text-rose-300'
-        }`}>
-            {type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-            <span className="text-sm font-medium">{message}</span>
-            <button onClick={onClose} className="ml-2 hover:opacity-70"><X size={16} /></button>
-        </div>
-    );
-};
+import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Save, Loader2, RefreshCw, Power } from 'lucide-react';
+import {
+    Dialog, DialogBody, DialogFooter,
+    ConfirmDialog, FormInput, FormSelect,
+    Toast, ActionButton
+} from '../components/ui';
 
 // 新增規則彈窗
 const AddRuleDialog: React.FC<{
@@ -45,70 +26,60 @@ const AddRuleDialog: React.FC<{
         }
     }, [isOpen]);
 
-    if (!isOpen) return null;
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!port.trim()) return;
         onSave(port.trim(), protocol);
     };
 
+    const protocols = [
+        { value: 'tcp', label: 'TCP' },
+        { value: 'udp', label: 'UDP' },
+        { value: '', label: 'Any (TCP/UDP)' }
+    ];
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-surface border border-border rounded-lg shadow-2xl w-full max-w-md mx-4">
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                    <h2 className="text-lg font-bold text-zinc-100">Add Firewall Rule</h2>
-                    <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Port *</label>
-                        <input
-                            type="text"
-                            value={port}
-                            onChange={(e) => setPort(e.target.value)}
-                            placeholder="80, 443, 8080-8090"
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            required
-                            autoFocus
-                        />
-                        <p className="mt-1 text-xs text-zinc-500">Single port, range (8080-8090), or service name (ssh)</p>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Protocol</label>
-                        <select
-                            value={protocol}
-                            onChange={(e) => setProtocol(e.target.value)}
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                        >
-                            <option value="tcp">TCP</option>
-                            <option value="udp">UDP</option>
-                            <option value="">Any (TCP/UDP)</option>
-                        </select>
-                    </div>
-                    <div className="flex justify-end gap-2 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            disabled={saving}
-                            className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={saving || !port.trim()}
-                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
-                        >
-                            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                            Allow Port
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Add Firewall Rule"
+            titleIcon={<Shield size={20} className="text-emerald-400" />}
+        >
+            <form onSubmit={handleSubmit}>
+                <DialogBody>
+                    <FormInput
+                        label="Port"
+                        value={port}
+                        onChange={setPort}
+                        placeholder="80, 443, 8080-8090"
+                        required
+                        hint="Single port, range (8080-8090), or service name (ssh)"
+                        mono
+                    />
+                    <FormSelect
+                        label="Protocol"
+                        value={protocol}
+                        onChange={setProtocol}
+                        options={protocols}
+                    />
+                </DialogBody>
+                <DialogFooter>
+                    <ActionButton variant="ghost" onClick={onClose} disabled={saving}>
+                        Cancel
+                    </ActionButton>
+                    <ActionButton
+                        type="submit"
+                        variant="primary"
+                        loading={saving}
+                        icon={<Save size={16} />}
+                        loadingIcon={<Loader2 size={16} className="animate-spin" />}
+                        disabled={!port.trim()}
+                    >
+                        Allow Port
+                    </ActionButton>
+                </DialogFooter>
+            </form>
+        </Dialog>
     );
 };
 
@@ -120,47 +91,31 @@ const DeleteConfirmDialog: React.FC<{
     rule: FirewallRule | null;
     deleting: boolean;
 }> = ({ isOpen, onClose, onConfirm, rule, deleting }) => {
-    if (!isOpen || !rule) return null;
+    if (!rule) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-surface border border-border rounded-lg shadow-2xl w-full max-w-md mx-4 p-6">
-                <div className="flex items-center gap-3 text-rose-400 mb-4">
-                    <AlertCircle size={24} />
-                    <h2 className="text-lg font-bold">Delete Firewall Rule</h2>
-                </div>
-                <p className="text-zinc-300 text-sm mb-2">Are you sure you want to delete this rule?</p>
-                <div className="bg-zinc-800/50 rounded p-3 mb-4 font-mono text-sm">
-                    <div className="flex items-center gap-3">
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                            rule.action.includes('ALLOW') 
-                                ? 'bg-emerald-500/20 text-emerald-400' 
-                                : 'bg-rose-500/20 text-rose-400'
-                        }`}>{rule.action}</span>
-                        <span className="text-zinc-200">{rule.to}</span>
-                        <span className="text-zinc-500">from</span>
-                        <span className="text-zinc-300">{rule.from}</span>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                    <button
-                        onClick={onClose}
-                        disabled={deleting}
-                        className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        disabled={deleting}
-                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
-                    >
-                        {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                        Delete
-                    </button>
+        <ConfirmDialog
+            isOpen={isOpen}
+            onClose={onClose}
+            onConfirm={onConfirm}
+            title="Delete Firewall Rule"
+            message="Are you sure you want to delete this rule?"
+            confirmText="Delete"
+            confirmIcon={deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+        >
+            <div className="bg-zinc-800/50 rounded p-3 font-mono text-sm">
+                <div className="flex items-center gap-3">
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        rule.action.includes('ALLOW') 
+                            ? 'bg-emerald-500/20 text-emerald-400' 
+                            : 'bg-rose-500/20 text-rose-400'
+                    }`}>{rule.action}</span>
+                    <span className="text-zinc-200">{rule.to}</span>
+                    <span className="text-zinc-500">from</span>
+                    <span className="text-zinc-300">{rule.from}</span>
                 </div>
             </div>
-        </div>
+        </ConfirmDialog>
     );
 };
 
@@ -317,22 +272,17 @@ const FirewallManager: React.FC = () => {
                 }
                 actions={
                     <div className="flex items-center gap-3">
-                        <button
+                        <ActionButton
                             onClick={handleToggleStatus}
                             disabled={enabled === null || togglingStatus}
-                            className={`flex items-center gap-2 px-4 py-2 rounded font-medium text-sm transition-colors border shadow-lg disabled:opacity-50 ${
-                                enabled
-                                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/50 hover:bg-rose-500/20'
-                                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/50 hover:bg-emerald-500/20'
-                            }`}
+                            variant={enabled ? 'danger' : 'primary'}
+                            loading={togglingStatus}
+                            icon={<Power size={16} />}
+                            loadingIcon={<Loader2 size={16} className="animate-spin" />}
+                            className="shadow-lg"
                         >
-                            {togglingStatus ? (
-                                <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                                <Power size={16} />
-                            )}
                             {enabled ? 'Disable' : 'Enable'}
-                        </button>
+                        </ActionButton>
                         <button
                             onClick={() => { loadStatus(); loadRules(); }}
                             disabled={loading}
@@ -341,13 +291,14 @@ const FirewallManager: React.FC = () => {
                         >
                             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
                         </button>
-                        <button 
+                        <ActionButton
                             onClick={() => setAddDialogOpen(true)}
                             disabled={enabled === false}
-                            className="bg-zinc-100 hover:bg-white text-zinc-900 px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 shadow-lg disabled:opacity-50"
+                            icon={<Plus size={16} />}
+                            className="shadow-lg"
                         >
-                            <Plus size={16} /> Add Rule
-                        </button>
+                            Add Rule
+                        </ActionButton>
                     </div>
                 }
             />

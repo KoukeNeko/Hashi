@@ -63,6 +63,7 @@ public class DashboardServiceImpl implements DashboardService {
         FileSystem fileSystem = os.getFileSystem();
         List<SystemStatusDTO.DiskInfo> diskInfos = fileSystem.getFileStores().stream()
                 // 過濾掉一些虛擬磁碟 (tmpfs, overlay)，只看實體硬碟
+                // TODO: 應該可以不用過濾1GB以下的，改成過濾掉 tmpfs 就好
                 .filter(store -> store.getTotalSpace() > 1024 * 1024 * 1024L) // 只顯示大於 1GB 的
                 .map(store -> SystemStatusDTO.DiskInfo.builder()
                         .name(store.getName())

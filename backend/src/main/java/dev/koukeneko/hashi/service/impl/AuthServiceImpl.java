@@ -65,13 +65,14 @@ public class AuthServiceImpl implements AuthService {
                     // 格式: username:x:uid:gid:gecos:home:shell
                     String[] parts = line.split(":");
                     if (parts.length >= 7) {
-                        UserInfoDTO user = new UserInfoDTO();
-                        user.setUsername(parts[0]);
-                        user.setUid(Integer.parseInt(parts[2]));
-                        user.setGid(Integer.parseInt(parts[3]));
-                        user.setHomeDir(parts[5]);
-                        user.setShell(parts[6]);
-                        return Optional.of(user);
+                        return Optional.of(UserInfoDTO.builder()
+                                .username(parts[0])
+                                .uid(Integer.parseInt(parts[2]))
+                                .gid(Integer.parseInt(parts[3]))
+                                .gecos(parts[4])
+                                .homeDir(parts[5])
+                                .shell(parts[6])
+                                .build());
                     }
                 }
             }

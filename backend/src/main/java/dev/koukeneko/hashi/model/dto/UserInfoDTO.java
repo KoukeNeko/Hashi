@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserInfoDTO {
-    private String username;
-    private int uid;
-    private int gid;
-    private String homeDir;
-    private String shell;
+    private String username; // e.g. "john"
+    private int uid;         // e.g. 1001
+    private int gid;         // e.g. 1001
+    private String homeDir;  // e.g. "/home/john"
+    private String shell;    // e.g. "/bin/bash"
 }

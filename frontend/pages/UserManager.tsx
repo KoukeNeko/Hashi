@@ -10,7 +10,8 @@ import {
 import {
     Dialog, DialogBody, DialogFooter,
     ConfirmDialog, FormInput, FormSelect, FormCheckbox,
-    FormError, Toast, ActionButton
+    FormError, Toast, ActionButton,
+    FormDialog, useFormDialog
 } from '../components/ui';
 
 // ==================== Tab Configuration ====================
@@ -19,134 +20,63 @@ const tabs: TabItem[] = [
     { id: 'groups', label: 'Groups', icon: UsersRound }
 ];
 
+// ==================== Shell Options ====================
+const defaultShells = [
+    { value: '/bin/bash', label: '/bin/bash' },
+    { value: '/bin/sh', label: '/bin/sh' },
+    { value: '/bin/zsh', label: '/bin/zsh' },
+    { value: '/usr/bin/fish', label: '/usr/bin/fish' },
+    { value: '/sbin/nologin', label: '/sbin/nologin' }
+];
+
 // ==================== Create User Dialog ====================
 const CreateUserDialog: React.FC<{
     isOpen: boolean;
     onClose: () => void;
     onSave: (username: string, password: string, shell: string, createHome: boolean) => Promise<void>;
 }> = ({ isOpen, onClose, onSave }) => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [shell, setShell] = useState('/bin/bash');
-    const [createHome, setCreateHome] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
+    interface CreateUserForm {
+        username: string;
+        password: string;
+        confirmPassword: string;
+        shell: string;
+        createHome: boolean;
+    }
 
-    useEffect(() => {
-        if (isOpen) {
-            setUsername('');
-            setPassword('');
-            setConfirmPassword('');
-            setShell('/bin/bash');
-            setCreateHome(true);
-            setError('');
+    const validate = (values: CreateUserForm): string | null => {
+        if (!/^[a-z_][a-z0-9_-]*$/.test(values.username)) {
+            return 'Invalid username format';
         }
-    }, [isOpen]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-
-        if (!username.trim()) {
-            setError('Username is required');
-            return;
+        if (values.password.length < 6) {
+            return 'Password must be at least 6 characters';
         }
-        if (!/^[a-z_][a-z0-9_-]*$/.test(username)) {
-            setError('Invalid username format');
-            return;
+        if (values.password !== values.confirmPassword) {
+            return 'Passwords do not match';
         }
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters');
-            return;
-        }
-        if (password !== confirmPassword) {
-            setError('Passwords do not match');
-            return;
-        }
-
-        setSaving(true);
-        try {
-            await onSave(username, password, shell, createHome);
-            onClose();
-        } catch {
-            setError('Failed to create user');
-        } finally {
-            setSaving(false);
-        }
+        return null;
     };
 
-    const shells = [
-        { value: '/bin/bash', label: '/bin/bash' },
-        { value: '/bin/sh', label: '/bin/sh' },
-        { value: '/bin/zsh', label: '/bin/zsh' },
-        { value: '/usr/bin/fish', label: '/usr/bin/fish' },
-        { value: '/sbin/nologin', label: '/sbin/nologin' }
-    ];
+    const handleSubmit = async (values: CreateUserForm) => {
+        await onSave(values.username, values.password, values.shell, values.createHome);
+    };
 
     return (
-        <Dialog
+        <FormDialog<CreateUserForm>
             isOpen={isOpen}
             onClose={onClose}
+            onSubmit={handleSubmit}
             title="Create New User"
             titleIcon={<UserPlus size={20} className="text-emerald-400" />}
-        >
-            <form onSubmit={handleSubmit}>
-                <DialogBody>
-                    {error && <FormError message={error} />}
-                    <FormInput
-                        label="Username"
-                        value={username}
-                        onChange={(v) => setUsername(v.toLowerCase())}
-                        placeholder="johndoe"
-                        required
-                        hint="Lowercase letters, numbers, underscores, hyphens"
-                    />
-                    <FormInput
-                        label="Password"
-                        type="password"
-                        value={password}
-                        onChange={setPassword}
-                        placeholder="••••••••"
-                        required
-                    />
-                    <FormInput
-                        label="Confirm Password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={setConfirmPassword}
-                        placeholder="••••••••"
-                        required
-                    />
-                    <FormSelect
-                        label="Shell"
-                        value={shell}
-                        onChange={setShell}
-                        options={shells}
-                    />
-                    <FormCheckbox
-                        id="createHome"
-                        label="Create home directory"
-                        checked={createHome}
-                        onChange={setCreateHome}
-                    />
-                </DialogBody>
-                <DialogFooter>
-                    <ActionButton variant="ghost" onClick={onClose}>
-                        Cancel
-                    </ActionButton>
-                    <ActionButton
-                        type="submit"
-                        variant="primary"
-                        loading={saving}
-                        icon={<Save size={16} />}
-                        loadingIcon={<Loader2 size={16} className="animate-spin" />}
-                    >
-                        Create User
-                    </ActionButton>
-                </DialogFooter>
-            </form>
-        </Dialog>
+            submitText="Create User"
+            fields={[
+                { name: 'username', label: 'Username', required: true, placeholder: 'johndoe', hint: 'Lowercase letters, numbers, underscores, hyphens', transform: (v) => v.toLowerCase() },
+                { name: 'password', label: 'Password', type: 'password', required: true, placeholder: '••••••••' },
+                { name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true, placeholder: '••••••••' },
+                { name: 'shell', label: 'Shell', type: 'select', options: defaultShells, defaultValue: '/bin/bash' },
+                { name: 'createHome', label: 'Create home directory', type: 'checkbox', defaultValue: true }
+            ]}
+            validate={validate}
+        />
     );
 };
 
@@ -157,89 +87,75 @@ const ChangePasswordDialog: React.FC<{
     onClose: () => void;
     onSave: (password: string) => Promise<void>;
 }> = ({ isOpen, username, onClose, onSave }) => {
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
+    interface ChangePasswordForm {
+        password: string;
+        confirmPassword: string;
+    }
 
-    useEffect(() => {
-        if (isOpen) {
-            setPassword('');
-            setConfirmPassword('');
-            setError('');
+    const validate = (values: ChangePasswordForm): string | null => {
+        if (values.password.length < 6) {
+            return 'Password must be at least 6 characters';
         }
-    }, [isOpen]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters');
-            return;
+        if (values.password !== values.confirmPassword) {
+            return 'Passwords do not match';
         }
-        if (password !== confirmPassword) {
-            setError('Passwords do not match');
-            return;
-        }
-
-        setSaving(true);
-        try {
-            await onSave(password);
-            onClose();
-        } catch {
-            setError('Failed to change password');
-        } finally {
-            setSaving(false);
-        }
+        return null;
     };
 
     return (
-        <Dialog
+        <FormDialog<ChangePasswordForm>
             isOpen={isOpen}
             onClose={onClose}
+            onSubmit={(values) => onSave(values.password)}
             title="Change Password"
             titleIcon={<Key size={20} className="text-amber-400" />}
-        >
-            <form onSubmit={handleSubmit}>
-                <DialogBody>
-                    <p className="text-sm text-zinc-400">
-                        Change password for user: <span className="text-white font-medium">{username}</span>
-                    </p>
-                    {error && <FormError message={error} />}
-                    <FormInput
-                        label="New Password"
-                        type="password"
-                        value={password}
-                        onChange={setPassword}
-                        placeholder="••••••••"
-                        required
-                    />
-                    <FormInput
-                        label="Confirm Password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={setConfirmPassword}
-                        placeholder="••••••••"
-                        required
-                    />
-                </DialogBody>
-                <DialogFooter>
-                    <ActionButton variant="ghost" onClick={onClose}>
-                        Cancel
-                    </ActionButton>
-                    <ActionButton
-                        type="submit"
-                        variant="warning"
-                        loading={saving}
-                        icon={<Key size={16} />}
-                        loadingIcon={<Loader2 size={16} className="animate-spin" />}
-                    >
-                        Change Password
-                    </ActionButton>
-                </DialogFooter>
-            </form>
-        </Dialog>
+            submitText="Change Password"
+            submitVariant="warning"
+            submitIcon={<Key size={16} />}
+            header={
+                <p className="text-sm text-zinc-400 mb-2">
+                    Change password for user: <span className="text-white font-medium">{username}</span>
+                </p>
+            }
+            fields={[
+                { name: 'password', label: 'New Password', type: 'password', required: true, placeholder: '••••••••' },
+                { name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true, placeholder: '••••••••' }
+            ]}
+            validate={validate}
+        />
+    );
+};
+
+// ==================== Create Group Dialog ====================
+const CreateGroupDialog: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (name: string) => Promise<void>;
+}> = ({ isOpen, onClose, onSave }) => {
+    interface CreateGroupForm {
+        name: string;
+    }
+
+    const validate = (values: CreateGroupForm): string | null => {
+        if (!/^[a-z_][a-z0-9_-]*$/.test(values.name)) {
+            return 'Invalid group name format';
+        }
+        return null;
+    };
+
+    return (
+        <FormDialog<CreateGroupForm>
+            isOpen={isOpen}
+            onClose={onClose}
+            onSubmit={(values) => onSave(values.name)}
+            title="Create New Group"
+            titleIcon={<UsersRound size={20} className="text-emerald-400" />}
+            submitText="Create Group"
+            fields={[
+                { name: 'name', label: 'Group Name', required: true, placeholder: 'developers', hint: 'Lowercase letters, numbers, underscores, hyphens', transform: (v) => v.toLowerCase() }
+            ]}
+            validate={validate}
+        />
     );
 };
 
@@ -285,85 +201,6 @@ const DeleteUserDialog: React.FC<{
                 />
             </div>
         </ConfirmDialog>
-    );
-};
-
-// ==================== Create Group Dialog ====================
-const CreateGroupDialog: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (name: string) => Promise<void>;
-}> = ({ isOpen, onClose, onSave }) => {
-    const [name, setName] = useState('');
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        if (isOpen) {
-            setName('');
-            setError('');
-        }
-    }, [isOpen]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-
-        if (!name.trim()) {
-            setError('Group name is required');
-            return;
-        }
-        if (!/^[a-z_][a-z0-9_-]*$/.test(name)) {
-            setError('Invalid group name format');
-            return;
-        }
-
-        setSaving(true);
-        try {
-            await onSave(name);
-            onClose();
-        } catch {
-            setError('Failed to create group');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    return (
-        <Dialog
-            isOpen={isOpen}
-            onClose={onClose}
-            title="Create New Group"
-            titleIcon={<UsersRound size={20} className="text-emerald-400" />}
-        >
-            <form onSubmit={handleSubmit}>
-                <DialogBody>
-                    {error && <FormError message={error} />}
-                    <FormInput
-                        label="Group Name"
-                        value={name}
-                        onChange={(v) => setName(v.toLowerCase())}
-                        placeholder="developers"
-                        required
-                        hint="Lowercase letters, numbers, underscores, hyphens"
-                    />
-                </DialogBody>
-                <DialogFooter>
-                    <ActionButton variant="ghost" onClick={onClose}>
-                        Cancel
-                    </ActionButton>
-                    <ActionButton
-                        type="submit"
-                        variant="primary"
-                        loading={saving}
-                        icon={<Save size={16} />}
-                        loadingIcon={<Loader2 size={16} className="animate-spin" />}
-                    >
-                        Create Group
-                    </ActionButton>
-                </DialogFooter>
-            </form>
-        </Dialog>
     );
 };
 

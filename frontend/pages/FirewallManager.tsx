@@ -2,89 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { FirewallService } from '../services/api';
 import { FirewallRule } from '../types';
-import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Save, Loader2, RefreshCw, Power } from 'lucide-react';
+import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Loader2, RefreshCw, Power } from 'lucide-react';
 import {
-    Dialog, DialogBody, DialogFooter,
-    ConfirmDialog, FormInput, FormSelect,
+    ConfirmDialog, FormDialog,
     Toast, ActionButton
 } from '../components/ui';
 
-// 新增規則彈窗
+// ==================== Protocol Options ====================
+const protocolOptions = [
+    { value: 'tcp', label: 'TCP' },
+    { value: 'udp', label: 'UDP' },
+    { value: '', label: 'Any (TCP/UDP)' }
+];
+
+// ==================== Add Rule Dialog ====================
+interface AddRuleFormValues {
+    port: string;
+    protocol: string;
+}
+
 const AddRuleDialog: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onSave: (port: string, protocol: string) => void;
-    saving: boolean;
-}> = ({ isOpen, onClose, onSave, saving }) => {
-    const [port, setPort] = useState('');
-    const [protocol, setProtocol] = useState('tcp');
-
-    useEffect(() => {
-        if (isOpen) {
-            setPort('');
-            setProtocol('tcp');
-        }
-    }, [isOpen]);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!port.trim()) return;
-        onSave(port.trim(), protocol);
-    };
-
-    const protocols = [
-        { value: 'tcp', label: 'TCP' },
-        { value: 'udp', label: 'UDP' },
-        { value: '', label: 'Any (TCP/UDP)' }
-    ];
-
+    onSave: (port: string, protocol: string) => Promise<void>;
+}> = ({ isOpen, onClose, onSave }) => {
     return (
-        <Dialog
+        <FormDialog<AddRuleFormValues>
             isOpen={isOpen}
             onClose={onClose}
+            onSubmit={(values) => onSave(values.port.trim(), values.protocol)}
             title="Add Firewall Rule"
             titleIcon={<Shield size={20} className="text-emerald-400" />}
-        >
-            <form onSubmit={handleSubmit}>
-                <DialogBody>
-                    <FormInput
-                        label="Port"
-                        value={port}
-                        onChange={setPort}
-                        placeholder="80, 443, 8080-8090"
-                        required
-                        hint="Single port, range (8080-8090), or service name (ssh)"
-                        mono
-                    />
-                    <FormSelect
-                        label="Protocol"
-                        value={protocol}
-                        onChange={setProtocol}
-                        options={protocols}
-                    />
-                </DialogBody>
-                <DialogFooter>
-                    <ActionButton variant="ghost" onClick={onClose} disabled={saving}>
-                        Cancel
-                    </ActionButton>
-                    <ActionButton
-                        type="submit"
-                        variant="primary"
-                        loading={saving}
-                        icon={<Save size={16} />}
-                        loadingIcon={<Loader2 size={16} className="animate-spin" />}
-                        disabled={!port.trim()}
-                    >
-                        Allow Port
-                    </ActionButton>
-                </DialogFooter>
-            </form>
-        </Dialog>
+            submitText="Allow Port"
+            fields={[
+                { name: 'port', label: 'Port', required: true, placeholder: '80, 443, 8080-8090', hint: 'Single port, range (8080-8090), or service name (ssh)', mono: true },
+                { name: 'protocol', label: 'Protocol', type: 'select', options: protocolOptions, defaultValue: 'tcp' }
+            ]}
+        />
     );
 };
 
-// 刪除確認彈窗
-const DeleteConfirmDialog: React.FC<{
+// ==================== Delete Confirm Dialog ====================
+const DeleteRuleDialog: React.FC<{
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
@@ -193,22 +152,19 @@ const FirewallManager: React.FC = () => {
     // 新增規則
     const handleAddRule = async (port: string, protocol: string) => {
         try {
-            setSaving(true);
             await FirewallService.addRule(port, protocol);
-            setAddDialogOpen(false);
             setToast({ message: `Port ${port}/${protocol || 'any'} allowed`, type: 'success' });
             loadRules(); // 重新載入
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to add rule:', err);
             let errorMsg = 'Failed to add rule';
-            if (err.response?.data) {
-                errorMsg = typeof err.response.data === 'string' 
-                    ? err.response.data 
-                    : err.response.data.message || JSON.stringify(err.response.data);
+            const e = err as { response?: { data?: string | { message?: string } } };
+            if (e.response?.data) {
+                errorMsg = typeof e.response.data === 'string' 
+                    ? e.response.data 
+                    : e.response.data.message || JSON.stringify(e.response.data);
             }
-            setToast({ message: errorMsg, type: 'error' });
-        } finally {
-            setSaving(false);
+            throw new Error(errorMsg);
         }
     };
 
@@ -446,11 +402,10 @@ const FirewallManager: React.FC = () => {
                 isOpen={addDialogOpen}
                 onClose={() => setAddDialogOpen(false)}
                 onSave={handleAddRule}
-                saving={saving}
             />
 
             {/* 刪除確認彈窗 */}
-            <DeleteConfirmDialog
+            <DeleteRuleDialog
                 isOpen={deleteDialogOpen}
                 onClose={() => {
                     setDeleteDialogOpen(false);

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { X, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { X, AlertCircle, CheckCircle, Save, Loader2 } from 'lucide-react';
 
 // ==================== Base Dialog ====================
 interface DialogProps {
@@ -369,3 +369,209 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         </button>
     );
 };
+
+// ==================== Form Dialog ====================
+// 通用表單對話框，處理 loading、error、submit 等狀態
+export interface FormDialogField {
+    name: string;
+    label: string;
+    type?: 'text' | 'password' | 'date' | 'select' | 'checkbox';
+    placeholder?: string;
+    required?: boolean;
+    hint?: string;
+    mono?: boolean;
+    options?: { value: string; label: string }[];   // for select
+    defaultValue?: string | boolean;
+    transform?: (value: string) => string;          // e.g. toLowerCase
+}
+
+export interface FormDialogProps<T extends Record<string, unknown>> {
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (values: T) => Promise<void>;
+    title: string;
+    titleIcon?: React.ReactNode;
+    submitText?: string;
+    submitIcon?: React.ReactNode;
+    submitVariant?: 'primary' | 'secondary' | 'danger' | 'warning';
+    fields: FormDialogField[];
+    initialValues?: Partial<T>;                     // 動態初始值（優先於 defaultValue）
+    validate?: (values: T) => string | null;        // return error message or null
+    children?: React.ReactNode;                     // 額外內容
+    header?: React.ReactNode;                       // 顯示在表單之前的內容
+}
+
+export function FormDialog<T extends Record<string, unknown>>({
+    isOpen,
+    onClose,
+    onSubmit,
+    title,
+    titleIcon,
+    submitText = 'Save',
+    submitIcon = <Save size={16} />,
+    submitVariant = 'primary',
+    fields,
+    initialValues,
+    validate,
+    children,
+    header
+}: FormDialogProps<T>) {
+    const [values, setValues] = useState<Record<string, string | boolean>>({});
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    // 初始化表單值
+    useEffect(() => {
+        if (isOpen) {
+            const vals: Record<string, string | boolean> = {};
+            fields.forEach(field => {
+                // 優先使用 initialValues，其次是 defaultValue
+                const initVal = initialValues?.[field.name as keyof T];
+                if (initVal !== undefined) {
+                    vals[field.name] = initVal as string | boolean;
+                } else {
+                    vals[field.name] = field.defaultValue ?? (field.type === 'checkbox' ? false : '');
+                }
+            });
+            setValues(vals);
+            setError('');
+        }
+    }, [isOpen, fields, initialValues]);
+
+    const handleChange = useCallback((name: string, value: string | boolean, transform?: (v: string) => string) => {
+        setValues(prev => ({
+            ...prev,
+            [name]: typeof value === 'string' && transform ? transform(value) : value
+        }));
+    }, []);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        // 驗證必填欄位
+        for (const field of fields) {
+            if (field.required && field.type !== 'checkbox') {
+                const val = values[field.name];
+                if (!val || (typeof val === 'string' && !val.trim())) {
+                    setError(`${field.label} is required`);
+                    return;
+                }
+            }
+        }
+
+        // 自訂驗證
+        if (validate) {
+            const validationError = validate(values as T);
+            if (validationError) {
+                setError(validationError);
+                return;
+            }
+        }
+
+        setSaving(true);
+        try {
+            await onSubmit(values as T);
+            onClose();
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Operation failed';
+            setError(message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            title={title}
+            titleIcon={titleIcon}
+        >
+            <form onSubmit={handleSubmit}>
+                <DialogBody>
+                    {header}
+                    {error && <FormError message={error} />}
+                    {fields.map(field => {
+                        if (field.type === 'select') {
+                            return (
+                                <FormSelect
+                                    key={field.name}
+                                    label={field.label}
+                                    value={values[field.name] as string || ''}
+                                    onChange={(v) => handleChange(field.name, v)}
+                                    options={field.options || []}
+                                    required={field.required}
+                                />
+                            );
+                        }
+                        if (field.type === 'checkbox') {
+                            return (
+                                <FormCheckbox
+                                    key={field.name}
+                                    id={field.name}
+                                    label={field.label}
+                                    checked={values[field.name] as boolean || false}
+                                    onChange={(v) => handleChange(field.name, v)}
+                                />
+                            );
+                        }
+                        return (
+                            <FormInput
+                                key={field.name}
+                                label={field.label}
+                                type={field.type || 'text'}
+                                value={values[field.name] as string || ''}
+                                onChange={(v) => handleChange(field.name, v, field.transform)}
+                                placeholder={field.placeholder}
+                                required={field.required}
+                                hint={field.hint}
+                            />
+                        );
+                    })}
+                    {children}
+                </DialogBody>
+                <DialogFooter>
+                    <ActionButton variant="ghost" onClick={onClose} disabled={saving}>
+                        Cancel
+                    </ActionButton>
+                    <ActionButton
+                        type="submit"
+                        variant={submitVariant}
+                        loading={saving}
+                        icon={submitIcon}
+                        loadingIcon={<Loader2 size={16} className="animate-spin" />}
+                    >
+                        {submitText}
+                    </ActionButton>
+                </DialogFooter>
+            </form>
+        </Dialog>
+    );
+}
+
+// ==================== useFormDialog Hook ====================
+// 提供對話框狀態管理
+export interface UseFormDialogResult<T> {
+    isOpen: boolean;
+    data: T | null;
+    open: (data?: T | null) => void;
+    close: () => void;
+}
+
+export function useFormDialog<T = null>(): UseFormDialogResult<T> {
+    const [isOpen, setIsOpen] = useState(false);
+    const [data, setData] = useState<T | null>(null);
+
+    const open = useCallback((d?: T | null) => {
+        setData(d ?? null);
+        setIsOpen(true);
+    }, []);
+
+    const close = useCallback(() => {
+        setIsOpen(false);
+        setData(null);
+    }, []);
+
+    return { isOpen, data, open, close };
+}

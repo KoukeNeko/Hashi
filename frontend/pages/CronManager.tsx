@@ -5,97 +5,56 @@ import { CronService } from '../services/api';
 import { CronJob } from '../types';
 import { Clock, Trash2, Edit, Plus, Save, Loader2 } from 'lucide-react';
 import {
-    Dialog, DialogBody, DialogFooter,
-    ConfirmDialog, FormInput, 
+    ConfirmDialog, FormDialog,
     Toast, ActionButton
 } from '../components/ui';
 
-// 新增/編輯彈窗
-const CronDialog: React.FC<{
+// ==================== Cron Job Dialog ====================
+interface CronFormValues {
+    expression: string;
+    command: string;
+    comment: string;
+}
+
+const CronJobDialog: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onSave: (job: CronJob) => void;
+    onSave: (job: CronJob) => Promise<void>;
     job: CronJob | null;
 }> = ({ isOpen, onClose, onSave, job }) => {
-    const [expression, setExpression] = useState('');
-    const [command, setCommand] = useState('');
-    const [comment, setComment] = useState('');
-
-    useEffect(() => {
-        if (job) {
-            setExpression(job.expression);
-            setCommand(job.command);
-            setComment(job.comment || '');
-        } else {
-            setExpression('');
-            setCommand('');
-            setComment('');
-        }
-    }, [job, isOpen]);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!expression.trim() || !command.trim()) return;
-        onSave({
+    const handleSubmit = async (values: CronFormValues) => {
+        await onSave({
             id: job?.id,
-            expression: expression.trim(),
-            command: command.trim(),
-            comment: comment.trim() || undefined,
+            expression: values.expression.trim(),
+            command: values.command.trim(),
+            comment: values.comment.trim() || undefined,
         });
     };
 
     return (
-        <Dialog
+        <FormDialog<CronFormValues>
             isOpen={isOpen}
             onClose={onClose}
+            onSubmit={handleSubmit}
             title={job ? 'Edit Cron Job' : 'Add Cron Job'}
             titleIcon={<Clock size={20} className="text-emerald-400" />}
-        >
-            <form onSubmit={handleSubmit}>
-                <DialogBody>
-                    <FormInput
-                        label="Cron Expression"
-                        value={expression}
-                        onChange={setExpression}
-                        placeholder="0 3 * * *"
-                        required
-                        hint="Format: minute hour day month weekday"
-                        mono
-                    />
-                    <FormInput
-                        label="Command"
-                        value={command}
-                        onChange={setCommand}
-                        placeholder="/path/to/script.sh"
-                        required
-                        mono
-                    />
-                    <FormInput
-                        label="Comment (optional)"
-                        value={comment}
-                        onChange={setComment}
-                        placeholder="Brief description"
-                    />
-                </DialogBody>
-                <DialogFooter>
-                    <ActionButton variant="ghost" onClick={onClose}>
-                        Cancel
-                    </ActionButton>
-                    <ActionButton
-                        type="submit"
-                        variant="primary"
-                        icon={<Save size={16} />}
-                    >
-                        {job ? 'Update' : 'Create'}
-                    </ActionButton>
-                </DialogFooter>
-            </form>
-        </Dialog>
+            submitText={job ? 'Update' : 'Create'}
+            initialValues={job ? {
+                expression: job.expression,
+                command: job.command,
+                comment: job.comment || ''
+            } : undefined}
+            fields={[
+                { name: 'expression', label: 'Cron Expression', required: true, placeholder: '0 3 * * *', hint: 'Format: minute hour day month weekday', mono: true },
+                { name: 'command', label: 'Command', required: true, placeholder: '/path/to/script.sh', mono: true },
+                { name: 'comment', label: 'Comment (optional)', placeholder: 'Brief description' }
+            ]}
+        />
     );
 };
 
-// 刪除確認彈窗
-const DeleteConfirmDialog: React.FC<{
+// ==================== Delete Confirm Dialog ====================
+const DeleteCronDialog: React.FC<{
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
@@ -349,7 +308,7 @@ const CronManager: React.FC = () => {
             )}
 
             {/* 新增/編輯彈窗 */}
-            <CronDialog
+            <CronJobDialog
                 isOpen={dialogOpen}
                 onClose={() => setDialogOpen(false)}
                 onSave={handleSaveJob}
@@ -357,7 +316,7 @@ const CronManager: React.FC = () => {
             />
 
             {/* 刪除確認彈窗 */}
-            <DeleteConfirmDialog
+            <DeleteCronDialog
                 isOpen={deleteDialogOpen}
                 onClose={() => {
                     setDeleteDialogOpen(false);

@@ -276,7 +276,8 @@ const CronManager: React.FC = () => {
             newJobs = jobs.map(j => j.id === job.id ? job : j);
         } else {
             // 新增 (給一個臨時 ID，後端會重新分配)
-            newJobs = [...jobs, { ...job, id: crypto.randomUUID() }];
+            const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+            newJobs = [...jobs, { ...job, id: tempId }];
         }
 
         const success = await saveAllJobs(newJobs);

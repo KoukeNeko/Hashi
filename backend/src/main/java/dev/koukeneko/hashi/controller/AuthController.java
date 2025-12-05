@@ -29,7 +29,7 @@ public class AuthController {
 
     @GetMapping("/validate")
     public ResponseEntity<AuthResponse> validateSession(@RequestParam String username) {
-        // 驗證用戶是否仍然有效（存在於系統中）
+        // 驗證使用者是否仍然有效（存在於系統中）
         return authService.validateUser(username)
                 .map(user -> ResponseEntity.ok(new AuthResponse(true, "Session valid", user)))
                 .orElse(ResponseEntity.status(401).body(new AuthResponse(false, "Invalid session", null)));

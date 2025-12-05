@@ -13,6 +13,7 @@ import CronManager from './pages/CronManager';
 import WafManager from './pages/WafManager';
 import LogManager from './pages/LogManager';
 import TerminalManager from './pages/TerminalManager';
+import UserManager from './pages/UserManager';
 import Login from './pages/Login';
 import { TabView, UserInfo } from './types';
 import { AuthService, SessionStorage } from './services/api';
@@ -41,7 +42,7 @@ const App: React.FC = () => {
       const storedUser = SessionStorage.getUser();
       if (storedUser) {
         try {
-          // 驗證用戶是否仍然有效
+          // 驗證使用者是否仍然有效
           const response = await AuthService.validateSession(storedUser.username);
           if (response.success && response.user) {
             setUser(response.user);
@@ -106,6 +107,8 @@ const App: React.FC = () => {
         return <FirewallManager />;
       case TabView.WAF:
         return <WafManager />;
+      case TabView.USERS:
+        return <UserManager />;
       case TabView.MONITOR:
         return <ConstructionView title="Network Monitor" />;
       case TabView.KVM:

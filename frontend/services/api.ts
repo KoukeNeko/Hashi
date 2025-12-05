@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AuthResponse, CronJob, FileItem, FirewallRule, ServiceItem, SystemStatus, UserInfo } from '@/types';
+import { AuthResponse, CronJob, FileItem, FirewallRule, GroupInfo, ServiceItem, SystemStatus, UserInfo } from '@/types';
 
 // 認證相關 API
 export const AuthService = {
@@ -19,7 +19,43 @@ export const AuthService = {
   }
 };
 
-// localStorage 存儲用戶資訊的 key
+// 使用者管理 API
+export const UserManagementService = {
+  listUsers: async (): Promise<UserInfo[]> => {
+    const response = await api.get<UserInfo[]>('/users');
+    return response.data;
+  },
+  createUser: async (username: string, password: string, shell: string = '/bin/bash', createHome: boolean = true) => {
+    const response = await api.post('/users', { username, password, shell, createHome: String(createHome) });
+    return response.data;
+  },
+  deleteUser: async (username: string, removeHome: boolean = false) => {
+    const response = await api.delete(`/users/${username}`, { params: { removeHome } });
+    return response.data;
+  },
+  changePassword: async (username: string, password: string) => {
+    const response = await api.put(`/users/${username}/password`, { password });
+    return response.data;
+  },
+  changeShell: async (username: string, shell: string) => {
+    const response = await api.put(`/users/${username}/shell`, { shell });
+    return response.data;
+  },
+  listGroups: async (): Promise<GroupInfo[]> => {
+    const response = await api.get<GroupInfo[]>('/users/groups');
+    return response.data;
+  },
+  getUserGroups: async (username: string): Promise<string[]> => {
+    const response = await api.get<string[]>(`/users/${username}/groups`);
+    return response.data;
+  },
+  setUserGroups: async (username: string, groups: string[]) => {
+    const response = await api.put(`/users/${username}/groups`, { groups });
+    return response.data;
+  }
+};
+
+// localStorage 存儲使用者資訊的 key
 const USER_STORAGE_KEY = 'hashi_user';
 
 export const SessionStorage = {

@@ -29,7 +29,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const response = await AuthService.login(username, password);
       
       if (response.success && response.user) {
-        // 儲存用戶資訊到 localStorage
+        // 儲存使用者資訊到 localStorage
         SessionStorage.setUser(response.user);
         onLogin(response.user);
       } else {

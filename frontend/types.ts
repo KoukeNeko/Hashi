@@ -1,10 +1,16 @@
-// 用戶認證相關
+// 使用者認證相關
 export interface UserInfo {
   username: string;
   uid: number;
   gid: number;
   homeDir: string;
   shell: string;
+}
+
+export interface GroupInfo {
+  name: string;
+  gid: number;
+  members: string[];
 }
 
 export interface AuthResponse {
@@ -227,6 +233,7 @@ export enum TabView {
   KVM = 'kvm',
   SERVICES = 'services',
   CRON = 'cron',
+  USERS = 'users',
   TERMINAL = 'terminal',
   SETTINGS = 'settings'
 }

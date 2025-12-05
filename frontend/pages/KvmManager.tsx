@@ -4,7 +4,7 @@ import { VirtService } from '../services/api';
 import { PageHeader } from '../components/PageHeader';
 import { 
     Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick, 
-    Loader2, RefreshCw, AlertCircle, Play, Square
+    Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle
 } from 'lucide-react';
 import { Toast, ActionButton, ConfirmDialog } from '../components/ui';
 
@@ -34,9 +34,114 @@ const formatMemory = (kib: number): string => {
     return `${mib.toFixed(0)} MB`;
 };
 
+// ==================== Setup Guide Component ====================
+const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => {
+    const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+    const commands = [
+        {
+            title: 'Install KVM & Libvirt',
+            cmd: 'sudo apt update && sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils'
+        },
+        {
+            title: 'Install development libraries (required for Java)',
+            cmd: 'sudo apt install -y libvirt-dev'
+        },
+        {
+            title: 'Add user to libvirt group',
+            cmd: 'sudo usermod -aG libvirt $USER'
+        },
+        {
+            title: 'Start & enable libvirtd',
+            cmd: 'sudo systemctl enable --now libvirtd'
+        }
+    ];
+
+    const copyToClipboard = async (text: string, index: number) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedIndex(index);
+            setTimeout(() => setCopiedIndex(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    };
+
+    return (
+        <div className="bg-surface border border-border rounded-lg p-6 max-w-2xl mx-auto">
+            <div className="flex items-start gap-4 mb-6">
+                <div className="p-3 bg-amber-500/20 rounded-lg">
+                    <AlertCircle size={24} className="text-amber-400" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-zinc-100">Libvirt Setup Required</h3>
+                    <p className="text-sm text-zinc-400 mt-1">
+                        KVM/Libvirt is not configured on this server. Please run the following commands to set it up:
+                    </p>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                {commands.map((item, index) => (
+                    <div key={index} className="bg-zinc-900 rounded-lg overflow-hidden border border-border">
+                        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-zinc-800/50">
+                            <span className="text-xs text-zinc-400 font-medium">
+                                {index + 1}. {item.title}
+                            </span>
+                            <button
+                                onClick={() => copyToClipboard(item.cmd, index)}
+                                className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                            >
+                                {copiedIndex === index ? (
+                                    <>
+                                        <CheckCircle size={12} className="text-emerald-400" />
+                                        <span className="text-emerald-400">Copied!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy size={12} />
+                                        <span>Copy</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <code className="text-sm font-mono text-emerald-400 break-all">
+                                {item.cmd}
+                            </code>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <div className="flex items-start gap-3">
+                    <Terminal size={18} className="text-blue-400 mt-0.5" />
+                    <div className="text-sm text-blue-200">
+                        <p className="font-medium">After running the commands:</p>
+                        <ul className="mt-2 space-y-1 text-blue-300/80">
+                            <li>• Log out and log back in (for group changes to take effect)</li>
+                            <li>• Restart the Hashi backend service</li>
+                            <li>• Click the button below to retry</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6 flex justify-center">
+                <ActionButton onClick={onRetry} icon={<RefreshCw size={16} />}>
+                    Retry Connection
+                </ActionButton>
+            </div>
+        </div>
+    );
+};
+
+// ==================== Main Component ====================
 const KvmManager: React.FC = () => {
     const [vms, setVms] = useState<VM[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [confirmDialog, setConfirmDialog] = useState<{
@@ -48,11 +153,17 @@ const KvmManager: React.FC = () => {
     const loadVms = async () => {
         try {
             setLoading(true);
+            setError(null);
             const data = await VirtService.listVms();
             setVms(data);
-        } catch (error) {
-            console.error('Failed to load VMs:', error);
-            setToast({ message: 'Failed to load virtual machines', type: 'error' });
+        } catch (err: unknown) {
+            console.error('Failed to load VMs:', err);
+            const axiosError = err as { response?: { status?: number; data?: string } };
+            if (axiosError.response?.status === 404 || axiosError.response?.status === 500) {
+                setError('libvirt_not_configured');
+            } else {
+                setToast({ message: 'Failed to load virtual machines', type: 'error' });
+            }
         } finally {
             setLoading(false);
         }
@@ -116,7 +227,9 @@ const KvmManager: React.FC = () => {
                 }
             />
 
-            {loading ? (
+            {error === 'libvirt_not_configured' ? (
+                <LibvirtSetupGuide onRetry={loadVms} />
+            ) : loading ? (
                 <div className="flex items-center justify-center py-16">
                     <Loader2 size={32} className="animate-spin text-zinc-500" />
                 </div>

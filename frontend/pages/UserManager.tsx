@@ -1,37 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { UserManagementService } from '../services/api';
-import { UserInfo, GroupInfo } from '../types';
+import { UserInfo } from '../types';
 import { 
-    Users, Plus, Trash2, Edit, Key, Terminal, X, Save, 
-    AlertCircle, CheckCircle, Loader2, Shield, Home, UserPlus
+    Users, Plus, Trash2, Key, Terminal, Save, 
+    Loader2, Shield, Home, UserPlus
 } from 'lucide-react';
+import {
+    Dialog, DialogBody, DialogFooter,
+    ConfirmDialog, FormInput, FormSelect, FormCheckbox,
+    FormError, Toast, ActionButton
+} from '../components/ui';
 
-// Toast 通知組件
-const Toast: React.FC<{
-    message: string;
-    type: 'success' | 'error';
-    onClose: () => void;
-}> = ({ message, type, onClose }) => {
-    useEffect(() => {
-        const timer = setTimeout(onClose, 4000);
-        return () => clearTimeout(timer);
-    }, [onClose]);
-
-    return (
-        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border animate-fade-in ${
-            type === 'success' 
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' 
-                : 'bg-rose-500/20 border-rose-500/50 text-rose-300'
-        }`}>
-            {type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-            <span className="text-sm font-medium">{message}</span>
-            <button onClick={onClose} className="ml-2 hover:opacity-70"><X size={16} /></button>
-        </div>
-    );
-};
-
-// 新增用戶彈窗
+// ==================== Create User Dialog ====================
 const CreateUserDialog: React.FC<{
     isOpen: boolean;
     onClose: () => void;
@@ -55,8 +36,6 @@ const CreateUserDialog: React.FC<{
             setError('');
         }
     }, [isOpen]);
-
-    if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -90,107 +69,81 @@ const CreateUserDialog: React.FC<{
         }
     };
 
-    const shells = ['/bin/bash', '/bin/sh', '/bin/zsh', '/usr/bin/fish', '/sbin/nologin'];
+    const shells = [
+        { value: '/bin/bash', label: '/bin/bash' },
+        { value: '/bin/sh', label: '/bin/sh' },
+        { value: '/bin/zsh', label: '/bin/zsh' },
+        { value: '/usr/bin/fish', label: '/usr/bin/fish' },
+        { value: '/sbin/nologin', label: '/sbin/nologin' }
+    ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-surface border border-border rounded-lg shadow-2xl w-full max-w-md mx-4">
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                    <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
-                        <UserPlus size={20} className="text-emerald-400" />
-                        Create New User
-                    </h2>
-                    <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
-                    {error && (
-                        <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm p-3 rounded flex items-center gap-2">
-                            <AlertCircle size={16} />
-                            {error}
-                        </div>
-                    )}
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Username *</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                            placeholder="johndoe"
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            required
-                        />
-                        <p className="mt-1 text-xs text-zinc-500">Lowercase letters, numbers, underscores, hyphens</p>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Password *</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Confirm Password *</label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Shell</label>
-                        <select
-                            value={shell}
-                            onChange={(e) => setShell(e.target.value)}
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                        >
-                            {shells.map(s => (
-                                <option key={s} value={s}>{s}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            id="createHome"
-                            checked={createHome}
-                            onChange={(e) => setCreateHome(e.target.checked)}
-                            className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-emerald-600 focus:ring-emerald-500"
-                        />
-                        <label htmlFor="createHome" className="text-sm text-zinc-400">Create home directory</label>
-                    </div>
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
-                        >
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Create New User"
+            titleIcon={<UserPlus size={20} className="text-emerald-400" />}
+        >
+            <form onSubmit={handleSubmit}>
+                <DialogBody>
+                    {error && <FormError message={error} />}
+                    <FormInput
+                        label="Username"
+                        value={username}
+                        onChange={(v) => setUsername(v.toLowerCase())}
+                        placeholder="johndoe"
+                        required
+                        hint="Lowercase letters, numbers, underscores, hyphens"
+                    />
+                    <FormInput
+                        label="Password"
+                        type="password"
+                        value={password}
+                        onChange={setPassword}
+                        placeholder="••••••••"
+                        required
+                    />
+                    <FormInput
+                        label="Confirm Password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={setConfirmPassword}
+                        placeholder="••••••••"
+                        required
+                    />
+                    <FormSelect
+                        label="Shell"
+                        value={shell}
+                        onChange={setShell}
+                        options={shells}
+                    />
+                    <FormCheckbox
+                        id="createHome"
+                        label="Create home directory"
+                        checked={createHome}
+                        onChange={setCreateHome}
+                    />
+                    <DialogFooter>
+                        <ActionButton variant="ghost" onClick={onClose}>
                             Cancel
-                        </button>
-                        <button
+                        </ActionButton>
+                        <ActionButton
                             type="submit"
-                            disabled={saving}
-                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
+                            variant="primary"
+                            loading={saving}
+                            icon={<Save size={16} />}
+                            loadingIcon={<Loader2 size={16} className="animate-spin" />}
                         >
-                            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                             Create User
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                        </ActionButton>
+                    </DialogFooter>
+                </DialogBody>
+            </form>
+        </Dialog>
     );
 };
 
-// 修改密碼彈窗
+// ==================== Change Password Dialog ====================
 const ChangePasswordDialog: React.FC<{
     isOpen: boolean;
     username: string;
@@ -209,8 +162,6 @@ const ChangePasswordDialog: React.FC<{
             setError('');
         }
     }, [isOpen]);
-
-    if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -237,74 +188,56 @@ const ChangePasswordDialog: React.FC<{
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-surface border border-border rounded-lg shadow-2xl w-full max-w-md mx-4">
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                    <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
-                        <Key size={20} className="text-amber-400" />
-                        Change Password
-                    </h2>
-                    <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Change Password"
+            titleIcon={<Key size={20} className="text-amber-400" />}
+        >
+            <form onSubmit={handleSubmit}>
+                <DialogBody>
                     <p className="text-sm text-zinc-400">
                         Change password for user: <span className="text-white font-medium">{username}</span>
                     </p>
-                    {error && (
-                        <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm p-3 rounded flex items-center gap-2">
-                            <AlertCircle size={16} />
-                            {error}
-                        </div>
-                    )}
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">New Password *</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-1">Confirm Password *</label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            required
-                        />
-                    </div>
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
-                        >
+                    {error && <FormError message={error} />}
+                    <FormInput
+                        label="New Password"
+                        type="password"
+                        value={password}
+                        onChange={setPassword}
+                        placeholder="••••••••"
+                        required
+                    />
+                    <FormInput
+                        label="Confirm Password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={setConfirmPassword}
+                        placeholder="••••••••"
+                        required
+                    />
+                    <DialogFooter>
+                        <ActionButton variant="ghost" onClick={onClose}>
                             Cancel
-                        </button>
-                        <button
+                        </ActionButton>
+                        <ActionButton
                             type="submit"
-                            disabled={saving}
-                            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
+                            variant="warning"
+                            loading={saving}
+                            icon={<Key size={16} />}
+                            loadingIcon={<Loader2 size={16} className="animate-spin" />}
                         >
-                            {saving ? <Loader2 size={16} className="animate-spin" /> : <Key size={16} />}
                             Change Password
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                        </ActionButton>
+                    </DialogFooter>
+                </DialogBody>
+            </form>
+        </Dialog>
     );
 };
 
-// 刪除確認彈窗
-const DeleteConfirmDialog: React.FC<{
+// ==================== Delete User Dialog ====================
+const DeleteUserDialog: React.FC<{
     isOpen: boolean;
     user: UserInfo | null;
     onClose: () => void;
@@ -313,72 +246,47 @@ const DeleteConfirmDialog: React.FC<{
     const [removeHome, setRemoveHome] = useState(false);
 
     useEffect(() => {
-        if (isOpen) {
-            setRemoveHome(false);
-        }
+        if (isOpen) setRemoveHome(false);
     }, [isOpen]);
 
-    if (!isOpen || !user) return null;
+    if (!user) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-surface border border-border rounded-lg shadow-2xl w-full max-w-md mx-4">
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                    <h2 className="text-lg font-bold text-rose-400 flex items-center gap-2">
-                        <AlertCircle size={20} />
-                        Delete User
-                    </h2>
-                    <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-                <div className="p-4 space-y-4">
-                    <p className="text-sm text-zinc-300">
-                        Are you sure you want to delete user <span className="text-white font-bold">{user.username}</span>?
-                    </p>
-                    <p className="text-xs text-zinc-500">
+        <ConfirmDialog
+            isOpen={isOpen}
+            onClose={onClose}
+            onConfirm={() => onConfirm(removeHome)}
+            title="Delete User"
+            message={
+                <>
+                    Are you sure you want to delete user <span className="text-white font-bold">{user.username}</span>?
+                    <p className="text-xs text-zinc-500 mt-2">
                         UID: {user.uid} | Home: {user.homeDir}
                     </p>
-                    <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded">
-                        <input
-                            type="checkbox"
-                            id="removeHome"
-                            checked={removeHome}
-                            onChange={(e) => setRemoveHome(e.target.checked)}
-                            className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-rose-600 focus:ring-rose-500"
-                        />
-                        <label htmlFor="removeHome" className="text-sm text-rose-300">
-                            Also delete home directory and mail spool
-                        </label>
-                    </div>
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={() => onConfirm(removeHome)}
-                            className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-                        >
-                            <Trash2 size={16} />
-                            Delete User
-                        </button>
-                    </div>
-                </div>
+                </>
+            }
+            confirmText="Delete User"
+            confirmIcon={<Trash2 size={16} />}
+        >
+            <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded">
+                <FormCheckbox
+                    id="removeHome"
+                    label="Also delete home directory and mail spool"
+                    checked={removeHome}
+                    onChange={setRemoveHome}
+                    color="rose"
+                />
             </div>
-        </div>
+        </ConfirmDialog>
     );
 };
 
+// ==================== Main Component ====================
 const UserManager: React.FC = () => {
     const [users, setUsers] = useState<UserInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-    // 彈窗狀態
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -425,16 +333,6 @@ const UserManager: React.FC = () => {
         }
     };
 
-    const openPasswordDialog = (user: UserInfo) => {
-        setSelectedUser(user);
-        setPasswordDialogOpen(true);
-    };
-
-    const openDeleteDialog = (user: UserInfo) => {
-        setSelectedUser(user);
-        setDeleteDialogOpen(true);
-    };
-
     return (
         <div className="space-y-6 animate-fade-in">
             <PageHeader
@@ -442,13 +340,13 @@ const UserManager: React.FC = () => {
                 icon={Users}
                 description="Manage system users and permissions."
                 actions={
-                    <button
+                    <ActionButton
                         onClick={() => setCreateDialogOpen(true)}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-medium text-sm transition-colors shadow-lg"
+                        icon={<Plus size={16} />}
+                        className="shadow-lg"
                     >
-                        <Plus size={16} />
                         Add User
-                    </button>
+                    </ActionButton>
                 }
             />
 
@@ -513,7 +411,10 @@ const UserManager: React.FC = () => {
                                     <td className="p-4">
                                         <div className="flex items-center justify-end gap-1">
                                             <button
-                                                onClick={() => openPasswordDialog(user)}
+                                                onClick={() => {
+                                                    setSelectedUser(user);
+                                                    setPasswordDialogOpen(true);
+                                                }}
                                                 className="p-2 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors"
                                                 title="Change Password"
                                             >
@@ -521,7 +422,10 @@ const UserManager: React.FC = () => {
                                             </button>
                                             {user.uid !== 0 && (
                                                 <button
-                                                    onClick={() => openDeleteDialog(user)}
+                                                    onClick={() => {
+                                                        setSelectedUser(user);
+                                                        setDeleteDialogOpen(true);
+                                                    }}
                                                     className="p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
                                                     title="Delete User"
                                                 >
@@ -537,28 +441,26 @@ const UserManager: React.FC = () => {
                 )}
             </div>
 
-            {/* 彈窗 */}
+            {/* Dialogs */}
             <CreateUserDialog
                 isOpen={createDialogOpen}
                 onClose={() => setCreateDialogOpen(false)}
                 onSave={handleCreateUser}
             />
-
             <ChangePasswordDialog
                 isOpen={passwordDialogOpen}
                 username={selectedUser?.username || ''}
                 onClose={() => setPasswordDialogOpen(false)}
                 onSave={handleChangePassword}
             />
-
-            <DeleteConfirmDialog
+            <DeleteUserDialog
                 isOpen={deleteDialogOpen}
                 user={selectedUser}
                 onClose={() => setDeleteDialogOpen(false)}
                 onConfirm={handleDeleteUser}
             />
 
-            {/* Toast 通知 */}
+            {/* Toast */}
             {toast && (
                 <Toast
                     message={toast.message}

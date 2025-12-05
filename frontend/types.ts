@@ -18,6 +18,12 @@ export interface CreateVmRequest {
   osVariant?: string; // 作業系統變體
 }
 
+export interface IsoFile {
+  name: string;       // 檔案名稱
+  path: string;       // 完整路徑
+  size: number;       // 檔案大小 (bytes)
+}
+
 // 使用者認證相關
 export interface UserInfo {
   username: string;

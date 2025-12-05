@@ -1,11 +1,13 @@
 package dev.koukeneko.hashi.controller;
 
 import dev.koukeneko.hashi.model.dto.CreateVmDTO;
+import dev.koukeneko.hashi.model.dto.IsoFileDTO;
 import dev.koukeneko.hashi.model.dto.VmDTO;
 import dev.koukeneko.hashi.service.VirtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -17,6 +19,8 @@ public class VirtController {
 
     private final VirtService virtService;
 
+    // ==================== VM 管理 ====================
+    
     @GetMapping("/vms")
     public ResponseEntity<List<VmDTO>> listVms() {
         return ResponseEntity.ok(virtService.listVms());
@@ -33,10 +37,27 @@ public class VirtController {
         return ResponseEntity.ok().build();
     }
 
-    // POST /api/v1/virt/vms/win10/start
     @PostMapping("/vms/{name}/{action}")
     public ResponseEntity<Void> controlVm(@PathVariable String name, @PathVariable String action) {
         virtService.controlVm(name, action);
+        return ResponseEntity.ok().build();
+    }
+
+    // ==================== ISO 管理 ====================
+    
+    @GetMapping("/iso")
+    public ResponseEntity<List<IsoFileDTO>> listIsoFiles() {
+        return ResponseEntity.ok(virtService.listIsoFiles());
+    }
+
+    @PostMapping("/iso")
+    public ResponseEntity<IsoFileDTO> uploadIso(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(virtService.uploadIso(file));
+    }
+
+    @DeleteMapping("/iso/{filename}")
+    public ResponseEntity<Void> deleteIso(@PathVariable String filename) {
+        virtService.deleteIso(filename);
         return ResponseEntity.ok().build();
     }
 }

@@ -2,9 +2,10 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM } from '@/types';
+import { AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM } from '@/types';
 
 export const VirtService = {
+  // VM 管理
   listVms: async () => {
     const response = await api.get<VM[]>('/virt/vms');
     return response.data;
@@ -18,6 +19,28 @@ export const VirtService = {
   },
   controlVm: async (name: string, action: 'start' | 'stop' | 'force-stop' | 'reboot') => {
     await api.post(`/virt/vms/${name}/${action}`);
+  },
+  
+  // ISO 管理
+  listIsoFiles: async () => {
+    const response = await api.get<IsoFile[]>('/virt/iso');
+    return response.data;
+  },
+  uploadIso: async (file: File, onProgress?: (progress: number) => void) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<IsoFile>('/virt/iso', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (event) => {
+        if (onProgress && event.total) {
+          onProgress(Math.round((event.loaded * 100) / event.total));
+        }
+      }
+    });
+    return response.data;
+  },
+  deleteIso: async (filename: string) => {
+    await api.delete(`/virt/iso/${filename}`);
   }
 };
   

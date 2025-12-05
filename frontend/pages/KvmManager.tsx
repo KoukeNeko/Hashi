@@ -1,13 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { VM, CreateVmRequest } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { VM, CreateVmRequest, IsoFile } from '../types';
 import { VirtService } from '../services/api';
 import { PageHeader } from '../components/PageHeader';
 import { 
     Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick, 
     Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle,
-    Plus, Trash2
+    Plus, Trash2, Upload, Disc, X
 } from 'lucide-react';
-import { Toast, ActionButton, ConfirmDialog, FormDialog, useFormDialog } from '../components/ui';
+import { Toast, ActionButton, ConfirmDialog } from '../components/ui';
+
+// 格式化檔案大小
+const formatFileSize = (bytes: number): string => {
+    if (bytes >= 1024 * 1024 * 1024) {
+        return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+    }
+    if (bytes >= 1024 * 1024) {
+        return `${(bytes / 1024 / 1024).toFixed(0)} MB`;
+    }
+    return `${(bytes / 1024).toFixed(0)} KB`;
+};
 
 // VM 狀態對應
 const getVmStatusInfo = (state: string) => {
@@ -146,6 +157,7 @@ const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => {
 // ==================== Main Component ====================
 const KvmManager: React.FC = () => {
     const [vms, setVms] = useState<VM[]>([]);
+    const [isoFiles, setIsoFiles] = useState<IsoFile[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -157,7 +169,20 @@ const KvmManager: React.FC = () => {
     } | null>(null);
 
     // Create VM Dialog
-    const createVmDialog = useFormDialog<CreateVmRequest>();
+    const [createVmDialogOpen, setCreateVmDialogOpen] = useState(false);
+    const [createVmForm, setCreateVmForm] = useState<CreateVmRequest>({
+        name: '',
+        vcpu: 2,
+        memoryMB: 2048,
+        diskGB: 20,
+        osType: 'linux',
+        isoPath: ''
+    });
+    const [createVmLoading, setCreateVmLoading] = useState(false);
+
+    // ISO Upload
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const loadVms = async () => {
         try {
@@ -178,8 +203,18 @@ const KvmManager: React.FC = () => {
         }
     };
 
+    const loadIsoFiles = async () => {
+        try {
+            const data = await VirtService.listIsoFiles();
+            setIsoFiles(data);
+        } catch (err) {
+            console.error('Failed to load ISO files:', err);
+        }
+    };
+
     useEffect(() => {
         loadVms();
+        loadIsoFiles();
     }, []);
 
     const handleVmAction = async (vmName: string, action: 'start' | 'stop' | 'force-stop' | 'reboot' | 'delete') => {
@@ -223,15 +258,49 @@ const KvmManager: React.FC = () => {
         }
     };
 
-    const handleCreateVm = async (data: CreateVmRequest) => {
+    const handleCreateVm = async () => {
+        if (!createVmForm.name.trim()) {
+            setToast({ message: 'Please enter a VM name', type: 'error' });
+            return;
+        }
+        
         try {
-            await VirtService.createVm(data);
-            setToast({ message: `VM "${data.name}" created successfully`, type: 'success' });
+            setCreateVmLoading(true);
+            await VirtService.createVm(createVmForm);
+            setToast({ message: `VM "${createVmForm.name}" created successfully`, type: 'success' });
+            setCreateVmDialogOpen(false);
+            setCreateVmForm({ name: '', vcpu: 2, memoryMB: 2048, diskGB: 20, osType: 'linux', isoPath: '' });
             loadVms();
         } catch (error) {
             console.error('Failed to create VM:', error);
-            setToast({ message: `Failed to create VM "${data.name}"`, type: 'error' });
-            throw error;
+            setToast({ message: `Failed to create VM "${createVmForm.name}"`, type: 'error' });
+        } finally {
+            setCreateVmLoading(false);
+        }
+    };
+
+    const handleIsoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.name.toLowerCase().endsWith('.iso')) {
+            setToast({ message: 'Only ISO files are allowed', type: 'error' });
+            return;
+        }
+
+        try {
+            setUploadProgress(0);
+            await VirtService.uploadIso(file, setUploadProgress);
+            setToast({ message: `ISO "${file.name}" uploaded successfully`, type: 'success' });
+            loadIsoFiles();
+        } catch (error) {
+            console.error('Failed to upload ISO:', error);
+            setToast({ message: `Failed to upload ISO "${file.name}"`, type: 'error' });
+        } finally {
+            setUploadProgress(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         }
     };
 
@@ -239,6 +308,15 @@ const KvmManager: React.FC = () => {
 
     return (
         <div className="space-y-6 animate-fade-in">
+            {/* Hidden file input */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleIsoUpload}
+                accept=".iso"
+                className="hidden"
+            />
+
             <PageHeader
                 title="KVM Virtualization"
                 icon={Monitor}
@@ -246,19 +324,24 @@ const KvmManager: React.FC = () => {
                 actions={
                     <div className="flex gap-2">
                         <ActionButton
-                            onClick={() => createVmDialog.open({
-                                name: '',
-                                vcpu: 2,
-                                memoryMB: 2048,
-                                diskGB: 20,
-                                osType: 'linux'
-                            })}
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadProgress !== null}
+                            icon={uploadProgress !== null 
+                                ? <Loader2 size={16} className="animate-spin" /> 
+                                : <Upload size={16} />
+                            }
+                            variant="secondary"
+                        >
+                            {uploadProgress !== null ? `Uploading ${uploadProgress}%` : 'Upload ISO'}
+                        </ActionButton>
+                        <ActionButton
+                            onClick={() => setCreateVmDialogOpen(true)}
                             icon={<Plus size={16} />}
                         >
                             Create VM
                         </ActionButton>
                         <ActionButton
-                            onClick={loadVms}
+                            onClick={() => { loadVms(); loadIsoFiles(); }}
                             disabled={loading}
                             icon={loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
                             variant="secondary"
@@ -440,64 +523,144 @@ const KvmManager: React.FC = () => {
             )}
 
             {/* Create VM Dialog */}
-            <FormDialog
-                isOpen={createVmDialog.isOpen}
-                onClose={createVmDialog.close}
-                onSubmit={handleCreateVm}
-                title="Create Virtual Machine"
-                submitText="Create"
-                initialValues={createVmDialog.data || { name: '', vcpu: 2, memoryMB: 2048, diskGB: 20, osType: 'linux' }}
-                fields={[
-                    {
-                        name: 'name',
-                        label: 'VM Name',
-                        type: 'text',
-                        placeholder: 'my-ubuntu-server',
-                        required: true
-                    },
-                    {
-                        name: 'osType',
-                        label: 'OS Type',
-                        type: 'select',
-                        options: [
-                            { value: 'linux', label: 'Linux' },
-                            { value: 'windows', label: 'Windows' }
-                        ]
-                    },
-                    {
-                        name: 'vcpu',
-                        label: 'CPU Cores',
-                        type: 'number',
-                        min: 1,
-                        max: 64,
-                        required: true
-                    },
-                    {
-                        name: 'memoryMB',
-                        label: 'Memory (MB)',
-                        type: 'number',
-                        min: 512,
-                        max: 262144,
-                        step: 512,
-                        required: true
-                    },
-                    {
-                        name: 'diskGB',
-                        label: 'Disk Size (GB)',
-                        type: 'number',
-                        min: 1,
-                        max: 2048,
-                        required: true
-                    },
-                    {
-                        name: 'isoPath',
-                        label: 'ISO Path',
-                        type: 'text',
-                        placeholder: '/var/lib/libvirt/images/ubuntu-22.04.iso',
-                        description: 'Optional: Path to installation ISO'
-                    }
-                ]}
-            />
+            {createVmDialogOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-surface border border-border rounded-lg w-full max-w-lg shadow-xl">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                            <h2 className="text-lg font-bold text-zinc-100">Create Virtual Machine</h2>
+                            <button
+                                onClick={() => setCreateVmDialogOpen(false)}
+                                className="p-1 hover:bg-zinc-700 rounded transition-colors"
+                            >
+                                <X size={18} className="text-zinc-400" />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+                            {/* VM Name */}
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                    VM Name <span className="text-rose-400">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={createVmForm.name}
+                                    onChange={(e) => setCreateVmForm({ ...createVmForm, name: e.target.value })}
+                                    placeholder="my-ubuntu-server"
+                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            {/* OS Type */}
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-300 mb-1">OS Type</label>
+                                <select
+                                    value={createVmForm.osType}
+                                    onChange={(e) => setCreateVmForm({ ...createVmForm, osType: e.target.value })}
+                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="linux">Linux</option>
+                                    <option value="windows">Windows</option>
+                                </select>
+                            </div>
+
+                            {/* ISO Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                    <Disc size={14} className="inline mr-1" />
+                                    Installation ISO
+                                </label>
+                                <select
+                                    value={createVmForm.isoPath || ''}
+                                    onChange={(e) => setCreateVmForm({ ...createVmForm, isoPath: e.target.value })}
+                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">No ISO (empty disk)</option>
+                                    {isoFiles.map((iso) => (
+                                        <option key={iso.path} value={iso.path}>
+                                            {iso.name} ({formatFileSize(iso.size)})
+                                        </option>
+                                    ))}
+                                </select>
+                                {isoFiles.length === 0 && (
+                                    <p className="text-xs text-zinc-500 mt-1">
+                                        No ISO files found. Click "Upload ISO" to add one.
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* CPU & Memory in row */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                        <Cpu size={14} className="inline mr-1" />
+                                        CPU Cores
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={64}
+                                        value={createVmForm.vcpu}
+                                        onChange={(e) => setCreateVmForm({ ...createVmForm, vcpu: parseInt(e.target.value) || 1 })}
+                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                        <MemoryStick size={14} className="inline mr-1" />
+                                        Memory (MB)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={512}
+                                        max={262144}
+                                        step={512}
+                                        value={createVmForm.memoryMB}
+                                        onChange={(e) => setCreateVmForm({ ...createVmForm, memoryMB: parseInt(e.target.value) || 512 })}
+                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Disk Size */}
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                    <HardDrive size={14} className="inline mr-1" />
+                                    Disk Size (GB)
+                                </label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={2048}
+                                    value={createVmForm.diskGB}
+                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskGB: parseInt(e.target.value) || 1 })}
+                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex justify-end gap-3 px-5 py-4 border-t border-border">
+                            <button
+                                onClick={() => setCreateVmDialogOpen(false)}
+                                className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCreateVm}
+                                disabled={createVmLoading || !createVmForm.name.trim()}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white rounded transition-colors flex items-center gap-2"
+                            >
+                                {createVmLoading && <Loader2 size={16} className="animate-spin" />}
+                                Create
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Toast */}
             {toast && (

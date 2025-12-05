@@ -1,6 +1,7 @@
 package dev.koukeneko.hashi.service;
 
 import dev.koukeneko.hashi.model.dto.CreateVmDTO;
+import dev.koukeneko.hashi.model.dto.IsoFileDTO;
 import dev.koukeneko.hashi.model.dto.VmDTO;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -248,5 +249,75 @@ public class VirtService {
                         ? "<disk type='file' device='cdrom'><driver name='qemu' type='raw'/><source file='" + req.isoPath() + "'/><target dev='sda' bus='sata'/><readonly/></disk>"
                         : ""
         );
+    }
+
+    // ==================== ISO 檔案管理 ====================
+    
+    public List<IsoFileDTO> listIsoFiles() {
+        List<IsoFileDTO> isoFiles = new ArrayList<>();
+        try {
+            Path imagesDir = Path.of(DISK_BASE_PATH);
+            if (Files.exists(imagesDir)) {
+                Files.list(imagesDir)
+                        .filter(path -> path.toString().toLowerCase().endsWith(".iso"))
+                        .forEach(path -> {
+                            try {
+                                isoFiles.add(IsoFileDTO.builder()
+                                        .name(path.getFileName().toString())
+                                        .path(path.toAbsolutePath().toString())
+                                        .size(Files.size(path))
+                                        .build());
+                            } catch (IOException e) {
+                                // 忽略無法讀取的檔案
+                            }
+                        });
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to list ISO files: " + e.getMessage(), e);
+        }
+        return isoFiles;
+    }
+
+    public IsoFileDTO uploadIso(org.springframework.web.multipart.MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".iso")) {
+            throw new IllegalArgumentException("Only ISO files are allowed");
+        }
+
+        // 清理檔案名稱
+        String safeFilename = originalFilename.replaceAll("[^a-zA-Z0-9._-]", "_");
+        Path targetPath = Path.of(DISK_BASE_PATH, safeFilename);
+
+        try {
+            Files.copy(file.getInputStream(), targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            return IsoFileDTO.builder()
+                    .name(safeFilename)
+                    .path(targetPath.toAbsolutePath().toString())
+                    .size(Files.size(targetPath))
+                    .build();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload ISO: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteIso(String filename) {
+        // 安全檢查：防止路徑穿越攻擊
+        if (filename.contains("/") || filename.contains("\\") || filename.contains("..")) {
+            throw new IllegalArgumentException("Invalid filename");
+        }
+
+        Path isoPath = Path.of(DISK_BASE_PATH, filename);
+        try {
+            if (!Files.exists(isoPath)) {
+                throw new IllegalArgumentException("ISO file not found: " + filename);
+            }
+            Files.delete(isoPath);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to delete ISO: " + e.getMessage(), e);
+        }
     }
 }

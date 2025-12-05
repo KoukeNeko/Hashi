@@ -74,7 +74,7 @@ interface DialogFooterProps {
 }
 
 export const DialogFooter: React.FC<DialogFooterProps> = ({ children, className = '' }) => (
-    <div className={`flex justify-end gap-3 pt-2 ${className}`}>
+    <div className={`flex justify-end gap-3 px-4 py-3 border-t border-border ${className}`}>
         {children}
     </div>
 );

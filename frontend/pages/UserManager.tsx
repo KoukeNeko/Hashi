@@ -323,15 +323,20 @@ const ManageMembersDialog: React.FC<{
 const EditUserDialog: React.FC<{
     isOpen: boolean;
     user: UserInfo | null;
+    groups: GroupInfo[];
     onClose: () => void;
     onSave: (updates: {
+        uid?: number;
+        gid?: number;
         shell?: string;
         gecos?: string;
         homeDir?: string;
         expireDate?: string | null;
     }) => Promise<void>;
     onRefresh: () => void;
-}> = ({ isOpen, user, onClose, onSave, onRefresh }) => {
+}> = ({ isOpen, user, groups, onClose, onSave, onRefresh }) => {
+    const [uid, setUid] = useState('');
+    const [gid, setGid] = useState('');
     const [shell, setShell] = useState('');
     const [gecos, setGecos] = useState('');
     const [homeDir, setHomeDir] = useState('');
@@ -342,6 +347,8 @@ const EditUserDialog: React.FC<{
 
     useEffect(() => {
         if (isOpen && user) {
+            setUid(user.uid.toString());
+            setGid(user.gid.toString());
             setShell(user.shell || '/bin/bash');
             setGecos(user.gecos || '');
             setHomeDir(user.homeDir || '');
@@ -357,14 +364,37 @@ const EditUserDialog: React.FC<{
 
     if (!user) return null;
 
+    // 建立 GID 選項 (群組列表)
+    const gidOptions = groups.map(g => ({ 
+        value: g.gid.toString(), 
+        label: `${g.name} (${g.gid})` 
+    }));
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        // 驗證 UID
+        const newUid = parseInt(uid);
+        if (isNaN(newUid) || newUid < 0) {
+            setError('Invalid UID');
+            return;
+        }
+
+        // 驗證 GID
+        const newGid = parseInt(gid);
+        if (isNaN(newGid) || newGid < 0) {
+            setError('Invalid GID');
+            return;
+        }
+
         setSaving(true);
 
         try {
-            const updates: { shell?: string; gecos?: string; homeDir?: string; expireDate?: string | null } = {};
+            const updates: { uid?: number; gid?: number; shell?: string; gecos?: string; homeDir?: string; expireDate?: string | null } = {};
             
+            if (newUid !== user.uid) updates.uid = newUid;
+            if (newGid !== user.gid) updates.gid = newGid;
             if (shell !== user.shell) updates.shell = shell;
             if (gecos !== (user.gecos || '')) updates.gecos = gecos;
             if (homeDir !== user.homeDir) updates.homeDir = homeDir;
@@ -398,15 +428,21 @@ const EditUserDialog: React.FC<{
                 <DialogBody>
                     {error && <FormError message={error} />}
                     
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="bg-zinc-800/50 p-3 rounded border border-border">
-                            <span className="text-xs text-zinc-500">UID</span>
-                            <p className="font-mono text-sm">{user.uid}</p>
-                        </div>
-                        <div className="bg-zinc-800/50 p-3 rounded border border-border">
-                            <span className="text-xs text-zinc-500">GID</span>
-                            <p className="font-mono text-sm">{user.gid}</p>
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormInput
+                            label="UID"
+                            type="text"
+                            value={uid}
+                            onChange={setUid}
+                            placeholder="1000"
+                            hint="User ID (changing may affect file ownership)"
+                        />
+                        <FormSelect
+                            label="Primary Group (GID)"
+                            value={gid}
+                            onChange={setGid}
+                            options={gidOptions}
+                        />
                     </div>
 
                     <FormInput
@@ -871,10 +907,16 @@ const UserManager: React.FC = () => {
         }
     };
 
-    const handleEditUser = async (updates: { shell?: string; gecos?: string; homeDir?: string; expireDate?: string | null }) => {
+    const handleEditUser = async (updates: { uid?: number; gid?: number; shell?: string; gecos?: string; homeDir?: string; expireDate?: string | null }) => {
         if (!selectedUser) return;
         
         try {
+            if (updates.uid !== undefined) {
+                await UserManagementService.changeUid(selectedUser.username, updates.uid);
+            }
+            if (updates.gid !== undefined) {
+                await UserManagementService.changePrimaryGroup(selectedUser.username, updates.gid);
+            }
             if (updates.shell) {
                 await UserManagementService.changeShell(selectedUser.username, updates.shell);
             }
@@ -1006,6 +1048,7 @@ const UserManager: React.FC = () => {
             <EditUserDialog
                 isOpen={editUserDialogOpen}
                 user={selectedUser}
+                groups={groups}
                 onClose={() => setEditUserDialogOpen(false)}
                 onSave={handleEditUser}
                 onRefresh={loadUsers}

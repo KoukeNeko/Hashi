@@ -100,9 +100,16 @@ public class UserController {
     @PutMapping("/{username}/primary-group")
     public ResponseEntity<Map<String, Object>> changePrimaryGroup(
             @PathVariable String username,
-            @RequestBody Map<String, String> request) {
-        String groupName = request.get("group");
-        boolean success = userService.changePrimaryGroup(username, groupName);
+            @RequestBody Map<String, Object> request) {
+        // 支援 gid 或 group name
+        boolean success;
+        if (request.containsKey("gid")) {
+            int gid = Integer.parseInt(String.valueOf(request.get("gid")));
+            success = userService.changePrimaryGroup(username, gid);
+        } else {
+            String groupName = (String) request.get("group");
+            success = userService.changePrimaryGroup(username, groupName);
+        }
         return buildResponse(success, "Primary group changed successfully", "Failed to change primary group");
     }
 

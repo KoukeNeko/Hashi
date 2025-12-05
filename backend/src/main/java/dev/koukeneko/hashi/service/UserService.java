@@ -68,9 +68,14 @@ public interface UserService {
     boolean changeUid(String username, int newUid);
 
     /**
-     * 修改使用者主要群組
+     * 修改使用者主要群組 (by group name)
      */
     boolean changePrimaryGroup(String username, String groupName);
+
+    /**
+     * 修改使用者主要群組 (by GID)
+     */
+    boolean changePrimaryGroup(String username, int gid);
 
     /**
      * 修改使用者家目錄

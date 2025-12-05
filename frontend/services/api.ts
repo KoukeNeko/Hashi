@@ -56,8 +56,8 @@ export const UserManagementService = {
     const response = await api.put(`/users/${username}/uid`, { uid });
     return response.data;
   },
-  changePrimaryGroup: async (username: string, group: string) => {
-    const response = await api.put(`/users/${username}/primary-group`, { group });
+  changePrimaryGroup: async (username: string, gid: number) => {
+    const response = await api.put(`/users/${username}/primary-group`, { gid });
     return response.data;
   },
   changeHomeDir: async (username: string, homeDir: string, moveContents: boolean = false) => {

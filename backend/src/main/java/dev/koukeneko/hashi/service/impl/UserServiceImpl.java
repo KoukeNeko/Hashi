@@ -352,6 +352,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean changePrimaryGroup(String username, int gid) {
+        int exitCode = executeCommand(Arrays.asList("usermod", "-g", String.valueOf(gid), username));
+        if (exitCode == 0) {
+            log.info("Primary group changed for user {} to GID {}", username, gid);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean changeHomeDir(String username, String newHomeDir, boolean moveContents) {
         List<String> cmd = new ArrayList<>(Arrays.asList("usermod", "-d", newHomeDir));
         if (moveContents) {

@@ -31,12 +31,17 @@ export const VirtService = {
     formData.append('file', file);
     const response = await api.post<IsoFile>('/virt/iso', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0, // 禁用超時（大檔案上傳需要較長時間）
       onUploadProgress: (event) => {
-        if (onProgress && event.total) {
-          onProgress(Math.round((event.loaded * 100) / event.total));
+        if (onProgress) {
+          // 使用檔案大小作為 total（如果 event.total 未定義）
+          const total = event.total || file.size;
+          const progress = Math.round((event.loaded * 100) / total);
+          onProgress(Math.min(progress, 99)); // 上傳完成前最多顯示 99%
         }
       }
     });
+    if (onProgress) onProgress(100); // 上傳完成
     return response.data;
   },
   deleteIso: async (filename: string) => {

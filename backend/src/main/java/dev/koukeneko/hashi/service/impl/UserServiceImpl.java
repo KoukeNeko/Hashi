@@ -28,16 +28,14 @@ public class UserServiceImpl implements UserService {
                     String[] parts = line.split(":");
                     if (parts.length >= 7) {
                         int uid = Integer.parseInt(parts[2]);
-                        // 只顯示正常使用者 (UID >= 1000) 和 root (UID 0)
-                        if (uid >= 1000 || uid == 0) {
-                            UserInfoDTO user = new UserInfoDTO();
-                            user.setUsername(parts[0]);
-                            user.setUid(uid);
-                            user.setGid(Integer.parseInt(parts[3]));
-                            user.setHomeDir(parts[5]);
-                            user.setShell(parts[6]);
-                            users.add(user);
-                        }
+                        // 回傳所有使用者，讓前端決定是否顯示系統使用者
+                        UserInfoDTO user = new UserInfoDTO();
+                        user.setUsername(parts[0]);
+                        user.setUid(uid);
+                        user.setGid(Integer.parseInt(parts[3]));
+                        user.setHomeDir(parts[5]);
+                        user.setShell(parts[6]);
+                        users.add(user);
                     }
                 }
             }

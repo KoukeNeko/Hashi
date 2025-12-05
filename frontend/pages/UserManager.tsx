@@ -489,7 +489,11 @@ const UsersTab: React.FC<{
     onCreateUser: () => void;
     onChangePassword: (user: UserInfo) => void;
     onDeleteUser: (user: UserInfo) => void;
-}> = ({ users, loading, onCreateUser, onChangePassword, onDeleteUser }) => {
+}> = ({ users, loading, onChangePassword, onDeleteUser }) => {
+    // 過濾掉系統使用者 (UID < 1000)，可以選擇顯示
+    const [showSystem, setShowSystem] = useState(false);
+    const displayUsers = showSystem ? users : users.filter(u => u.uid >= 1000 || u.uid === 0);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-16">
@@ -498,87 +502,107 @@ const UsersTab: React.FC<{
         );
     }
 
-    if (users.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
-                <Users size={48} className="mb-4 opacity-50" />
-                <p className="text-sm">No users found</p>
-            </div>
-        );
-    }
-
     return (
-        <table className="w-full text-left border-collapse">
-            <thead>
-                <tr className="bg-zinc-900 border-b border-border text-xs uppercase text-zinc-500">
-                    <th className="p-4 font-medium">User</th>
-                    <th className="p-4 font-medium">UID / GID</th>
-                    <th className="p-4 font-medium">Home Directory</th>
-                    <th className="p-4 font-medium">Shell</th>
-                    <th className="p-4 font-medium text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody className="text-sm divide-y divide-border">
-                {users.map(user => (
-                    <tr key={user.username} className="hover:bg-zinc-800/50 transition-colors">
-                        <td className="p-4">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                    user.uid === 0 
-                                        ? 'bg-rose-500/20 text-rose-400' 
-                                        : 'bg-emerald-500/20 text-emerald-400'
-                                }`}>
-                                    {user.uid === 0 ? <Shield size={16} /> : <Users size={16} />}
-                                </div>
-                                <div>
-                                    <span className="font-medium text-zinc-100">{user.username}</span>
-                                    {user.uid === 0 && (
-                                        <span className="ml-2 text-xs bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">
-                                            root
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </td>
-                        <td className="p-4 font-mono text-zinc-400 text-xs">
-                            {user.uid} / {user.gid}
-                        </td>
-                        <td className="p-4">
-                            <div className="flex items-center gap-2 text-zinc-400">
-                                <Home size={14} />
-                                <span className="font-mono text-xs">{user.homeDir}</span>
-                            </div>
-                        </td>
-                        <td className="p-4">
-                            <div className="flex items-center gap-2 text-zinc-400">
-                                <Terminal size={14} />
-                                <span className="font-mono text-xs">{user.shell}</span>
-                            </div>
-                        </td>
-                        <td className="p-4">
-                            <div className="flex items-center justify-end gap-1">
-                                <button
-                                    onClick={() => onChangePassword(user)}
-                                    className="p-2 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors"
-                                    title="Change Password"
-                                >
-                                    <Key size={16} />
-                                </button>
-                                {user.uid !== 0 && (
-                                    <button
-                                        onClick={() => onDeleteUser(user)}
-                                        className="p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
-                                        title="Delete User"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                )}
-                            </div>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
+        <div>
+            {/* Filter Toggle */}
+            <div className="p-3 border-b border-border flex items-center justify-between bg-zinc-900/50">
+                <FormCheckbox
+                    id="showSystemUsers"
+                    label="Show system users (UID < 1000)"
+                    checked={showSystem}
+                    onChange={setShowSystem}
+                />
+                <span className="text-xs text-zinc-500">
+                    Showing {displayUsers.length} of {users.length} users
+                </span>
+            </div>
+
+            {displayUsers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+                    <Users size={48} className="mb-4 opacity-50" />
+                    <p className="text-sm">No users found</p>
+                </div>
+            ) : (
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-zinc-900 border-b border-border text-xs uppercase text-zinc-500">
+                            <th className="p-4 font-medium">User</th>
+                            <th className="p-4 font-medium">UID / GID</th>
+                            <th className="p-4 font-medium">Home Directory</th>
+                            <th className="p-4 font-medium">Shell</th>
+                            <th className="p-4 font-medium text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="text-sm divide-y divide-border">
+                        {displayUsers.map(user => (
+                            <tr key={user.username} className="hover:bg-zinc-800/50 transition-colors">
+                                <td className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            user.uid === 0 
+                                                ? 'bg-rose-500/20 text-rose-400' 
+                                                : user.uid < 1000
+                                                    ? 'bg-amber-500/20 text-amber-400'
+                                                    : 'bg-emerald-500/20 text-emerald-400'
+                                        }`}>
+                                            {user.uid === 0 ? <Shield size={16} /> : <Users size={16} />}
+                                        </div>
+                                        <div>
+                                            <span className="font-medium text-zinc-100">{user.username}</span>
+                                            {user.uid === 0 && (
+                                                <span className="ml-2 text-xs bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">
+                                                    root
+                                                </span>
+                                            )}
+                                            {user.uid > 0 && user.uid < 1000 && (
+                                                <span className="ml-2 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
+                                                    system
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="p-4 font-mono text-zinc-400 text-xs">
+                                    {user.uid} / {user.gid}
+                                </td>
+                                <td className="p-4">
+                                    <div className="flex items-center gap-2 text-zinc-400">
+                                        <Home size={14} />
+                                        <span className="font-mono text-xs">{user.homeDir}</span>
+                                    </div>
+                                </td>
+                                <td className="p-4">
+                                    <div className="flex items-center gap-2 text-zinc-400">
+                                        <Terminal size={14} />
+                                        <span className="font-mono text-xs">{user.shell}</span>
+                                    </div>
+                                </td>
+                                <td className="p-4">
+                                    <div className="flex items-center justify-end gap-1">
+                                        <button
+                                            onClick={() => onChangePassword(user)}
+                                            className="p-2 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors"
+                                            title="Change Password"
+                                        >
+                                            <Key size={16} />
+                                        </button>
+                                        {user.uid !== 0 && user.uid >= 1000 && (
+                                            <button
+                                                onClick={() => onDeleteUser(user)}
+                                                className="p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
+                                                title="Delete User"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+        </div>
     );
 };
 

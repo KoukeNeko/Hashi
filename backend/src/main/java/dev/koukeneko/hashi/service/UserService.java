@@ -1,6 +1,6 @@
 package dev.koukeneko.hashi.service;
 
-import dev.koukeneko.hashi.model.dto.UserInfo;
+import dev.koukeneko.hashi.model.dto.UserInfoDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -9,7 +9,7 @@ public interface UserService {
     /**
      * 列出所有系統使用者
      */
-    List<UserInfo> listAllUsers();
+    List<UserInfoDTO> listAllUsers();
 
     /**
      * 建立新使用者

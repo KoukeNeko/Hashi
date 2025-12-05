@@ -1,6 +1,6 @@
 package dev.koukeneko.hashi.service.impl;
 
-import dev.koukeneko.hashi.model.dto.UserInfo;
+import dev.koukeneko.hashi.model.dto.UserInfoDTO;
 import dev.koukeneko.hashi.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,8 +14,8 @@ import java.util.*;
 public class UserServiceImpl implements UserService {
 
     @Override
-    public List<UserInfo> listAllUsers() {
-        List<UserInfo> users = new ArrayList<>();
+    public List<UserInfoDTO> listAllUsers() {
+        List<UserInfoDTO> users = new ArrayList<>();
         try {
             ProcessBuilder pb = new ProcessBuilder("getent", "passwd");
             pb.redirectErrorStream(true);
@@ -30,7 +30,7 @@ public class UserServiceImpl implements UserService {
                         int uid = Integer.parseInt(parts[2]);
                         // 只顯示正常使用者 (UID >= 1000) 和 root (UID 0)
                         if (uid >= 1000 || uid == 0) {
-                            UserInfo user = new UserInfo();
+                            UserInfoDTO user = new UserInfoDTO();
                             user.setUsername(parts[0]);
                             user.setUid(uid);
                             user.setGid(Integer.parseInt(parts[3]));

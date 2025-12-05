@@ -1,6 +1,6 @@
 package dev.koukeneko.hashi.controller;
 
-import dev.koukeneko.hashi.model.dto.UserInfo;
+import dev.koukeneko.hashi.model.dto.UserInfoDTO;
 import dev.koukeneko.hashi.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +17,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<UserInfo>> listUsers() {
+    public ResponseEntity<List<UserInfoDTO>> listUsers() {
         return ResponseEntity.ok(userService.listAllUsers());
     }
 

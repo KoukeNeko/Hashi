@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 public class AuthResponse {
     private boolean success;
     private String message;
-    private UserInfo user;
+    private UserInfoDTO user;
 }

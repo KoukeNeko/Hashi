@@ -1,4 +1,4 @@
-package dev.koukeneko.hashi;
+package dev.koukeneko.hashi.handler;
 
 import dev.koukeneko.hashi.service.TerminalService;
 import lombok.RequiredArgsConstructor;

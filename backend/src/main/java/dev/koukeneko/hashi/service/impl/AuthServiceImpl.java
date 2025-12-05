@@ -1,6 +1,6 @@
 package dev.koukeneko.hashi.service.impl;
 
-import dev.koukeneko.hashi.model.dto.UserInfo;
+import dev.koukeneko.hashi.model.dto.UserInfoDTO;
 import dev.koukeneko.hashi.service.AuthService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.util.Optional;
 public class AuthServiceImpl implements AuthService {
 
     @Override
-    public Optional<UserInfo> authenticate(String username, String password) {
+    public Optional<UserInfoDTO> authenticate(String username, String password) {
         try {
             // 使用 su 命令驗證密碼
             // su -c "exit" username 會要求輸入密碼，如果密碼正確就成功退出
@@ -44,14 +44,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public Optional<UserInfo> validateUser(String username) {
+    public Optional<UserInfoDTO> validateUser(String username) {
         return getUserInfo(username);
     }
 
     /**
      * 從 /etc/passwd 獲取使用者資訊
      */
-    private Optional<UserInfo> getUserInfo(String username) {
+    private Optional<UserInfoDTO> getUserInfo(String username) {
         try {
             ProcessBuilder pb = new ProcessBuilder("getent", "passwd", username);
             pb.redirectErrorStream(true);
@@ -65,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
                     // 格式: username:x:uid:gid:gecos:home:shell
                     String[] parts = line.split(":");
                     if (parts.length >= 7) {
-                        UserInfo user = new UserInfo();
+                        UserInfoDTO user = new UserInfoDTO();
                         user.setUsername(parts[0]);
                         user.setUid(Integer.parseInt(parts[2]));
                         user.setGid(Integer.parseInt(parts[3]));

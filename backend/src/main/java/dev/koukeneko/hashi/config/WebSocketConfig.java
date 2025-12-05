@@ -1,6 +1,7 @@
 package dev.koukeneko.hashi.config;
 
 import dev.koukeneko.hashi.TerminalSocketHandler;
+import dev.koukeneko.hashi.handler.LogSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,8 @@ import org.springframework.web.socket.config.annotation.*;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSocketConfigurer {
 
     private final TerminalSocketHandler terminalSocketHandler;
+
+    private final LogSocketHandler logSocketHandler;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -36,6 +39,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSoc
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         // 註冊 /terminal 路徑，交給 TerminalSocketHandler 處理
         registry.addHandler(terminalSocketHandler, "/terminal")
+                .setAllowedOrigins("*");
+
+        // Log 端點
+        registry.addHandler(logSocketHandler, "/logs")
                 .setAllowedOrigins("*");
     }
 }

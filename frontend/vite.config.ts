@@ -23,6 +23,11 @@ export default defineConfig(({ mode }) => {
             changeOrigin: true,
             ws: true,
           },
+          '/logs': {
+            target: 'ws://localhost:8080',
+            changeOrigin: true,
+            ws: true,
+          },
         },
       },
       plugins: [react()],

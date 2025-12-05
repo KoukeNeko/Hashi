@@ -127,6 +127,7 @@ const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => {
                         <ul className="mt-2 space-y-1 text-blue-300/80">
                             <li>• Log out and log back in (for group changes to take effect)</li>
                             <li>• Restart the Hashi backend service</li>
+                            <li>• Place ISO files in <code className="bg-zinc-800 px-1 rounded">/var/lib/libvirt/images/</code></li>
                             <li>• Click the button below to retry</li>
                         </ul>
                     </div>

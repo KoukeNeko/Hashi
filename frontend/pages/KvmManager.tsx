@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { VM } from '../types';
+import { VM, CreateVmRequest } from '../types';
 import { VirtService } from '../services/api';
 import { PageHeader } from '../components/PageHeader';
 import { 
     Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick, 
-    Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle
+    Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle,
+    Plus, Trash2
 } from 'lucide-react';
-import { Toast, ActionButton, ConfirmDialog } from '../components/ui';
+import { Toast, ActionButton, ConfirmDialog, FormDialog, useFormDialog } from '../components/ui';
 
 // VM 狀態對應
 const getVmStatusInfo = (state: string) => {
@@ -147,8 +148,11 @@ const KvmManager: React.FC = () => {
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean;
         vmName: string;
-        action: 'stop' | 'force-stop' | 'reboot';
+        action: 'stop' | 'force-stop' | 'reboot' | 'delete';
     } | null>(null);
+
+    // Create VM Dialog
+    const createVmDialog = useFormDialog<CreateVmRequest>();
 
     const loadVms = async () => {
         try {
@@ -173,9 +177,9 @@ const KvmManager: React.FC = () => {
         loadVms();
     }, []);
 
-    const handleVmAction = async (vmName: string, action: 'start' | 'stop' | 'force-stop' | 'reboot') => {
+    const handleVmAction = async (vmName: string, action: 'start' | 'stop' | 'force-stop' | 'reboot' | 'delete') => {
         // 危險操作需要確認
-        if (action === 'stop' || action === 'force-stop' || action === 'reboot') {
+        if (action === 'stop' || action === 'force-stop' || action === 'reboot' || action === 'delete') {
             setConfirmDialog({ isOpen: true, vmName, action });
             return;
         }
@@ -183,27 +187,46 @@ const KvmManager: React.FC = () => {
         await executeVmAction(vmName, action);
     };
 
-    const executeVmAction = async (vmName: string, action: 'start' | 'stop' | 'force-stop' | 'reboot') => {
+    const executeVmAction = async (vmName: string, action: 'start' | 'stop' | 'force-stop' | 'reboot' | 'delete') => {
         try {
             setActionLoading(vmName);
-            await VirtService.controlVm(vmName, action);
             
-            const actionLabels = {
-                'start': 'started',
-                'stop': 'stopped',
-                'force-stop': 'force stopped',
-                'reboot': 'rebooted'
-            };
-            setToast({ message: `VM "${vmName}" ${actionLabels[action]} successfully`, type: 'success' });
-            
-            // 延遲重新載入，讓 libvirt 有時間更新狀態
-            setTimeout(loadVms, 1000);
+            if (action === 'delete') {
+                await VirtService.deleteVm(vmName);
+                setToast({ message: `VM "${vmName}" deleted successfully`, type: 'success' });
+                loadVms();
+            } else {
+                await VirtService.controlVm(vmName, action);
+                
+                const actionLabels = {
+                    'start': 'started',
+                    'stop': 'stopped',
+                    'force-stop': 'force stopped',
+                    'reboot': 'rebooted'
+                };
+                setToast({ message: `VM "${vmName}" ${actionLabels[action]} successfully`, type: 'success' });
+                
+                // 延遲重新載入，讓 libvirt 有時間更新狀態
+                setTimeout(loadVms, 1000);
+            }
         } catch (error) {
             console.error(`Failed to ${action} VM:`, error);
             setToast({ message: `Failed to ${action} VM "${vmName}"`, type: 'error' });
         } finally {
             setActionLoading(null);
             setConfirmDialog(null);
+        }
+    };
+
+    const handleCreateVm = async (data: CreateVmRequest) => {
+        try {
+            await VirtService.createVm(data);
+            setToast({ message: `VM "${data.name}" created successfully`, type: 'success' });
+            loadVms();
+        } catch (error) {
+            console.error('Failed to create VM:', error);
+            setToast({ message: `Failed to create VM "${data.name}"`, type: 'error' });
+            throw error;
         }
     };
 
@@ -216,14 +239,28 @@ const KvmManager: React.FC = () => {
                 icon={Monitor}
                 description="Manage virtual machines powered by libvirt/QEMU-KVM."
                 actions={
-                    <ActionButton
-                        onClick={loadVms}
-                        disabled={loading}
-                        icon={loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                        variant="secondary"
-                    >
-                        Refresh
-                    </ActionButton>
+                    <div className="flex gap-2">
+                        <ActionButton
+                            onClick={() => createVmDialog.open({
+                                name: '',
+                                vcpu: 2,
+                                memoryMB: 2048,
+                                diskGB: 20,
+                                osType: 'linux'
+                            })}
+                            icon={<Plus size={16} />}
+                        >
+                            Create VM
+                        </ActionButton>
+                        <ActionButton
+                            onClick={loadVms}
+                            disabled={loading}
+                            icon={loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                            variant="secondary"
+                        >
+                            Refresh
+                        </ActionButton>
+                    </div>
                 }
             />
 
@@ -328,13 +365,22 @@ const KvmManager: React.FC = () => {
                                                 </>
                                             )}
                                             {!vmRunning && (
-                                                <button
-                                                    onClick={() => handleVmAction(vm.name, 'start')}
-                                                    className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
-                                                    title="Start VM"
-                                                >
-                                                    <Play size={16} />
-                                                </button>
+                                                <>
+                                                    <button
+                                                        onClick={() => handleVmAction(vm.name, 'start')}
+                                                        className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+                                                        title="Start VM"
+                                                    >
+                                                        <Play size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleVmAction(vm.name, 'delete')}
+                                                        className="p-2 bg-rose-600 hover:bg-rose-500 text-white rounded transition-colors"
+                                                        title="Delete VM"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </>
                                             )}
                                         </>
                                     )}
@@ -352,6 +398,7 @@ const KvmManager: React.FC = () => {
                     onClose={() => setConfirmDialog(null)}
                     onConfirm={() => executeVmAction(confirmDialog.vmName, confirmDialog.action)}
                     title={
+                        confirmDialog.action === 'delete' ? 'Delete VM' :
                         confirmDialog.action === 'force-stop' ? 'Force Stop VM' :
                         confirmDialog.action === 'stop' ? 'Shutdown VM' : 'Reboot VM'
                     }
@@ -365,19 +412,87 @@ const KvmManager: React.FC = () => {
                                     This may cause data loss if the VM has unsaved data.
                                 </p>
                             )}
+                            {confirmDialog.action === 'delete' && (
+                                <p className="text-xs text-rose-400 mt-2">
+                                    <AlertCircle size={12} className="inline mr-1" />
+                                    This will permanently delete the VM and its disk. This action cannot be undone.
+                                </p>
+                            )}
                         </>
                     }
                     confirmText={
+                        confirmDialog.action === 'delete' ? 'Delete' :
                         confirmDialog.action === 'force-stop' ? 'Force Stop' :
                         confirmDialog.action === 'stop' ? 'Shutdown' : 'Reboot'
                     }
-                    confirmColor={confirmDialog.action === 'force-stop' ? 'red' : 'amber'}
+                    confirmColor={confirmDialog.action === 'delete' || confirmDialog.action === 'force-stop' ? 'red' : 'amber'}
                     confirmIcon={
+                        confirmDialog.action === 'delete' ? <Trash2 size={16} /> :
                         confirmDialog.action === 'reboot' ? <RotateCcw size={16} /> :
                         confirmDialog.action === 'force-stop' ? <Square size={16} /> : <Power size={16} />
                     }
                 />
             )}
+
+            {/* Create VM Dialog */}
+            <FormDialog
+                isOpen={createVmDialog.isOpen}
+                onClose={createVmDialog.close}
+                onSubmit={handleCreateVm}
+                title="Create Virtual Machine"
+                submitText="Create"
+                initialValues={createVmDialog.data || { name: '', vcpu: 2, memoryMB: 2048, diskGB: 20, osType: 'linux' }}
+                fields={[
+                    {
+                        name: 'name',
+                        label: 'VM Name',
+                        type: 'text',
+                        placeholder: 'my-ubuntu-server',
+                        required: true
+                    },
+                    {
+                        name: 'osType',
+                        label: 'OS Type',
+                        type: 'select',
+                        options: [
+                            { value: 'linux', label: 'Linux' },
+                            { value: 'windows', label: 'Windows' }
+                        ]
+                    },
+                    {
+                        name: 'vcpu',
+                        label: 'CPU Cores',
+                        type: 'number',
+                        min: 1,
+                        max: 64,
+                        required: true
+                    },
+                    {
+                        name: 'memoryMB',
+                        label: 'Memory (MB)',
+                        type: 'number',
+                        min: 512,
+                        max: 262144,
+                        step: 512,
+                        required: true
+                    },
+                    {
+                        name: 'diskGB',
+                        label: 'Disk Size (GB)',
+                        type: 'number',
+                        min: 1,
+                        max: 2048,
+                        required: true
+                    },
+                    {
+                        name: 'isoPath',
+                        label: 'ISO Path',
+                        type: 'text',
+                        placeholder: '/var/lib/libvirt/images/ubuntu-22.04.iso',
+                        description: 'Optional: Path to installation ISO'
+                    }
+                ]}
+            />
 
             {/* Toast */}
             {toast && (

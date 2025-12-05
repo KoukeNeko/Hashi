@@ -5,6 +5,17 @@ export interface VM {
   state: string; // VIR_DOMAIN_RUNNING, VIR_DOMAIN_SHUTOFF
   vcpu: number;
   memory: number;
+  maxMemory?: number;
+}
+
+export interface CreateVmRequest {
+  name: string;       // VM 名稱
+  vcpu: number;       // CPU 核心數
+  memoryMB: number;   // 記憶體 (MB)
+  diskGB: number;     // 磁碟大小 (GB)
+  isoPath?: string;   // ISO 映像路徑
+  osType: string;     // 作業系統類型 (linux/windows)
+  osVariant?: string; // 作業系統變體
 }
 
 // 使用者認證相關

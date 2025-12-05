@@ -1,5 +1,6 @@
 package dev.koukeneko.hashi.controller;
 
+import dev.koukeneko.hashi.model.dto.CreateVmDTO;
 import dev.koukeneko.hashi.model.dto.VmDTO;
 import dev.koukeneko.hashi.service.VirtService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,17 @@ public class VirtController {
     @GetMapping("/vms")
     public ResponseEntity<List<VmDTO>> listVms() {
         return ResponseEntity.ok(virtService.listVms());
+    }
+
+    @PostMapping("/vms")
+    public ResponseEntity<VmDTO> createVm(@RequestBody CreateVmDTO request) {
+        return ResponseEntity.ok(virtService.createVm(request));
+    }
+
+    @DeleteMapping("/vms/{name}")
+    public ResponseEntity<Void> deleteVm(@PathVariable String name) {
+        virtService.deleteVm(name);
+        return ResponseEntity.ok().build();
     }
 
     // POST /api/v1/virt/vms/win10/start

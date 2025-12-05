@@ -2,12 +2,19 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AuthResponse, CreateGroupOptions, CreateUserOptions, CronJob, FileItem, FirewallRule, GroupInfo, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM } from '@/types';
+import { AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM } from '@/types';
 
 export const VirtService = {
   listVms: async () => {
     const response = await api.get<VM[]>('/virt/vms');
     return response.data;
+  },
+  createVm: async (request: CreateVmRequest) => {
+    const response = await api.post<VM>('/virt/vms', request);
+    return response.data;
+  },
+  deleteVm: async (name: string) => {
+    await api.delete(`/virt/vms/${name}`);
   },
   controlVm: async (name: string, action: 'start' | 'stop' | 'force-stop' | 'reboot') => {
     await api.post(`/virt/vms/${name}/${action}`);

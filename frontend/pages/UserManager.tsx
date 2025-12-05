@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../components/PageHeader';
+import { Tabs, TabItem } from '../components/Tabs';
 import { UserManagementService } from '../services/api';
-import { UserInfo } from '../types';
+import { UserInfo, GroupInfo } from '../types';
 import { 
-    Users, Plus, Trash2, Key, Terminal, Save, 
-    Loader2, Shield, Home, UserPlus
+    Users, UsersRound, Plus, Trash2, Key, Terminal, Save, 
+    Loader2, Shield, Home, UserPlus, UserMinus
 } from 'lucide-react';
 import {
     Dialog, DialogBody, DialogFooter,
     ConfirmDialog, FormInput, FormSelect, FormCheckbox,
     FormError, Toast, ActionButton
 } from '../components/ui';
+
+// ==================== Tab Configuration ====================
+const tabs: TabItem[] = [
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'groups', label: 'Groups', icon: UsersRound }
+];
 
 // ==================== Create User Dialog ====================
 const CreateUserDialog: React.FC<{
@@ -123,21 +130,21 @@ const CreateUserDialog: React.FC<{
                         checked={createHome}
                         onChange={setCreateHome}
                     />
-                    <DialogFooter>
-                        <ActionButton variant="ghost" onClick={onClose}>
-                            Cancel
-                        </ActionButton>
-                        <ActionButton
-                            type="submit"
-                            variant="primary"
-                            loading={saving}
-                            icon={<Save size={16} />}
-                            loadingIcon={<Loader2 size={16} className="animate-spin" />}
-                        >
-                            Create User
-                        </ActionButton>
-                    </DialogFooter>
                 </DialogBody>
+                <DialogFooter>
+                    <ActionButton variant="ghost" onClick={onClose}>
+                        Cancel
+                    </ActionButton>
+                    <ActionButton
+                        type="submit"
+                        variant="primary"
+                        loading={saving}
+                        icon={<Save size={16} />}
+                        loadingIcon={<Loader2 size={16} className="animate-spin" />}
+                    >
+                        Create User
+                    </ActionButton>
+                </DialogFooter>
             </form>
         </Dialog>
     );
@@ -216,21 +223,21 @@ const ChangePasswordDialog: React.FC<{
                         placeholder="••••••••"
                         required
                     />
-                    <DialogFooter>
-                        <ActionButton variant="ghost" onClick={onClose}>
-                            Cancel
-                        </ActionButton>
-                        <ActionButton
-                            type="submit"
-                            variant="warning"
-                            loading={saving}
-                            icon={<Key size={16} />}
-                            loadingIcon={<Loader2 size={16} className="animate-spin" />}
-                        >
-                            Change Password
-                        </ActionButton>
-                    </DialogFooter>
                 </DialogBody>
+                <DialogFooter>
+                    <ActionButton variant="ghost" onClick={onClose}>
+                        Cancel
+                    </ActionButton>
+                    <ActionButton
+                        type="submit"
+                        variant="warning"
+                        loading={saving}
+                        icon={<Key size={16} />}
+                        loadingIcon={<Loader2 size={16} className="animate-spin" />}
+                    >
+                        Change Password
+                    </ActionButton>
+                </DialogFooter>
             </form>
         </Dialog>
     );
@@ -281,34 +288,475 @@ const DeleteUserDialog: React.FC<{
     );
 };
 
+// ==================== Create Group Dialog ====================
+const CreateGroupDialog: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (name: string) => Promise<void>;
+}> = ({ isOpen, onClose, onSave }) => {
+    const [name, setName] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            setName('');
+            setError('');
+        }
+    }, [isOpen]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        if (!name.trim()) {
+            setError('Group name is required');
+            return;
+        }
+        if (!/^[a-z_][a-z0-9_-]*$/.test(name)) {
+            setError('Invalid group name format');
+            return;
+        }
+
+        setSaving(true);
+        try {
+            await onSave(name);
+            onClose();
+        } catch {
+            setError('Failed to create group');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Create New Group"
+            titleIcon={<UsersRound size={20} className="text-emerald-400" />}
+        >
+            <form onSubmit={handleSubmit}>
+                <DialogBody>
+                    {error && <FormError message={error} />}
+                    <FormInput
+                        label="Group Name"
+                        value={name}
+                        onChange={(v) => setName(v.toLowerCase())}
+                        placeholder="developers"
+                        required
+                        hint="Lowercase letters, numbers, underscores, hyphens"
+                    />
+                </DialogBody>
+                <DialogFooter>
+                    <ActionButton variant="ghost" onClick={onClose}>
+                        Cancel
+                    </ActionButton>
+                    <ActionButton
+                        type="submit"
+                        variant="primary"
+                        loading={saving}
+                        icon={<Save size={16} />}
+                        loadingIcon={<Loader2 size={16} className="animate-spin" />}
+                    >
+                        Create Group
+                    </ActionButton>
+                </DialogFooter>
+            </form>
+        </Dialog>
+    );
+};
+
+// ==================== Manage Group Members Dialog ====================
+const ManageMembersDialog: React.FC<{
+    isOpen: boolean;
+    group: GroupInfo | null;
+    users: UserInfo[];
+    onClose: () => void;
+    onAddMember: (groupName: string, username: string) => Promise<void>;
+    onRemoveMember: (groupName: string, username: string) => Promise<void>;
+}> = ({ isOpen, group, users, onClose, onAddMember, onRemoveMember }) => {
+    const [selectedUser, setSelectedUser] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) setSelectedUser('');
+    }, [isOpen]);
+
+    if (!group) return null;
+
+    const nonMembers = users.filter(u => !group.members.includes(u.username));
+
+    const handleAdd = async () => {
+        if (!selectedUser) return;
+        setSaving(true);
+        try {
+            await onAddMember(group.name, selectedUser);
+            setSelectedUser('');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRemove = async (username: string) => {
+        setSaving(true);
+        try {
+            await onRemoveMember(group.name, username);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            title={`Manage Members: ${group.name}`}
+            titleIcon={<UsersRound size={20} className="text-blue-400" />}
+            maxWidth="max-w-lg"
+        >
+            <DialogBody>
+                {/* Add Member */}
+                <div className="flex gap-2">
+                    <div className="flex-1">
+                        <FormSelect
+                            label="Add Member"
+                            value={selectedUser}
+                            onChange={setSelectedUser}
+                            options={[
+                                { value: '', label: 'Select a user...' },
+                                ...nonMembers.map(u => ({ value: u.username, label: u.username }))
+                            ]}
+                        />
+                    </div>
+                    <div className="flex items-end">
+                        <ActionButton
+                            onClick={handleAdd}
+                            disabled={!selectedUser || saving}
+                            icon={<UserPlus size={16} />}
+                            loading={saving}
+                        >
+                            Add
+                        </ActionButton>
+                    </div>
+                </div>
+
+                {/* Current Members */}
+                <div className="mt-4">
+                    <label className="block text-xs font-medium text-zinc-400 mb-2">
+                        Current Members ({group.members.length})
+                    </label>
+                    {group.members.length === 0 ? (
+                        <p className="text-sm text-zinc-500 italic">No members in this group</p>
+                    ) : (
+                        <div className="space-y-1 max-h-48 overflow-y-auto">
+                            {group.members.map(member => (
+                                <div 
+                                    key={member} 
+                                    className="flex items-center justify-between p-2 bg-zinc-800/50 rounded border border-border"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Users size={14} className="text-zinc-500" />
+                                        <span className="text-sm text-zinc-200">{member}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRemove(member)}
+                                        disabled={saving}
+                                        className="p-1 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors disabled:opacity-50"
+                                        title="Remove member"
+                                    >
+                                        <UserMinus size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </DialogBody>
+            <DialogFooter>
+                <ActionButton variant="ghost" onClick={onClose}>
+                    Close
+                </ActionButton>
+            </DialogFooter>
+        </Dialog>
+    );
+};
+
+// ==================== Users Tab Content ====================
+const UsersTab: React.FC<{
+    users: UserInfo[];
+    loading: boolean;
+    onCreateUser: () => void;
+    onChangePassword: (user: UserInfo) => void;
+    onDeleteUser: (user: UserInfo) => void;
+}> = ({ users, loading, onCreateUser, onChangePassword, onDeleteUser }) => {
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-16">
+                <Loader2 size={32} className="animate-spin text-zinc-500" />
+            </div>
+        );
+    }
+
+    if (users.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+                <Users size={48} className="mb-4 opacity-50" />
+                <p className="text-sm">No users found</p>
+            </div>
+        );
+    }
+
+    return (
+        <table className="w-full text-left border-collapse">
+            <thead>
+                <tr className="bg-zinc-900 border-b border-border text-xs uppercase text-zinc-500">
+                    <th className="p-4 font-medium">User</th>
+                    <th className="p-4 font-medium">UID / GID</th>
+                    <th className="p-4 font-medium">Home Directory</th>
+                    <th className="p-4 font-medium">Shell</th>
+                    <th className="p-4 font-medium text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody className="text-sm divide-y divide-border">
+                {users.map(user => (
+                    <tr key={user.username} className="hover:bg-zinc-800/50 transition-colors">
+                        <td className="p-4">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                    user.uid === 0 
+                                        ? 'bg-rose-500/20 text-rose-400' 
+                                        : 'bg-emerald-500/20 text-emerald-400'
+                                }`}>
+                                    {user.uid === 0 ? <Shield size={16} /> : <Users size={16} />}
+                                </div>
+                                <div>
+                                    <span className="font-medium text-zinc-100">{user.username}</span>
+                                    {user.uid === 0 && (
+                                        <span className="ml-2 text-xs bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">
+                                            root
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </td>
+                        <td className="p-4 font-mono text-zinc-400 text-xs">
+                            {user.uid} / {user.gid}
+                        </td>
+                        <td className="p-4">
+                            <div className="flex items-center gap-2 text-zinc-400">
+                                <Home size={14} />
+                                <span className="font-mono text-xs">{user.homeDir}</span>
+                            </div>
+                        </td>
+                        <td className="p-4">
+                            <div className="flex items-center gap-2 text-zinc-400">
+                                <Terminal size={14} />
+                                <span className="font-mono text-xs">{user.shell}</span>
+                            </div>
+                        </td>
+                        <td className="p-4">
+                            <div className="flex items-center justify-end gap-1">
+                                <button
+                                    onClick={() => onChangePassword(user)}
+                                    className="p-2 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors"
+                                    title="Change Password"
+                                >
+                                    <Key size={16} />
+                                </button>
+                                {user.uid !== 0 && (
+                                    <button
+                                        onClick={() => onDeleteUser(user)}
+                                        className="p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
+                                        title="Delete User"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                )}
+                            </div>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
+};
+
+// ==================== Groups Tab Content ====================
+const GroupsTab: React.FC<{
+    groups: GroupInfo[];
+    loading: boolean;
+    onCreateGroup: () => void;
+    onManageMembers: (group: GroupInfo) => void;
+    onDeleteGroup: (group: GroupInfo) => void;
+}> = ({ groups, loading, onCreateGroup, onManageMembers, onDeleteGroup }) => {
+    // 過濾掉系統群組 (GID < 1000)，可以選擇顯示
+    const [showSystem, setShowSystem] = useState(false);
+    const displayGroups = showSystem ? groups : groups.filter(g => g.gid >= 1000);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-16">
+                <Loader2 size={32} className="animate-spin text-zinc-500" />
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            {/* Filter Toggle */}
+            <div className="p-3 border-b border-border flex items-center justify-between bg-zinc-900/50">
+                <FormCheckbox
+                    id="showSystem"
+                    label="Show system groups (GID < 1000)"
+                    checked={showSystem}
+                    onChange={setShowSystem}
+                />
+                <span className="text-xs text-zinc-500">
+                    Showing {displayGroups.length} of {groups.length} groups
+                </span>
+            </div>
+
+            {displayGroups.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+                    <UsersRound size={48} className="mb-4 opacity-50" />
+                    <p className="text-sm">No groups found</p>
+                </div>
+            ) : (
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-zinc-900 border-b border-border text-xs uppercase text-zinc-500">
+                            <th className="p-4 font-medium">Group Name</th>
+                            <th className="p-4 font-medium">GID</th>
+                            <th className="p-4 font-medium">Members</th>
+                            <th className="p-4 font-medium text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="text-sm divide-y divide-border">
+                        {displayGroups.map(group => (
+                            <tr key={group.name} className="hover:bg-zinc-800/50 transition-colors">
+                                <td className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            group.gid < 1000 
+                                                ? 'bg-amber-500/20 text-amber-400' 
+                                                : 'bg-blue-500/20 text-blue-400'
+                                        }`}>
+                                            <UsersRound size={16} />
+                                        </div>
+                                        <div>
+                                            <span className="font-medium text-zinc-100">{group.name}</span>
+                                            {group.gid < 1000 && (
+                                                <span className="ml-2 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
+                                                    system
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="p-4 font-mono text-zinc-400 text-xs">
+                                    {group.gid}
+                                </td>
+                                <td className="p-4">
+                                    {group.members.length === 0 ? (
+                                        <span className="text-zinc-500 text-xs italic">No members</span>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-1">
+                                            {group.members.slice(0, 5).map(m => (
+                                                <span key={m} className="text-xs bg-zinc-800 px-2 py-0.5 rounded text-zinc-300">
+                                                    {m}
+                                                </span>
+                                            ))}
+                                            {group.members.length > 5 && (
+                                                <span className="text-xs text-zinc-500">
+                                                    +{group.members.length - 5} more
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="p-4">
+                                    <div className="flex items-center justify-end gap-1">
+                                        <button
+                                            onClick={() => onManageMembers(group)}
+                                            className="p-2 hover:bg-blue-500/20 hover:text-blue-400 rounded transition-colors"
+                                            title="Manage Members"
+                                        >
+                                            <Users size={16} />
+                                        </button>
+                                        {group.gid >= 1000 && (
+                                            <button
+                                                onClick={() => onDeleteGroup(group)}
+                                                className="p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
+                                                title="Delete Group"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+        </div>
+    );
+};
+
 // ==================== Main Component ====================
 const UserManager: React.FC = () => {
+    const [activeTab, setActiveTab] = useState('users');
     const [users, setUsers] = useState<UserInfo[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [groups, setGroups] = useState<GroupInfo[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(true);
+    const [loadingGroups, setLoadingGroups] = useState(true);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    // User dialogs
+    const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
     const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserInfo | null>(null);
+
+    // Group dialogs
+    const [createGroupDialogOpen, setCreateGroupDialogOpen] = useState(false);
+    const [manageMembersDialogOpen, setManageMembersDialogOpen] = useState(false);
+    const [deleteGroupDialogOpen, setDeleteGroupDialogOpen] = useState(false);
+    const [selectedGroup, setSelectedGroup] = useState<GroupInfo | null>(null);
 
     const loadUsers = async () => {
         try {
-            setLoading(true);
+            setLoadingUsers(true);
             const data = await UserManagementService.listUsers();
             setUsers(data);
         } catch (error) {
             console.error('Failed to load users:', error);
             setToast({ message: 'Failed to load users', type: 'error' });
         } finally {
-            setLoading(false);
+            setLoadingUsers(false);
+        }
+    };
+
+    const loadGroups = async () => {
+        try {
+            setLoadingGroups(true);
+            const data = await UserManagementService.listGroups();
+            setGroups(data);
+        } catch (error) {
+            console.error('Failed to load groups:', error);
+            setToast({ message: 'Failed to load groups', type: 'error' });
+        } finally {
+            setLoadingGroups(false);
         }
     };
 
     useEffect(() => {
         loadUsers();
+        loadGroups();
     }, []);
 
+    // User handlers
     const handleCreateUser = async (username: string, password: string, shell: string, createHome: boolean) => {
         await UserManagementService.createUser(username, password, shell, createHome);
         setToast({ message: `User "${username}" created successfully`, type: 'success' });
@@ -326,125 +774,101 @@ const UserManager: React.FC = () => {
         try {
             await UserManagementService.deleteUser(selectedUser.username, removeHome);
             setToast({ message: `User "${selectedUser.username}" deleted`, type: 'success' });
-            setDeleteDialogOpen(false);
+            setDeleteUserDialogOpen(false);
             loadUsers();
         } catch {
             setToast({ message: 'Failed to delete user', type: 'error' });
         }
     };
 
+    // Group handlers
+    const handleCreateGroup = async (name: string) => {
+        await UserManagementService.createGroup(name);
+        setToast({ message: `Group "${name}" created successfully`, type: 'success' });
+        loadGroups();
+    };
+
+    const handleDeleteGroup = async () => {
+        if (!selectedGroup) return;
+        try {
+            await UserManagementService.deleteGroup(selectedGroup.name);
+            setToast({ message: `Group "${selectedGroup.name}" deleted`, type: 'success' });
+            setDeleteGroupDialogOpen(false);
+            loadGroups();
+        } catch {
+            setToast({ message: 'Failed to delete group', type: 'error' });
+        }
+    };
+
+    const handleAddMember = async (groupName: string, username: string) => {
+        await UserManagementService.addMemberToGroup(groupName, username);
+        setToast({ message: `Added "${username}" to group "${groupName}"`, type: 'success' });
+        loadGroups();
+    };
+
+    const handleRemoveMember = async (groupName: string, username: string) => {
+        await UserManagementService.removeMemberFromGroup(groupName, username);
+        setToast({ message: `Removed "${username}" from group "${groupName}"`, type: 'success' });
+        loadGroups();
+    };
+
     return (
         <div className="space-y-6 animate-fade-in">
             <PageHeader
-                title="User Management"
+                title="User & Group Management"
                 icon={Users}
-                description="Manage system users and permissions."
+                description="Manage system users, groups, and permissions."
                 actions={
                     <ActionButton
-                        onClick={() => setCreateDialogOpen(true)}
+                        onClick={() => activeTab === 'users' ? setCreateUserDialogOpen(true) : setCreateGroupDialogOpen(true)}
                         icon={<Plus size={16} />}
                         className="shadow-lg"
                     >
-                        Add User
+                        {activeTab === 'users' ? 'Add User' : 'Add Group'}
                     </ActionButton>
                 }
             />
 
+            {/* Tabs */}
+            <Tabs items={tabs} activeId={activeTab} onChange={setActiveTab} />
+
+            {/* Content */}
             <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-xl">
-                {loading ? (
-                    <div className="flex items-center justify-center py-16">
-                        <Loader2 size={32} className="animate-spin text-zinc-500" />
-                    </div>
-                ) : users.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
-                        <Users size={48} className="mb-4 opacity-50" />
-                        <p className="text-sm">No users found</p>
-                    </div>
+                {activeTab === 'users' ? (
+                    <UsersTab
+                        users={users}
+                        loading={loadingUsers}
+                        onCreateUser={() => setCreateUserDialogOpen(true)}
+                        onChangePassword={(user) => {
+                            setSelectedUser(user);
+                            setPasswordDialogOpen(true);
+                        }}
+                        onDeleteUser={(user) => {
+                            setSelectedUser(user);
+                            setDeleteUserDialogOpen(true);
+                        }}
+                    />
                 ) : (
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-zinc-900 border-b border-border text-xs uppercase text-zinc-500">
-                                <th className="p-4 font-medium">User</th>
-                                <th className="p-4 font-medium">UID / GID</th>
-                                <th className="p-4 font-medium">Home Directory</th>
-                                <th className="p-4 font-medium">Shell</th>
-                                <th className="p-4 font-medium text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm divide-y divide-border">
-                            {users.map(user => (
-                                <tr key={user.username} className="hover:bg-zinc-800/50 transition-colors">
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                                user.uid === 0 
-                                                    ? 'bg-rose-500/20 text-rose-400' 
-                                                    : 'bg-emerald-500/20 text-emerald-400'
-                                            }`}>
-                                                {user.uid === 0 ? <Shield size={16} /> : <Users size={16} />}
-                                            </div>
-                                            <div>
-                                                <span className="font-medium text-zinc-100">{user.username}</span>
-                                                {user.uid === 0 && (
-                                                    <span className="ml-2 text-xs bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">
-                                                        root
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 font-mono text-zinc-400 text-xs">
-                                        {user.uid} / {user.gid}
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-2 text-zinc-400">
-                                            <Home size={14} />
-                                            <span className="font-mono text-xs">{user.homeDir}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-2 text-zinc-400">
-                                            <Terminal size={14} />
-                                            <span className="font-mono text-xs">{user.shell}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex items-center justify-end gap-1">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setPasswordDialogOpen(true);
-                                                }}
-                                                className="p-2 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors"
-                                                title="Change Password"
-                                            >
-                                                <Key size={16} />
-                                            </button>
-                                            {user.uid !== 0 && (
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedUser(user);
-                                                        setDeleteDialogOpen(true);
-                                                    }}
-                                                    className="p-2 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
-                                                    title="Delete User"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <GroupsTab
+                        groups={groups}
+                        loading={loadingGroups}
+                        onCreateGroup={() => setCreateGroupDialogOpen(true)}
+                        onManageMembers={(group) => {
+                            setSelectedGroup(group);
+                            setManageMembersDialogOpen(true);
+                        }}
+                        onDeleteGroup={(group) => {
+                            setSelectedGroup(group);
+                            setDeleteGroupDialogOpen(true);
+                        }}
+                    />
                 )}
             </div>
 
-            {/* Dialogs */}
+            {/* User Dialogs */}
             <CreateUserDialog
-                isOpen={createDialogOpen}
-                onClose={() => setCreateDialogOpen(false)}
+                isOpen={createUserDialogOpen}
+                onClose={() => setCreateUserDialogOpen(false)}
                 onSave={handleCreateUser}
             />
             <ChangePasswordDialog
@@ -454,10 +878,43 @@ const UserManager: React.FC = () => {
                 onSave={handleChangePassword}
             />
             <DeleteUserDialog
-                isOpen={deleteDialogOpen}
+                isOpen={deleteUserDialogOpen}
                 user={selectedUser}
-                onClose={() => setDeleteDialogOpen(false)}
+                onClose={() => setDeleteUserDialogOpen(false)}
                 onConfirm={handleDeleteUser}
+            />
+
+            {/* Group Dialogs */}
+            <CreateGroupDialog
+                isOpen={createGroupDialogOpen}
+                onClose={() => setCreateGroupDialogOpen(false)}
+                onSave={handleCreateGroup}
+            />
+            <ManageMembersDialog
+                isOpen={manageMembersDialogOpen}
+                group={selectedGroup}
+                users={users}
+                onClose={() => setManageMembersDialogOpen(false)}
+                onAddMember={handleAddMember}
+                onRemoveMember={handleRemoveMember}
+            />
+            <ConfirmDialog
+                isOpen={deleteGroupDialogOpen}
+                onClose={() => setDeleteGroupDialogOpen(false)}
+                onConfirm={handleDeleteGroup}
+                title="Delete Group"
+                message={
+                    selectedGroup ? (
+                        <>
+                            Are you sure you want to delete group <span className="text-white font-bold">{selectedGroup.name}</span>?
+                            <p className="text-xs text-zinc-500 mt-2">
+                                GID: {selectedGroup.gid} | Members: {selectedGroup.members.length}
+                            </p>
+                        </>
+                    ) : null
+                }
+                confirmText="Delete Group"
+                confirmIcon={<Trash2 size={16} />}
             />
 
             {/* Toast */}

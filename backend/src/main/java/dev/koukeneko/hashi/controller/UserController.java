@@ -96,4 +96,56 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to update groups"));
         }
     }
+
+    @PostMapping("/groups")
+    public ResponseEntity<Map<String, Object>> createGroup(@RequestBody Map<String, String> request) {
+        String groupName = request.get("name");
+        if (groupName == null || groupName.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Group name is required"));
+        }
+        boolean success = userService.createGroup(groupName);
+        if (success) {
+            return ResponseEntity.ok(Map.of("success", true, "message", "Group created successfully"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to create group"));
+        }
+    }
+
+    @DeleteMapping("/groups/{groupName}")
+    public ResponseEntity<Map<String, Object>> deleteGroup(@PathVariable String groupName) {
+        boolean success = userService.deleteGroup(groupName);
+        if (success) {
+            return ResponseEntity.ok(Map.of("success", true, "message", "Group deleted successfully"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to delete group"));
+        }
+    }
+
+    @PostMapping("/groups/{groupName}/members")
+    public ResponseEntity<Map<String, Object>> addMemberToGroup(
+            @PathVariable String groupName,
+            @RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Username is required"));
+        }
+        boolean success = userService.addMemberToGroup(groupName, username);
+        if (success) {
+            return ResponseEntity.ok(Map.of("success", true, "message", "Member added successfully"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to add member"));
+        }
+    }
+
+    @DeleteMapping("/groups/{groupName}/members/{username}")
+    public ResponseEntity<Map<String, Object>> removeMemberFromGroup(
+            @PathVariable String groupName,
+            @PathVariable String username) {
+        boolean success = userService.removeMemberFromGroup(groupName, username);
+        if (success) {
+            return ResponseEntity.ok(Map.of("success", true, "message", "Member removed successfully"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Failed to remove member"));
+        }
+    }
 }

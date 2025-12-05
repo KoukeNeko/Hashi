@@ -232,4 +232,88 @@ public class UserServiceImpl implements UserService {
             return false;
         }
     }
+
+    @Override
+    public boolean createGroup(String groupName) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("groupadd", groupName);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+
+            if (exitCode == 0) {
+                log.info("Group created: {}", groupName);
+                return true;
+            } else {
+                log.error("Failed to create group: {}", groupName);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("Error creating group {}: {}", groupName, e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean deleteGroup(String groupName) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("groupdel", groupName);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+
+            if (exitCode == 0) {
+                log.info("Group deleted: {}", groupName);
+                return true;
+            } else {
+                log.error("Failed to delete group: {}", groupName);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("Error deleting group {}: {}", groupName, e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean addMemberToGroup(String groupName, String username) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("gpasswd", "-a", username, groupName);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+
+            if (exitCode == 0) {
+                log.info("User {} added to group {}", username, groupName);
+                return true;
+            } else {
+                log.error("Failed to add user {} to group {}", username, groupName);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("Error adding user {} to group {}: {}", username, groupName, e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean removeMemberFromGroup(String groupName, String username) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("gpasswd", "-d", username, groupName);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+
+            if (exitCode == 0) {
+                log.info("User {} removed from group {}", username, groupName);
+                return true;
+            } else {
+                log.error("Failed to remove user {} from group {}", username, groupName);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("Error removing user {} from group {}: {}", username, groupName, e.getMessage());
+            return false;
+        }
+    }
 }

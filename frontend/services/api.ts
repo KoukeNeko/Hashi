@@ -45,6 +45,22 @@ export const UserManagementService = {
     const response = await api.get<GroupInfo[]>('/users/groups');
     return response.data;
   },
+  createGroup: async (name: string) => {
+    const response = await api.post('/users/groups', { name });
+    return response.data;
+  },
+  deleteGroup: async (groupName: string) => {
+    const response = await api.delete(`/users/groups/${groupName}`);
+    return response.data;
+  },
+  addMemberToGroup: async (groupName: string, username: string) => {
+    const response = await api.post(`/users/groups/${groupName}/members`, { username });
+    return response.data;
+  },
+  removeMemberFromGroup: async (groupName: string, username: string) => {
+    const response = await api.delete(`/users/groups/${groupName}/members/${username}`);
+    return response.data;
+  },
   getUserGroups: async (username: string): Promise<string[]> => {
     const response = await api.get<string[]>(`/users/${username}/groups`);
     return response.data;

@@ -45,4 +45,24 @@ public interface UserService {
      * 設定使用者群組
      */
     boolean setUserGroups(String username, List<String> groups);
+
+    /**
+     * 建立群組
+     */
+    boolean createGroup(String groupName);
+
+    /**
+     * 刪除群組
+     */
+    boolean deleteGroup(String groupName);
+
+    /**
+     * 新增成員到群組
+     */
+    boolean addMemberToGroup(String groupName, String username);
+
+    /**
+     * 從群組移除成員
+     */
+    boolean removeMemberFromGroup(String groupName, String username);
 }

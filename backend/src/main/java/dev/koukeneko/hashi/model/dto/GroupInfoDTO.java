@@ -1,16 +1,12 @@
 package dev.koukeneko.hashi.model.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Builder;
 
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class GroupInfoDTO {
-    private String name;          // 群組名稱
-    private int gid;              // 群組 ID
-    private List<String> members; // 成員列表
-}
+@Builder
+public record GroupInfoDTO(
+        String name,            // 群組名稱 (e.g. "developers")
+        int gid,                // 群組 ID (e.g. 1001)
+        List<String> members    // 成員列表
+) {}

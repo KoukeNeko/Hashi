@@ -105,15 +105,19 @@ public class UserServiceImpl implements UserService {
                 while ((line = reader.readLine()) != null) {
                     String[] parts = line.split(":");
                     if (parts.length >= 7) {
-                        UserInfoDTO user = new UserInfoDTO();
-                        user.setUsername(parts[0]);
-                        user.setUid(Integer.parseInt(parts[2]));
-                        user.setGid(Integer.parseInt(parts[3]));
-                        user.setGecos(parts[4]);
-                        user.setHomeDir(parts[5]);
-                        user.setShell(parts[6]);
-                        user.setGroups(getUserGroups(parts[0]));
-                        user.setLocked(isUserLocked(parts[0]));
+                        String username = parts[0];
+                        UserInfoDTO user = new UserInfoDTO(
+                            username,
+                            Integer.parseInt(parts[2]),
+                            Integer.parseInt(parts[3]),
+                            parts[4],
+                            parts[5],
+                            parts[6],
+                            getUserGroups(username),
+                            isUserLocked(username),
+                            null,
+                            null
+                        );
                         users.add(user);
                     }
                 }
@@ -131,23 +135,21 @@ public class UserServiceImpl implements UserService {
         if (!output.isEmpty()) {
             String[] parts = output.split(":");
             if (parts.length >= 7) {
-                UserInfoDTO user = new UserInfoDTO();
-                user.setUsername(parts[0]);
-                user.setUid(Integer.parseInt(parts[2]));
-                user.setGid(Integer.parseInt(parts[3]));
-                user.setGecos(parts[4]);
-                user.setHomeDir(parts[5]);
-                user.setShell(parts[6]);
-                user.setGroups(getUserGroups(username));
-                user.setLocked(isUserLocked(username));
-                user.setLastLogin(getLastLogin(username));
-                
                 PasswordInfoDTO pwInfo = getPasswordInfo(username);
-                if (pwInfo != null) {
-                    user.setExpireDate(pwInfo.getExpireDate());
-                }
+                String expireDate = pwInfo != null ? pwInfo.expireDate() : null;
                 
-                return user;
+                return new UserInfoDTO(
+                    parts[0],
+                    Integer.parseInt(parts[2]),
+                    Integer.parseInt(parts[3]),
+                    parts[4],
+                    parts[5],
+                    parts[6],
+                    getUserGroups(username),
+                    isUserLocked(username),
+                    expireDate,
+                    getLastLogin(username)
+                );
             }
         }
         return null;
@@ -158,9 +160,12 @@ public class UserServiceImpl implements UserService {
         String output = executeCommandWithOutput(Arrays.asList("chage", "-l", username));
         if (output.isEmpty()) return null;
 
-        PasswordInfoDTO info = new PasswordInfoDTO();
-        info.setUsername(username);
-        info.setLocked(isUserLocked(username));
+        int minDays = 0;
+        int maxDays = 99999;
+        int warnDays = 7;
+        int inactiveDays = -1;
+        String expireDate = null;
+        String lastChange = null;
 
         for (String line : output.split("\n")) {
             String[] parts = line.split(":\\s*", 2);
@@ -170,20 +175,30 @@ public class UserServiceImpl implements UserService {
             String value = parts[1].trim();
 
             if (key.contains("minimum")) {
-                info.setMinDays(parseIntOrDefault(value, 0));
+                minDays = parseIntOrDefault(value, 0);
             } else if (key.contains("maximum")) {
-                info.setMaxDays(parseIntOrDefault(value, 99999));
+                maxDays = parseIntOrDefault(value, 99999);
             } else if (key.contains("warning")) {
-                info.setWarnDays(parseIntOrDefault(value, 7));
+                warnDays = parseIntOrDefault(value, 7);
             } else if (key.contains("inactive")) {
-                info.setInactiveDays(parseIntOrDefault(value, -1));
+                inactiveDays = parseIntOrDefault(value, -1);
             } else if (key.contains("account expires")) {
-                info.setExpireDate("never".equalsIgnoreCase(value) ? null : value);
+                expireDate = "never".equalsIgnoreCase(value) ? null : value;
             } else if (key.contains("last password change")) {
-                info.setLastChange(value);
+                lastChange = value;
             }
         }
-        return info;
+        
+        return new PasswordInfoDTO(
+            username,
+            minDays,
+            maxDays,
+            warnDays,
+            inactiveDays,
+            expireDate,
+            lastChange,
+            isUserLocked(username)
+        );
     }
 
     private int parseIntOrDefault(String value, int defaultValue) {
@@ -500,12 +515,14 @@ public class UserServiceImpl implements UserService {
                 while ((line = reader.readLine()) != null) {
                     String[] parts = line.split(":");
                     if (parts.length >= 3) {
-                        GroupInfoDTO group = new GroupInfoDTO();
-                        group.setName(parts[0]);
-                        group.setGid(Integer.parseInt(parts[2]));
-                        group.setMembers(parts.length > 3 && !parts[3].isEmpty()
+                        List<String> members = parts.length > 3 && !parts[3].isEmpty()
                             ? Arrays.asList(parts[3].split(","))
-                            : new ArrayList<>());
+                            : new ArrayList<>();
+                        GroupInfoDTO group = new GroupInfoDTO(
+                            parts[0],
+                            Integer.parseInt(parts[2]),
+                            members
+                        );
                         groups.add(group);
                     }
                 }
@@ -523,13 +540,14 @@ public class UserServiceImpl implements UserService {
         if (!output.isEmpty()) {
             String[] parts = output.split(":");
             if (parts.length >= 3) {
-                GroupInfoDTO group = new GroupInfoDTO();
-                group.setName(parts[0]);
-                group.setGid(Integer.parseInt(parts[2]));
-                group.setMembers(parts.length > 3 && !parts[3].isEmpty()
+                List<String> members = parts.length > 3 && !parts[3].isEmpty()
                     ? Arrays.asList(parts[3].split(","))
-                    : new ArrayList<>());
-                return group;
+                    : new ArrayList<>();
+                return new GroupInfoDTO(
+                    parts[0],
+                    Integer.parseInt(parts[2]),
+                    members
+                );
             }
         }
         return null;

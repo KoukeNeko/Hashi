@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { Tabs } from '../components/Tabs';
 import { ScrollText, Download, Trash2, Search, Pause, Play, ArrowDown, Loader2, Wifi, WifiOff } from 'lucide-react';
@@ -64,14 +64,22 @@ const LogManager: React.FC = () => {
     const logIdRef = useRef(0);
     const pausedLogsRef = useRef<LogEntry[]>([]);
 
+    // 滾動到底部
+    const scrollToBottom = () => {
+        if (logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
+        setAutoScroll(true);
+    };
+
     // 建立 WebSocket 連線
-    const connectWebSocket = useCallback(() => {
+    const connectWebSocket = () => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
         setConnecting(true);
         
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/logs`;
-        
-        const ws = new WebSocket(wsUrl);
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${wsProtocol}//${window.location.host}/logs`);
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -91,29 +99,22 @@ const LogManager: React.FC = () => {
             }
             
             if (newLogs.length === 0) return;
-            
-            if (paused) {
-                // 暫停時先存起來
-                pausedLogsRef.current = [...pausedLogsRef.current, ...newLogs];
-            } else {
-                setLogs(prev => {
-                    // 限制最多保留 2000 條
-                    const combined = [...prev, ...newLogs];
-                    return combined.slice(-2000);
-                });
-            }
+
+            setLogs(prev => {
+                const combined = [...prev, ...newLogs];
+                return combined.slice(-2000);
+            });
         };
 
         ws.onclose = () => {
             console.log('Log WebSocket disconnected');
             setConnected(false);
             setConnecting(false);
+            wsRef.current = null;
             
             // 5 秒後自動重連
             setTimeout(() => {
-                if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-                    connectWebSocket();
-                }
+                connectWebSocket();
             }, 5000);
         };
 
@@ -121,39 +122,37 @@ const LogManager: React.FC = () => {
             console.error('Log WebSocket error:', err);
             setConnecting(false);
         };
-    }, [paused]);
+    };
 
-    // 初始連線
     useEffect(() => {
         connectWebSocket();
-        
+
         return () => {
             if (wsRef.current) {
                 wsRef.current.close();
+                wsRef.current = null;
             }
         };
     }, []);
 
-    // 自動滾動
+    // 自動滾動到底部 - 當 logs 更新時
     useEffect(() => {
-        if (autoScroll && !paused && logContainerRef.current) {
-            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        if (autoScroll && !paused && logs.length > 0) {
+            scrollToBottom();
         }
     }, [logs, autoScroll, paused]);
 
-    // 恢復暫停時接收的 logs
-    useEffect(() => {
-        if (!paused && pausedLogsRef.current.length > 0) {
-            setLogs(prev => {
-                const combined = [...prev, ...pausedLogsRef.current];
-                pausedLogsRef.current = [];
-                return combined.slice(-2000);
-            });
-        }
-    }, [paused]);
-
     // 過濾和搜尋
     const filteredLogs = logs.filter(log => {
+        if (paused) return true; // 暫停時不過濾，保持原狀
+        const matchFilter = filter === 'ALL' || log.level === filter;
+        const matchSearch = !searchQuery || 
+            log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            log.service.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchFilter && matchSearch;
+    }).filter(log => {
+        // 再次過濾（非暫停時）
+        if (!paused) return true;
         const matchFilter = filter === 'ALL' || log.level === filter;
         const matchSearch = !searchQuery || 
             log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -179,20 +178,13 @@ const LogManager: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
-    // 滾動到底部
-    const scrollToBottom = () => {
-        if (logContainerRef.current) {
-            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-        }
-        setAutoScroll(true);
-    };
-
     // 偵測手動滾動
     const handleScroll = () => {
         if (!logContainerRef.current) return;
         const { scrollTop, scrollHeight, clientHeight } = logContainerRef.current;
-        // 如果距離底部超過 100px，關閉自動滾動
-        setAutoScroll(scrollHeight - scrollTop - clientHeight < 100);
+        // 如果距離底部超過 50px，關閉自動滾動
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+        setAutoScroll(isAtBottom);
     };
 
     const filterTabs = [
@@ -299,12 +291,12 @@ const LogManager: React.FC = () => {
 
             {/* Log Container */}
             <div className="relative">
-                <div 
-                    ref={logContainerRef}
-                    onScroll={handleScroll}
-                    className="bg-black border border-zinc-800 rounded-lg overflow-hidden shadow-2xl font-mono text-xs"
-                >
-                    <div className="h-[600px] overflow-y-auto p-4 space-y-0.5">
+                <div className="bg-black border border-zinc-800 rounded-lg overflow-hidden shadow-2xl font-mono text-xs">
+                    <div 
+                        ref={logContainerRef}
+                        onScroll={handleScroll}
+                        className="h-[600px] overflow-y-auto p-4 space-y-0.5"
+                    >
                         {filteredLogs.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-zinc-500">
                                 <ScrollText size={48} className="mb-4 opacity-50" />

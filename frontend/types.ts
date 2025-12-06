@@ -24,6 +24,13 @@ export interface IsoFile {
   size: number;       // 檔案大小 (bytes)
 }
 
+export interface VncInfo {
+  host: string;
+  port: number;
+  password?: string;
+  websocketUrl: string;
+}
+
 // 使用者認證相關
 export interface UserInfo {
   username: string;

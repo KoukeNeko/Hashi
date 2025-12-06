@@ -3,6 +3,7 @@ package dev.koukeneko.hashi.controller;
 import dev.koukeneko.hashi.model.dto.CreateVmDTO;
 import dev.koukeneko.hashi.model.dto.IsoFileDTO;
 import dev.koukeneko.hashi.model.dto.VmDTO;
+import dev.koukeneko.hashi.model.dto.VncInfoDTO;
 import dev.koukeneko.hashi.service.VirtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +42,11 @@ public class VirtController {
     public ResponseEntity<Void> controlVm(@PathVariable String name, @PathVariable String action) {
         virtService.controlVm(name, action);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/vms/{name}/vnc-info")
+    public ResponseEntity<VncInfoDTO> getVncInfo(@PathVariable String name) {
+        return ResponseEntity.ok(virtService.getVncInfo(name));
     }
 
     // ==================== ISO 管理 ====================

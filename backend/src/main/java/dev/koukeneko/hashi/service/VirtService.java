@@ -3,6 +3,7 @@ package dev.koukeneko.hashi.service;
 import dev.koukeneko.hashi.model.dto.CreateVmDTO;
 import dev.koukeneko.hashi.model.dto.IsoFileDTO;
 import dev.koukeneko.hashi.model.dto.VmDTO;
+import dev.koukeneko.hashi.model.dto.VncInfoDTO;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -88,6 +89,71 @@ public class VirtService {
             }
         } catch (LibvirtException e) {
             throw new RuntimeException("KVM Action Failed", e);
+        } finally {
+            close(conn);
+        }
+    }
+
+    // 取得 VM 的 VNC 連線資訊
+    public VncInfoDTO getVncInfo(String name) {
+        Connect conn = null;
+        try {
+            conn = connect();
+            Domain domain = conn.domainLookupByName(name);
+            
+            if (domain.isActive() != 1) {
+                throw new IllegalStateException("VM is not running");
+            }
+
+            // 從 XML 中解析 VNC 資訊
+            String xml = domain.getXMLDesc(0);
+            
+            // 解析 VNC port
+            int port = -1;
+            String password = null;
+            
+            // 簡單的 XML 解析（找 graphics type='vnc'）
+            java.util.regex.Pattern portPattern = java.util.regex.Pattern.compile(
+                    "<graphics[^>]*type=['\"]vnc['\"][^>]*port=['\"](-?\\d+)['\"]"
+            );
+            java.util.regex.Matcher portMatcher = portPattern.matcher(xml);
+            if (portMatcher.find()) {
+                port = Integer.parseInt(portMatcher.group(1));
+            }
+            
+            // 如果 port 是 -1，代表 autoport，需要從 libvirt 取得實際 port
+            if (port == -1) {
+                // libvirt 會動態分配，通常從 5900 開始
+                // 需要重新解析執行中的 XML
+                String liveXml = domain.getXMLDesc(1); // VIR_DOMAIN_XML_SECURE
+                portMatcher = portPattern.matcher(liveXml);
+                if (portMatcher.find()) {
+                    port = Integer.parseInt(portMatcher.group(1));
+                }
+            }
+
+            // 解析密碼 (如果有)
+            java.util.regex.Pattern pwdPattern = java.util.regex.Pattern.compile(
+                    "<graphics[^>]*type=['\"]vnc['\"][^>]*passwd=['\"]([^'\"]*)['\"]"
+            );
+            java.util.regex.Matcher pwdMatcher = pwdPattern.matcher(xml);
+            if (pwdMatcher.find()) {
+                password = pwdMatcher.group(1);
+            }
+
+            if (port <= 0) {
+                throw new RuntimeException("Could not determine VNC port for VM: " + name);
+            }
+
+            return VncInfoDTO.builder()
+                    .host("localhost")
+                    .port(port)
+                    .password(password)
+                    .websocketUrl("/api/v1/virt/vms/" + name + "/vnc")
+                    .build();
+
+        } catch (LibvirtException e) {
+            throw new RuntimeException("Failed to get VNC info: " + e.getMessage(), e);
         } finally {
             close(conn);
         }

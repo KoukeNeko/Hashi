@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { VM, CreateVmRequest, IsoFile } from '../types';
 import { VirtService } from '../services/api';
 import { PageHeader } from '../components/PageHeader';
+import { VncConsole } from '../components/VncConsole';
 import { 
     Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick, 
     Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle,
-    Plus, Trash2, Upload, Disc, X
+    Plus, Trash2, Upload, Disc, X, MonitorPlay
 } from 'lucide-react';
 import { Toast, ActionButton, ConfirmDialog } from '../components/ui';
 
@@ -183,6 +184,9 @@ const KvmManager: React.FC = () => {
     // ISO Upload
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // VNC Console
+    const [consoleVm, setConsoleVm] = useState<string | null>(null);
 
     const loadVms = async () => {
         try {
@@ -450,6 +454,13 @@ const KvmManager: React.FC = () => {
                                                     >
                                                         <Square size={16} />
                                                     </button>
+                                                    <button
+                                                        onClick={() => setConsoleVm(vm.name)}
+                                                        className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors"
+                                                        title="Open Console"
+                                                    >
+                                                        <MonitorPlay size={16} />
+                                                    </button>
                                                 </>
                                             )}
                                             {!vmRunning && (
@@ -660,6 +671,11 @@ const KvmManager: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* VNC Console */}
+            {consoleVm && (
+                <VncConsole vmName={consoleVm} onClose={() => setConsoleVm(null)} />
             )}
 
             {/* Toast */}

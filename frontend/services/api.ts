@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM } from '@/types';
+import { AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo } from '@/types';
 
 export const VirtService = {
   // VM 管理
@@ -19,6 +19,10 @@ export const VirtService = {
   },
   controlVm: async (name: string, action: 'start' | 'stop' | 'force-stop' | 'reboot') => {
     await api.post(`/virt/vms/${name}/${action}`);
+  },
+  getVncInfo: async (name: string) => {
+    const response = await api.get<VncInfo>(`/virt/vms/${name}/vnc-info`);
+    return response.data;
   },
   
   // ISO 管理
@@ -331,7 +335,7 @@ export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => vo
 };
 
 // 設定後端的基礎 URL (透過 Vite proxy)
-const API_BASE_URL = '/api/v1';
+export const API_BASE_URL = '/api/v1';
 
 export const api = axios.create({
     baseURL: API_BASE_URL,

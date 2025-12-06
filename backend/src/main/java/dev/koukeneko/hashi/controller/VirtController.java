@@ -2,6 +2,7 @@ package dev.koukeneko.hashi.controller;
 
 import dev.koukeneko.hashi.model.dto.CreateVmDTO;
 import dev.koukeneko.hashi.model.dto.IsoFileDTO;
+import dev.koukeneko.hashi.model.dto.UpdateVmDTO;
 import dev.koukeneko.hashi.model.dto.VmDTO;
 import dev.koukeneko.hashi.model.dto.VncInfoDTO;
 import dev.koukeneko.hashi.service.VirtService;
@@ -27,9 +28,19 @@ public class VirtController {
         return ResponseEntity.ok(virtService.listVms());
     }
 
+    @GetMapping("/vms/{name}")
+    public ResponseEntity<VmDTO> getVmDetails(@PathVariable String name) {
+        return ResponseEntity.ok(virtService.getVmDetails(name));
+    }
+
     @PostMapping("/vms")
     public ResponseEntity<VmDTO> createVm(@RequestBody CreateVmDTO request) {
         return ResponseEntity.ok(virtService.createVm(request));
+    }
+
+    @PutMapping("/vms/{name}")
+    public ResponseEntity<VmDTO> updateVm(@PathVariable String name, @RequestBody UpdateVmDTO request) {
+        return ResponseEntity.ok(virtService.updateVm(name, request));
     }
 
     @DeleteMapping("/vms/{name}")

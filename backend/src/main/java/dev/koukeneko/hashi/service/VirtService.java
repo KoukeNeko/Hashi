@@ -2,6 +2,7 @@ package dev.koukeneko.hashi.service;
 
 import dev.koukeneko.hashi.model.dto.CreateVmDTO;
 import dev.koukeneko.hashi.model.dto.IsoFileDTO;
+import dev.koukeneko.hashi.model.dto.UpdateVmDTO;
 import dev.koukeneko.hashi.model.dto.VmDTO;
 import dev.koukeneko.hashi.model.dto.VncInfoDTO;
 import org.libvirt.Connect;
@@ -17,6 +18,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class VirtService {
@@ -170,6 +173,336 @@ public class VirtService {
                 .memory(info.memory * 1024L) // KB 轉 Bytes
                 .maxMemory(info.maxMem * 1024L)
                 .build();
+    }
+
+    // 取得 VM 詳細資訊 (包含所有設定)
+    public VmDTO getVmDetails(String name) {
+        Connect conn = null;
+        try {
+            conn = connect();
+            Domain domain = conn.domainLookupByName(name);
+            DomainInfo info = domain.getInfo();
+            String xml = domain.getXMLDesc(0);
+            
+            VmDTO.VmDTOBuilder builder = VmDTO.builder()
+                    .id(domain.getID())
+                    .uuid(domain.getUUIDString())
+                    .name(domain.getName())
+                    .state(info.state.toString())
+                    .vcpu(info.nrVirtCpu)
+                    .memory(info.memory * 1024L)
+                    .maxMemory(info.maxMem * 1024L)
+                    .autostart(domain.getAutostart());
+            
+            // 解析 XML 取得詳細設定
+            parseVmXmlToBuilder(xml, builder);
+            
+            return builder.build();
+        } catch (LibvirtException e) {
+            throw new RuntimeException("Failed to get VM details: " + e.getMessage(), e);
+        } finally {
+            close(conn);
+        }
+    }
+
+    // 解析 VM XML 設定到 DTO Builder
+    private void parseVmXmlToBuilder(String xml, VmDTO.VmDTOBuilder builder) {
+        // Description
+        builder.description(extractXmlValue(xml, "<description>([^<]*)</description>"));
+        
+        // CPU Mode
+        String cpuMode = extractXmlAttribute(xml, "<cpu[^>]*mode=['\"]([^'\"]+)['\"]");
+        builder.cpuMode(cpuMode);
+        
+        // CPU Topology
+        builder.cpuSockets(extractXmlAttributeInt(xml, "sockets=['\"]([^'\"]+)['\"]"));
+        builder.cpuCores(extractXmlAttributeInt(xml, "cores=['\"]([^'\"]+)['\"]"));
+        builder.cpuThreads(extractXmlAttributeInt(xml, "threads=['\"]([^'\"]+)['\"]"));
+        
+        // Hugepages
+        builder.hugepages(xml.contains("<hugepages/>"));
+        
+        // Disk
+        Pattern diskPattern = Pattern.compile("<disk[^>]*device=['\"]disk['\"][^>]*>.*?</disk>", Pattern.DOTALL);
+        Matcher diskMatcher = diskPattern.matcher(xml);
+        if (diskMatcher.find()) {
+            String diskXml = diskMatcher.group();
+            builder.diskPath(extractXmlAttribute(diskXml, "<source file=['\"]([^'\"]+)['\"]"));
+            builder.diskFormat(extractXmlAttribute(diskXml, "type=['\"]([^'\"]+)['\"]"));
+            builder.diskBus(extractXmlAttribute(diskXml, "bus=['\"]([^'\"]+)['\"]"));
+            
+            String diskPath = extractXmlAttribute(diskXml, "<source file=['\"]([^'\"]+)['\"]");
+            if (diskPath != null) {
+                try {
+                    builder.diskSizeBytes(Files.size(Path.of(diskPath)));
+                } catch (Exception e) { /* ignore */ }
+            }
+        }
+        
+        // CD-ROM / ISO
+        Pattern cdromPattern = Pattern.compile("<disk[^>]*device=['\"]cdrom['\"][^>]*>.*?</disk>", Pattern.DOTALL);
+        Matcher cdromMatcher = cdromPattern.matcher(xml);
+        if (cdromMatcher.find()) {
+            String cdromXml = cdromMatcher.group();
+            builder.isoPath(extractXmlAttribute(cdromXml, "<source file=['\"]([^'\"]+)['\"]"));
+        }
+        
+        // Network
+        Pattern netPattern = Pattern.compile("<interface[^>]*>.*?</interface>", Pattern.DOTALL);
+        Matcher netMatcher = netPattern.matcher(xml);
+        if (netMatcher.find()) {
+            String netXml = netMatcher.group();
+            builder.networkType(extractXmlAttribute(netXml, "<interface type=['\"]([^'\"]+)['\"]"));
+            builder.macAddress(extractXmlAttribute(netXml, "<mac address=['\"]([^'\"]+)['\"]"));
+            builder.networkSource(extractXmlAttribute(netXml, "<source (?:network|bridge)=['\"]([^'\"]+)['\"]"));
+            builder.networkModel(extractXmlAttribute(netXml, "<model type=['\"]([^'\"]+)['\"]"));
+        }
+        
+        // Graphics
+        Pattern graphicsPattern = Pattern.compile("<graphics[^>]*>.*?</graphics>", Pattern.DOTALL);
+        Matcher graphicsMatcher = graphicsPattern.matcher(xml);
+        if (graphicsMatcher.find()) {
+            String gfxXml = graphicsMatcher.group();
+            builder.graphicsType(extractXmlAttribute(gfxXml, "<graphics type=['\"]([^'\"]+)['\"]"));
+            builder.graphicsPort(extractXmlAttributeInt(gfxXml, "port=['\"](-?\\d+)['\"]"));
+            builder.graphicsListen(extractXmlAttribute(gfxXml, "listen=['\"]([^'\"]+)['\"]"));
+        }
+        
+        // Video
+        Pattern videoPattern = Pattern.compile("<video>.*?</video>", Pattern.DOTALL);
+        Matcher videoMatcher = videoPattern.matcher(xml);
+        if (videoMatcher.find()) {
+            String vidXml = videoMatcher.group();
+            builder.videoModel(extractXmlAttribute(vidXml, "<model type=['\"]([^'\"]+)['\"]"));
+            builder.videoVram(extractXmlAttributeInt(vidXml, "vram=['\"]([^'\"]+)['\"]"));
+        }
+        
+        // Boot Order
+        List<String> bootOrder = new ArrayList<>();
+        Pattern bootPattern = Pattern.compile("<boot dev=['\"]([^'\"]+)['\"]");
+        Matcher bootMatcher = bootPattern.matcher(xml);
+        while (bootMatcher.find()) {
+            bootOrder.add(bootMatcher.group(1));
+        }
+        builder.bootOrder(bootOrder.isEmpty() ? null : bootOrder);
+        
+        // Boot Menu
+        builder.bootMenu(xml.contains("<bootmenu enable='yes'") || xml.contains("<bootmenu enable=\"yes\""));
+        
+        // UEFI
+        builder.uefi(xml.contains("<loader") && xml.contains("OVMF"));
+        
+        // OS Type
+        if (xml.contains("localtime")) {
+            builder.osType("windows");
+        } else {
+            builder.osType("linux");
+        }
+        
+        // Machine
+        builder.machine(extractXmlAttribute(xml, "machine=['\"]([^'\"]+)['\"]"));
+        
+        // Power Management
+        builder.onPoweroff(extractXmlValue(xml, "<on_poweroff>([^<]+)</on_poweroff>"));
+        builder.onReboot(extractXmlValue(xml, "<on_reboot>([^<]+)</on_reboot>"));
+        builder.onCrash(extractXmlValue(xml, "<on_crash>([^<]+)</on_crash>"));
+        
+        // Features
+        builder.acpi(xml.contains("<acpi/>") || xml.contains("<acpi>"));
+        builder.apic(xml.contains("<apic/>") || xml.contains("<apic>"));
+        
+        // Clock
+        builder.clockOffset(extractXmlAttribute(xml, "<clock offset=['\"]([^'\"]+)['\"]"));
+        
+        // Devices
+        builder.usb(xml.contains("<controller type='usb'") || xml.contains("<controller type=\"usb\""));
+        builder.tablet(xml.contains("<input type='tablet'") || xml.contains("<input type=\"tablet\""));
+        builder.serial(xml.contains("<serial type='pty'") || xml.contains("<serial type=\"pty\""));
+        builder.tpm(xml.contains("<tpm"));
+    }
+    
+    private String extractXmlValue(String xml, String regex) {
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(xml);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+    
+    private String extractXmlAttribute(String xml, String regex) {
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(xml);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+    
+    private Integer extractXmlAttributeInt(String xml, String regex) {
+        String value = extractXmlAttribute(xml, regex);
+        if (value != null) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) { /* ignore */ }
+        }
+        return null;
+    }
+
+    // 更新 VM 設定
+    public VmDTO updateVm(String name, UpdateVmDTO request) {
+        Connect conn = null;
+        try {
+            conn = connect();
+            Domain domain = conn.domainLookupByName(name);
+            boolean isRunning = domain.isActive() == 1;
+            
+            // 取得現有 XML
+            String xml = domain.getXMLDesc(0);
+            
+            // 修改 XML
+            xml = applyUpdatesToXml(xml, request, isRunning);
+            
+            // 如果 VM 正在運行，某些設定需要重新定義
+            if (isRunning) {
+                // 只有部分設定可以熱更新
+                // 對於需要關機的設定，我們更新定義但不立即生效
+                domain = conn.domainDefineXML(xml);
+            } else {
+                // VM 已關機，可以直接重新定義
+                domain.undefine();
+                domain = conn.domainDefineXML(xml);
+            }
+            
+            // 處理 autostart
+            if (request.autostart() != null) {
+                domain.setAutostart(request.autostart());
+            }
+            
+            return getVmDetails(name);
+        } catch (LibvirtException e) {
+            throw new RuntimeException("Failed to update VM: " + e.getMessage(), e);
+        } finally {
+            close(conn);
+        }
+    }
+    
+    // 將更新套用到 XML
+    private String applyUpdatesToXml(String xml, UpdateVmDTO req, boolean isRunning) {
+        // Description
+        if (req.description() != null) {
+            if (xml.contains("<description>")) {
+                xml = xml.replaceFirst("<description>[^<]*</description>", 
+                        "<description>" + escapeXml(req.description()) + "</description>");
+            } else {
+                xml = xml.replaceFirst("</name>", "</name>\n  <description>" + escapeXml(req.description()) + "</description>");
+            }
+        }
+        
+        // Memory (可部分熱更新)
+        if (req.memoryMB() != null) {
+            xml = xml.replaceFirst("<currentMemory unit='MiB'>\\d+</currentMemory>", 
+                    "<currentMemory unit='MiB'>" + req.memoryMB() + "</currentMemory>");
+        }
+        if (req.maxMemoryMB() != null) {
+            xml = xml.replaceFirst("<memory unit='MiB'>\\d+</memory>", 
+                    "<memory unit='MiB'>" + req.maxMemoryMB() + "</memory>");
+        }
+        
+        // vCPU (需關機)
+        if (req.vcpu() != null && !isRunning) {
+            xml = xml.replaceFirst("<vcpu[^>]*>\\d+</vcpu>", "<vcpu>" + req.vcpu() + "</vcpu>");
+        }
+        
+        // CPU Mode (需關機)
+        if (req.cpuMode() != null && !isRunning) {
+            if (xml.contains("<cpu mode=")) {
+                xml = xml.replaceFirst("<cpu mode='[^']*'", "<cpu mode='" + req.cpuMode() + "'");
+            }
+        }
+        
+        // Graphics Password (可熱更新)
+        if (req.graphicsPassword() != null) {
+            // 先移除現有密碼
+            xml = xml.replaceFirst(" passwd='[^']*'", "");
+            xml = xml.replaceFirst(" passwd=\"[^\"]*\"", "");
+            // 加入新密碼
+            if (!req.graphicsPassword().isEmpty()) {
+                xml = xml.replaceFirst("<graphics type='([^']+)'", 
+                        "<graphics type='$1' passwd='" + escapeXml(req.graphicsPassword()) + "'");
+            }
+        }
+        
+        // Graphics Listen
+        if (req.graphicsListen() != null) {
+            xml = xml.replaceFirst("listen='[^']*'", "listen='" + req.graphicsListen() + "'");
+            xml = xml.replaceFirst("<listen type='address' address='[^']*'/>", 
+                    "<listen type='address' address='" + req.graphicsListen() + "'/>");
+        }
+        
+        // Boot Order (需關機)
+        if (req.bootOrder() != null && !isRunning) {
+            // 移除現有 boot 設定
+            xml = xml.replaceAll("\\s*<boot dev='[^']*'/>", "");
+            // 在 </os> 前加入新的 boot 順序
+            StringBuilder bootXml = new StringBuilder();
+            for (String boot : req.bootOrder()) {
+                bootXml.append("    <boot dev='").append(boot).append("'/>\n");
+            }
+            xml = xml.replaceFirst("(\\s*)</os>", "\n" + bootXml + "  </os>");
+        }
+        
+        // Boot Menu (需關機)
+        if (req.bootMenu() != null && !isRunning) {
+            xml = xml.replaceFirst("<bootmenu enable='[^']*'/>", "");
+            if (req.bootMenu()) {
+                xml = xml.replaceFirst("</os>", "    <bootmenu enable='yes'/>\n  </os>");
+            }
+        }
+        
+        // Power Management
+        if (req.onPoweroff() != null) {
+            xml = xml.replaceFirst("<on_poweroff>[^<]+</on_poweroff>", 
+                    "<on_poweroff>" + req.onPoweroff() + "</on_poweroff>");
+        }
+        if (req.onReboot() != null) {
+            xml = xml.replaceFirst("<on_reboot>[^<]+</on_reboot>", 
+                    "<on_reboot>" + req.onReboot() + "</on_reboot>");
+        }
+        if (req.onCrash() != null) {
+            xml = xml.replaceFirst("<on_crash>[^<]+</on_crash>", 
+                    "<on_crash>" + req.onCrash() + "</on_crash>");
+        }
+        
+        // Clock Offset (需關機)
+        if (req.clockOffset() != null && !isRunning) {
+            xml = xml.replaceFirst("<clock offset='[^']*'", "<clock offset='" + req.clockOffset() + "'");
+        }
+        
+        // CD-ROM / ISO (可熱插拔)
+        if (req.isoPath() != null) {
+            if (req.isoPath().isEmpty()) {
+                // 彈出 ISO - 移除 source
+                xml = xml.replaceFirst(
+                        "(<disk[^>]*device=['\"]cdrom['\"][^>]*>.*?)<source file='[^']*'/>",
+                        "$1");
+            } else {
+                // 換 ISO
+                if (xml.contains("<disk") && xml.contains("device='cdrom'")) {
+                    // 更新現有 cdrom
+                    Pattern cdromPattern = Pattern.compile(
+                            "(<disk[^>]*device=['\"]cdrom['\"][^>]*>)(.*?)(</disk>)", Pattern.DOTALL);
+                    Matcher cdromMatcher = cdromPattern.matcher(xml);
+                    if (cdromMatcher.find()) {
+                        String cdromContent = cdromMatcher.group(2);
+                        if (cdromContent.contains("<source file=")) {
+                            cdromContent = cdromContent.replaceFirst("<source file='[^']*'/>", 
+                                    "<source file='" + req.isoPath() + "'/>");
+                        } else {
+                            cdromContent = cdromContent.replaceFirst("<driver", 
+                                    "<source file='" + req.isoPath() + "'/>\n      <driver");
+                        }
+                        xml = cdromMatcher.replaceFirst("$1" + Matcher.quoteReplacement(cdromContent) + "$3");
+                    }
+                }
+            }
+        }
+        
+        return xml;
     }
 
     private void close(Connect conn) {

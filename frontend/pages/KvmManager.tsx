@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { VM, CreateVmRequest, IsoFile, VM_DEFAULTS, VM_OPTIONS } from '../types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { VM, CreateVmRequest, UpdateVmRequest, IsoFile, VM_DEFAULTS, VM_OPTIONS } from '../types';
 import { VirtService } from '../services/api';
 import { PageHeader } from '../components/PageHeader';
 import { VncConsole } from '../components/VncConsole';
+import { Tabs, TabItem } from '../components/Tabs';
 import { 
     Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick, 
     Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle,
-    Plus, Trash2, Upload, Disc, X, MonitorPlay, Settings, Network, Tv, Zap, ChevronDown, ChevronUp, Info
+    Plus, Trash2, Upload, Disc, X, MonitorPlay, Settings, Network, Tv, Zap, ChevronDown, ChevronUp, Info, Edit
 } from 'lucide-react';
 import { Toast, ActionButton, ConfirmDialog } from '../components/ui';
 
@@ -185,12 +186,29 @@ const KvmManager: React.FC = () => {
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [createVmTab, setCreateVmTab] = useState<'basic' | 'hardware' | 'network' | 'display' | 'advanced'>('basic');
 
+    // Edit VM Dialog
+    const [editVmDialogOpen, setEditVmDialogOpen] = useState(false);
+    const [editVmName, setEditVmName] = useState<string | null>(null);
+    const [editVmForm, setEditVmForm] = useState<UpdateVmRequest>({});
+    const [editVmLoading, setEditVmLoading] = useState(false);
+    const [editVmTab, setEditVmTab] = useState<'basic' | 'hardware' | 'network' | 'display' | 'advanced'>('basic');
+    const [editVmOriginal, setEditVmOriginal] = useState<VM | null>(null);
+
     // ISO Upload
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // VNC Console
     const [consoleVm, setConsoleVm] = useState<string | null>(null);
+
+    // VM Tab Items (shared between Create and Edit dialogs)
+    const vmTabItems: TabItem[] = useMemo(() => [
+        { id: 'basic', label: 'Basic', icon: Settings },
+        { id: 'hardware', label: 'Hardware', icon: Cpu },
+        { id: 'network', label: 'Network', icon: Network },
+        { id: 'display', label: 'Display', icon: Tv },
+        { id: 'advanced', label: 'Advanced', icon: Zap },
+    ], []);
 
     const loadVms = async () => {
         try {
@@ -289,6 +307,83 @@ const KvmManager: React.FC = () => {
             setToast({ message: `Failed to create VM "${createVmForm.name}"`, type: 'error' });
         } finally {
             setCreateVmLoading(false);
+        }
+    };
+
+    // 打開編輯 VM 對話框
+    const handleOpenEditVm = async (vmName: string) => {
+        try {
+            setEditVmLoading(true);
+            setEditVmDialogOpen(true);
+            setEditVmName(vmName);
+            setEditVmTab('basic');
+            
+            // 取得 VM 詳細資訊
+            const vmDetails = await VirtService.getVmDetails(vmName);
+            setEditVmOriginal(vmDetails);
+            
+            // 初始化編輯表單
+            setEditVmForm({
+                description: vmDetails.description || '',
+                vcpu: vmDetails.vcpu,
+                cpuMode: vmDetails.cpuMode,
+                cpuSockets: vmDetails.cpuSockets,
+                cpuCores: vmDetails.cpuCores,
+                cpuThreads: vmDetails.cpuThreads,
+                memoryMB: vmDetails.memory ? Math.round(vmDetails.memory / 1024 / 1024) : undefined,
+                maxMemoryMB: vmDetails.maxMemory ? Math.round(vmDetails.maxMemory / 1024 / 1024) : undefined,
+                hugepages: vmDetails.hugepages,
+                networkType: vmDetails.networkType,
+                networkSource: vmDetails.networkSource,
+                networkModel: vmDetails.networkModel,
+                macAddress: vmDetails.macAddress,
+                graphicsType: vmDetails.graphicsType,
+                graphicsPort: vmDetails.graphicsPort,
+                graphicsListen: vmDetails.graphicsListen,
+                videoModel: vmDetails.videoModel,
+                videoVram: vmDetails.videoVram,
+                bootOrder: vmDetails.bootOrder,
+                bootMenu: vmDetails.bootMenu,
+                onPoweroff: vmDetails.onPoweroff,
+                onReboot: vmDetails.onReboot,
+                onCrash: vmDetails.onCrash,
+                acpi: vmDetails.acpi,
+                apic: vmDetails.apic,
+                autostart: vmDetails.autostart,
+                clockOffset: vmDetails.clockOffset,
+                isoPath: vmDetails.isoPath,
+                usb: vmDetails.usb,
+                tablet: vmDetails.tablet,
+                serial: vmDetails.serial,
+                tpm: vmDetails.tpm,
+            });
+        } catch (error) {
+            console.error('Failed to load VM details:', error);
+            setToast({ message: `Failed to load VM "${vmName}" details`, type: 'error' });
+            setEditVmDialogOpen(false);
+        } finally {
+            setEditVmLoading(false);
+        }
+    };
+
+    // 更新 VM
+    const handleUpdateVm = async () => {
+        if (!editVmName) return;
+        
+        try {
+            setEditVmLoading(true);
+            await VirtService.updateVm(editVmName, editVmForm);
+            setToast({ message: `VM "${editVmName}" updated successfully`, type: 'success' });
+            setEditVmDialogOpen(false);
+            setEditVmName(null);
+            setEditVmForm({});
+            setEditVmOriginal(null);
+            loadVms();
+        } catch (error) {
+            console.error('Failed to update VM:', error);
+            setToast({ message: `Failed to update VM "${editVmName}"`, type: 'error' });
+        } finally {
+            setEditVmLoading(false);
         }
     };
 
@@ -440,6 +535,14 @@ const KvmManager: React.FC = () => {
                                         </div>
                                     ) : (
                                         <>
+                                            {/* Edit button - always visible */}
+                                            <button
+                                                onClick={() => handleOpenEditVm(vm.name)}
+                                                className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors"
+                                                title="Edit VM Settings"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
                                             {vmRunning && (
                                                 <>
                                                     <button
@@ -558,27 +661,12 @@ const KvmManager: React.FC = () => {
                         </div>
 
                         {/* Tabs */}
-                        <div className="flex border-b border-border px-5 shrink-0">
-                            {[
-                                { id: 'basic', label: 'Basic', icon: <Settings size={14} /> },
-                                { id: 'hardware', label: 'Hardware', icon: <Cpu size={14} /> },
-                                { id: 'network', label: 'Network', icon: <Network size={14} /> },
-                                { id: 'display', label: 'Display', icon: <Tv size={14} /> },
-                                { id: 'advanced', label: 'Advanced', icon: <Zap size={14} /> },
-                            ].map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setCreateVmTab(tab.id as typeof createVmTab)}
-                                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                                        createVmTab === tab.id 
-                                            ? 'border-blue-500 text-blue-400' 
-                                            : 'border-transparent text-zinc-400 hover:text-zinc-200'
-                                    }`}
-                                >
-                                    {tab.icon}
-                                    {tab.label}
-                                </button>
-                            ))}
+                        <div className="px-5 pt-3 shrink-0">
+                            <Tabs
+                                items={vmTabItems}
+                                activeId={createVmTab}
+                                onChange={setCreateVmTab}
+                            />
                         </div>
 
                         {/* Body */}
@@ -1162,6 +1250,559 @@ const KvmManager: React.FC = () => {
                                 {createVmLoading && <Loader2 size={16} className="animate-spin" />}
                                 Create VM
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit VM Dialog */}
+            {editVmDialogOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-surface border border-border rounded-lg w-full max-w-3xl shadow-xl max-h-[90vh] flex flex-col">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+                            <h2 className="text-lg font-bold text-zinc-100">Edit VM: {editVmName}</h2>
+                            <button
+                                onClick={() => {
+                                    setEditVmDialogOpen(false);
+                                    setEditVmName(null);
+                                    setEditVmForm({});
+                                    setEditVmOriginal(null);
+                                }}
+                                className="p-1 hover:bg-zinc-700 rounded transition-colors"
+                            >
+                                <X size={18} className="text-zinc-400" />
+                            </button>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="px-5 pt-3 shrink-0">
+                            <Tabs
+                                items={vmTabItems}
+                                activeId={editVmTab}
+                                onChange={setEditVmTab}
+                            />
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-5 space-y-4 overflow-y-auto flex-1">
+                            {editVmLoading && !editVmOriginal ? (
+                                <div className="flex items-center justify-center py-16">
+                                    <Loader2 size={32} className="animate-spin text-zinc-500" />
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Basic Tab */}
+                                    {editVmTab === 'basic' && (
+                                        <div className="space-y-4">
+                                            {/* Description */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
+                                                <input
+                                                    type="text"
+                                                    value={editVmForm.description || ''}
+                                                    onChange={(e) => setEditVmForm({ ...editVmForm, description: e.target.value })}
+                                                    placeholder="Web server for production"
+                                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+
+                                            {/* ISO Selection */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                    <Disc size={14} className="inline mr-1" />
+                                                    CD-ROM ISO
+                                                </label>
+                                                <select
+                                                    value={editVmForm.isoPath === '' ? '__eject__' : (editVmForm.isoPath || editVmOriginal?.isoPath || '')}
+                                                    onChange={(e) => {
+                                                        if (e.target.value === '__eject__') {
+                                                            setEditVmForm({ ...editVmForm, isoPath: '' });
+                                                        } else if (e.target.value === '') {
+                                                            // 不變
+                                                            const { isoPath, ...rest } = editVmForm;
+                                                            setEditVmForm(rest);
+                                                        } else {
+                                                            setEditVmForm({ ...editVmForm, isoPath: e.target.value });
+                                                        }
+                                                    }}
+                                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    <option value="">No change (Current: {editVmOriginal?.isoPath ? editVmOriginal.isoPath.split('/').pop() : 'None'})</option>
+                                                    <option value="__eject__">Eject CD-ROM</option>
+                                                    {isoFiles.map((iso) => (
+                                                        <option key={iso.path} value={iso.path}>
+                                                            {iso.name} ({formatFileSize(iso.size)})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Boot Order */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                    Boot Order
+                                                    {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
+                                                        <span className="text-xs text-amber-400 ml-2">(requires restart)</span>
+                                                    )}
+                                                </label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {VM_OPTIONS.bootDevices.map(device => (
+                                                        <label key={device.value} className="flex items-center gap-2 bg-zinc-800 px-3 py-2 rounded border border-zinc-700">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={(editVmForm.bootOrder || editVmOriginal?.bootOrder || []).includes(device.value)}
+                                                                onChange={(e) => {
+                                                                    const current = editVmForm.bootOrder || editVmOriginal?.bootOrder || [];
+                                                                    if (e.target.checked) {
+                                                                        setEditVmForm({ ...editVmForm, bootOrder: [...current, device.value] });
+                                                                    } else {
+                                                                        setEditVmForm({ ...editVmForm, bootOrder: current.filter(d => d !== device.value) });
+                                                                    }
+                                                                }}
+                                                                className="rounded border-zinc-600"
+                                                            />
+                                                            <span className="text-sm text-zinc-300">{device.label}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Autostart */}
+                                            <div className="flex items-center gap-6 pt-2">
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={editVmForm.autostart ?? editVmOriginal?.autostart ?? false}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, autostart: e.target.checked })}
+                                                        className="rounded border-zinc-600"
+                                                    />
+                                                    <span className="text-sm text-zinc-300">Autostart with host</span>
+                                                </label>
+                                            </div>
+
+                                            {/* VM Info (Read Only) */}
+                                            {editVmOriginal && (
+                                                <div className="mt-4 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                                                    <h4 className="text-sm font-medium text-zinc-400 mb-2">VM Information</h4>
+                                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                                        <div className="text-zinc-500">UUID:</div>
+                                                        <div className="text-zinc-300 font-mono text-xs">{editVmOriginal.uuid}</div>
+                                                        <div className="text-zinc-500">OS Type:</div>
+                                                        <div className="text-zinc-300">{editVmOriginal.osType || 'Unknown'}</div>
+                                                        <div className="text-zinc-500">Machine:</div>
+                                                        <div className="text-zinc-300">{editVmOriginal.machine || 'Unknown'}</div>
+                                                        <div className="text-zinc-500">Disk:</div>
+                                                        <div className="text-zinc-300 text-xs font-mono truncate" title={editVmOriginal.diskPath || ''}>
+                                                            {editVmOriginal.diskPath?.split('/').pop() || 'Unknown'}
+                                                            {editVmOriginal.diskSizeBytes && ` (${formatFileSize(editVmOriginal.diskSizeBytes)})`}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Hardware Tab */}
+                                    {editVmTab === 'hardware' && (
+                                        <div className="space-y-4">
+                                            {/* CPU Cores */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        <Cpu size={14} className="inline mr-1" />
+                                                        vCPU Cores
+                                                        {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
+                                                            <span className="text-xs text-amber-400 ml-2">(requires restart)</span>
+                                                        )}
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min={1}
+                                                        max={64}
+                                                        value={editVmForm.vcpu ?? editVmOriginal?.vcpu ?? 1}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, vcpu: parseInt(e.target.value) || 1 })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        CPU Mode
+                                                        {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
+                                                            <span className="text-xs text-amber-400 ml-2">(requires restart)</span>
+                                                        )}
+                                                    </label>
+                                                    <select
+                                                        value={editVmForm.cpuMode ?? editVmOriginal?.cpuMode ?? 'host-passthrough'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, cpuMode: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        {VM_OPTIONS.cpuModes.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            {/* Memory */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        <MemoryStick size={14} className="inline mr-1" />
+                                                        Memory (MB)
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min={512}
+                                                        max={262144}
+                                                        step={512}
+                                                        value={editVmForm.memoryMB ?? (editVmOriginal?.memory ? Math.round(editVmOriginal.memory / 1024 / 1024) : 2048)}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, memoryMB: parseInt(e.target.value) || 512 })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Max Memory (MB)</label>
+                                                    <input
+                                                        type="number"
+                                                        min={512}
+                                                        max={262144}
+                                                        step={512}
+                                                        value={editVmForm.maxMemoryMB ?? (editVmOriginal?.maxMemory ? Math.round(editVmOriginal.maxMemory / 1024 / 1024) : undefined)}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, maxMemoryMB: parseInt(e.target.value) || undefined })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Toggles */}
+                                            <div className="flex items-center gap-6 pt-2">
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={editVmForm.hugepages ?? editVmOriginal?.hugepages ?? false}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, hugepages: e.target.checked })}
+                                                        className="rounded border-zinc-600"
+                                                    />
+                                                    <span className="text-sm text-zinc-300">Enable Hugepages</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Network Tab */}
+                                    {editVmTab === 'network' && (
+                                        <div className="space-y-4">
+                                            {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
+                                                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                                                    <p className="text-sm text-amber-400">
+                                                        <AlertCircle size={14} className="inline mr-1" />
+                                                        Network changes require VM restart to take effect
+                                                    </p>
+                                                </div>
+                                            )}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Network Type</label>
+                                                    <select
+                                                        value={editVmForm.networkType ?? editVmOriginal?.networkType ?? 'network'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, networkType: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        {VM_OPTIONS.networkTypes.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        {(editVmForm.networkType ?? editVmOriginal?.networkType) === 'bridge' ? 'Bridge Interface' : 'Network Name'}
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={editVmForm.networkSource ?? editVmOriginal?.networkSource ?? 'default'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, networkSource: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Network Model</label>
+                                                    <select
+                                                        value={editVmForm.networkModel ?? editVmOriginal?.networkModel ?? 'virtio'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, networkModel: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        {VM_OPTIONS.networkModels.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">MAC Address</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editVmForm.macAddress ?? editVmOriginal?.macAddress ?? ''}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, macAddress: e.target.value })}
+                                                        placeholder="52:54:00:xx:xx:xx"
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Display Tab */}
+                                    {editVmTab === 'display' && (
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Graphics Type</label>
+                                                    <select
+                                                        value={editVmForm.graphicsType ?? editVmOriginal?.graphicsType ?? 'vnc'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, graphicsType: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        {VM_OPTIONS.graphicsTypes.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Listen Address</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editVmForm.graphicsListen ?? editVmOriginal?.graphicsListen ?? '0.0.0.0'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, graphicsListen: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">VNC/SPICE Password</label>
+                                                    <input
+                                                        type="password"
+                                                        value={editVmForm.graphicsPassword ?? ''}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, graphicsPassword: e.target.value })}
+                                                        placeholder="Leave empty to keep current"
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Port</label>
+                                                    <input
+                                                        type="number"
+                                                        value={editVmForm.graphicsPort ?? editVmOriginal?.graphicsPort ?? -1}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, graphicsPort: parseInt(e.target.value) })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Video Model</label>
+                                                    <select
+                                                        value={editVmForm.videoModel ?? editVmOriginal?.videoModel ?? 'qxl'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, videoModel: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        {VM_OPTIONS.videoModels.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Video RAM (KB)</label>
+                                                    <input
+                                                        type="number"
+                                                        min={1024}
+                                                        max={262144}
+                                                        step={1024}
+                                                        value={editVmForm.videoVram ?? editVmOriginal?.videoVram ?? 65536}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, videoVram: parseInt(e.target.value) })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Advanced Tab */}
+                                    {editVmTab === 'advanced' && (
+                                        <div className="space-y-4">
+                                            {/* Clock Offset */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        Clock Offset
+                                                        {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
+                                                            <span className="text-xs text-amber-400 ml-2">(requires restart)</span>
+                                                        )}
+                                                    </label>
+                                                    <select
+                                                        value={editVmForm.clockOffset ?? editVmOriginal?.clockOffset ?? 'utc'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, clockOffset: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        {VM_OPTIONS.clockOffsets.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            {/* Power Actions */}
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">On Poweroff</label>
+                                                    <select
+                                                        value={editVmForm.onPoweroff ?? editVmOriginal?.onPoweroff ?? 'destroy'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, onPoweroff: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        {VM_OPTIONS.powerActions.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">On Reboot</label>
+                                                    <select
+                                                        value={editVmForm.onReboot ?? editVmOriginal?.onReboot ?? 'restart'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, onReboot: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        {VM_OPTIONS.powerActions.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">On Crash</label>
+                                                    <select
+                                                        value={editVmForm.onCrash ?? editVmOriginal?.onCrash ?? 'destroy'}
+                                                        onChange={(e) => setEditVmForm({ ...editVmForm, onCrash: e.target.value })}
+                                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        {VM_OPTIONS.powerActions.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            {/* Feature Toggles */}
+                                            <div className="grid grid-cols-2 gap-4 pt-2">
+                                                <div className="space-y-3">
+                                                    <h4 className="text-sm font-medium text-zinc-400">System Features</h4>
+                                                    <label className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={editVmForm.acpi ?? editVmOriginal?.acpi ?? true}
+                                                            onChange={(e) => setEditVmForm({ ...editVmForm, acpi: e.target.checked })}
+                                                            className="rounded border-zinc-600"
+                                                        />
+                                                        <span className="text-sm text-zinc-300">ACPI</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={editVmForm.apic ?? editVmOriginal?.apic ?? true}
+                                                            onChange={(e) => setEditVmForm({ ...editVmForm, apic: e.target.checked })}
+                                                            className="rounded border-zinc-600"
+                                                        />
+                                                        <span className="text-sm text-zinc-300">APIC</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={editVmForm.bootMenu ?? editVmOriginal?.bootMenu ?? false}
+                                                            onChange={(e) => setEditVmForm({ ...editVmForm, bootMenu: e.target.checked })}
+                                                            className="rounded border-zinc-600"
+                                                        />
+                                                        <span className="text-sm text-zinc-300">Boot Menu</span>
+                                                    </label>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <h4 className="text-sm font-medium text-zinc-400">Devices</h4>
+                                                    <label className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={editVmForm.usb ?? editVmOriginal?.usb ?? true}
+                                                            onChange={(e) => setEditVmForm({ ...editVmForm, usb: e.target.checked })}
+                                                            className="rounded border-zinc-600"
+                                                        />
+                                                        <span className="text-sm text-zinc-300">USB Controller</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={editVmForm.tablet ?? editVmOriginal?.tablet ?? true}
+                                                            onChange={(e) => setEditVmForm({ ...editVmForm, tablet: e.target.checked })}
+                                                            className="rounded border-zinc-600"
+                                                        />
+                                                        <span className="text-sm text-zinc-300">USB Tablet (better mouse)</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={editVmForm.serial ?? editVmOriginal?.serial ?? true}
+                                                            onChange={(e) => setEditVmForm({ ...editVmForm, serial: e.target.checked })}
+                                                            className="rounded border-zinc-600"
+                                                        />
+                                                        <span className="text-sm text-zinc-300">Serial Console</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={editVmForm.tpm ?? editVmOriginal?.tpm ?? false}
+                                                            onChange={(e) => setEditVmForm({ ...editVmForm, tpm: e.target.checked })}
+                                                            className="rounded border-zinc-600"
+                                                        />
+                                                        <span className="text-sm text-zinc-300">TPM 2.0 (Windows 11)</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between px-5 py-4 border-t border-border shrink-0">
+                            {editVmOriginal && editVmOriginal.state === 'VIR_DOMAIN_RUNNING' ? (
+                                <p className="text-xs text-amber-400">
+                                    <AlertCircle size={12} className="inline mr-1" />
+                                    Some settings require VM restart to take effect
+                                </p>
+                            ) : <div />}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setEditVmDialogOpen(false);
+                                        setEditVmName(null);
+                                        setEditVmForm({});
+                                        setEditVmOriginal(null);
+                                    }}
+                                    className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleUpdateVm}
+                                    disabled={editVmLoading}
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white rounded transition-colors flex items-center gap-2"
+                                >
+                                    {editVmLoading && <Loader2 size={16} className="animate-spin" />}
+                                    Save Changes
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

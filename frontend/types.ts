@@ -6,6 +6,99 @@ export interface VM {
   vcpu: number;
   memory: number;
   maxMemory?: number;
+  
+  // 詳細設定 (由 getVmDetails 填充)
+  description?: string;
+  cpuMode?: string;
+  cpuSockets?: number;
+  cpuCores?: number;
+  cpuThreads?: number;
+  hugepages?: boolean;
+  diskPath?: string;
+  diskFormat?: string;
+  diskBus?: string;
+  diskSizeBytes?: number;
+  networkType?: string;
+  networkSource?: string;
+  networkModel?: string;
+  macAddress?: string;
+  graphicsType?: string;
+  graphicsPort?: number;
+  graphicsListen?: string;
+  videoModel?: string;
+  videoVram?: number;
+  bootOrder?: string[];
+  bootMenu?: boolean;
+  uefi?: boolean;
+  osType?: string;
+  machine?: string;
+  onPoweroff?: string;
+  onReboot?: string;
+  onCrash?: string;
+  acpi?: boolean;
+  apic?: boolean;
+  autostart?: boolean;
+  clockOffset?: string;
+  isoPath?: string;
+  usb?: boolean;
+  tablet?: boolean;
+  serial?: boolean;
+  tpm?: boolean;
+}
+
+export interface UpdateVmRequest {
+  // CPU 設定 (需要 VM 關機)
+  vcpu?: number;
+  cpuMode?: string;
+  cpuSockets?: number;
+  cpuCores?: number;
+  cpuThreads?: number;
+
+  // 記憶體設定 (部分可熱插拔)
+  memoryMB?: number;
+  maxMemoryMB?: number;
+  hugepages?: boolean;
+
+  // 描述 (可隨時修改)
+  description?: string;
+
+  // 網路設定 (需要 VM 關機)
+  networkType?: string;
+  networkSource?: string;
+  networkModel?: string;
+  macAddress?: string;
+
+  // 顯示設定 (需要 VM 關機)
+  graphicsType?: string;
+  graphicsPort?: number;
+  graphicsListen?: string;
+  graphicsPassword?: string;
+  videoModel?: string;
+  videoVram?: number;
+
+  // 開機設定 (需要 VM 關機)
+  bootOrder?: string[];
+  bootMenu?: boolean;
+
+  // 電源管理 (可隨時修改)
+  onPoweroff?: string;
+  onReboot?: string;
+  onCrash?: string;
+
+  // 進階功能 (需要 VM 關機)
+  acpi?: boolean;
+  apic?: boolean;
+  autostart?: boolean;
+  clockOffset?: string;
+
+  // CD-ROM (可熱插拔)
+  isoPath?: string | null;  // null = 不變, "" = 彈出
+
+  // 裝置 (需要 VM 關機)
+  usb?: boolean;
+  tablet?: boolean;
+  serial?: boolean;
+  tpm?: boolean;
 }
 
 export interface CreateVmRequest {

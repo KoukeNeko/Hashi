@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo } from '@/types';
+import { AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo } from '@/types';
 
 export const VirtService = {
   // VM 管理
@@ -10,8 +10,16 @@ export const VirtService = {
     const response = await api.get<VM[]>('/virt/vms');
     return response.data;
   },
+  getVmDetails: async (name: string) => {
+    const response = await api.get<VM>(`/virt/vms/${name}`);
+    return response.data;
+  },
   createVm: async (request: CreateVmRequest) => {
     const response = await api.post<VM>('/virt/vms', request);
+    return response.data;
+  },
+  updateVm: async (name: string, request: UpdateVmRequest) => {
+    const response = await api.put<VM>(`/virt/vms/${name}`, request);
     return response.data;
   },
   deleteVm: async (name: string) => {

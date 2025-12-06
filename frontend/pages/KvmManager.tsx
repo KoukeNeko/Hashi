@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { VM, CreateVmRequest, IsoFile } from '../types';
+import { VM, CreateVmRequest, IsoFile, VM_DEFAULTS, VM_OPTIONS } from '../types';
 import { VirtService } from '../services/api';
 import { PageHeader } from '../components/PageHeader';
 import { VncConsole } from '../components/VncConsole';
 import { 
     Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick, 
     Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle,
-    Plus, Trash2, Upload, Disc, X, MonitorPlay
+    Plus, Trash2, Upload, Disc, X, MonitorPlay, Settings, Network, Tv, Zap, ChevronDown, ChevronUp, Info
 } from 'lucide-react';
 import { Toast, ActionButton, ConfirmDialog } from '../components/ui';
 
@@ -177,9 +177,13 @@ const KvmManager: React.FC = () => {
         memoryMB: 2048,
         diskGB: 20,
         osType: 'linux',
-        isoPath: ''
+        isoPath: '',
+        // 使用預設值
+        ...VM_DEFAULTS,
     });
     const [createVmLoading, setCreateVmLoading] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [createVmTab, setCreateVmTab] = useState<'basic' | 'hardware' | 'network' | 'display' | 'advanced'>('basic');
 
     // ISO Upload
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -273,7 +277,12 @@ const KvmManager: React.FC = () => {
             await VirtService.createVm(createVmForm);
             setToast({ message: `VM "${createVmForm.name}" created successfully`, type: 'success' });
             setCreateVmDialogOpen(false);
-            setCreateVmForm({ name: '', vcpu: 2, memoryMB: 2048, diskGB: 20, osType: 'linux', isoPath: '' });
+            setCreateVmForm({ 
+                name: '', vcpu: 2, memoryMB: 2048, diskGB: 20, osType: 'linux', isoPath: '',
+                ...VM_DEFAULTS,
+            });
+            setCreateVmTab('basic');
+            setShowAdvanced(false);
             loadVms();
         } catch (error) {
             console.error('Failed to create VM:', error);
@@ -536,9 +545,9 @@ const KvmManager: React.FC = () => {
             {/* Create VM Dialog */}
             {createVmDialogOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-surface border border-border rounded-lg w-full max-w-lg shadow-xl">
+                    <div className="bg-surface border border-border rounded-lg w-full max-w-3xl shadow-xl max-h-[90vh] flex flex-col">
                         {/* Header */}
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
                             <h2 className="text-lg font-bold text-zinc-100">Create Virtual Machine</h2>
                             <button
                                 onClick={() => setCreateVmDialogOpen(false)}
@@ -548,112 +557,597 @@ const KvmManager: React.FC = () => {
                             </button>
                         </div>
 
+                        {/* Tabs */}
+                        <div className="flex border-b border-border px-5 shrink-0">
+                            {[
+                                { id: 'basic', label: 'Basic', icon: <Settings size={14} /> },
+                                { id: 'hardware', label: 'Hardware', icon: <Cpu size={14} /> },
+                                { id: 'network', label: 'Network', icon: <Network size={14} /> },
+                                { id: 'display', label: 'Display', icon: <Tv size={14} /> },
+                                { id: 'advanced', label: 'Advanced', icon: <Zap size={14} /> },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setCreateVmTab(tab.id as typeof createVmTab)}
+                                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                                        createVmTab === tab.id 
+                                            ? 'border-blue-500 text-blue-400' 
+                                            : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                                    }`}
+                                >
+                                    {tab.icon}
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
                         {/* Body */}
-                        <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
-                            {/* VM Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                    VM Name <span className="text-rose-400">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={createVmForm.name}
-                                    onChange={(e) => setCreateVmForm({ ...createVmForm, name: e.target.value })}
-                                    placeholder="my-ubuntu-server"
-                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
+                        <div className="p-5 space-y-4 overflow-y-auto flex-1">
+                            {/* Basic Tab */}
+                            {createVmTab === 'basic' && (
+                                <div className="space-y-4">
+                                    {/* VM Name */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                            VM Name <span className="text-rose-400">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={createVmForm.name}
+                                            onChange={(e) => setCreateVmForm({ ...createVmForm, name: e.target.value })}
+                                            placeholder="my-ubuntu-server"
+                                            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
 
-                            {/* OS Type */}
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-300 mb-1">OS Type</label>
-                                <select
-                                    value={createVmForm.osType}
-                                    onChange={(e) => setCreateVmForm({ ...createVmForm, osType: e.target.value })}
-                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="linux">Linux</option>
-                                    <option value="windows">Windows</option>
-                                </select>
-                            </div>
+                                    {/* Description */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
+                                        <input
+                                            type="text"
+                                            value={createVmForm.description || ''}
+                                            onChange={(e) => setCreateVmForm({ ...createVmForm, description: e.target.value })}
+                                            placeholder="Web server for production"
+                                            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
 
-                            {/* ISO Selection */}
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                    <Disc size={14} className="inline mr-1" />
-                                    Installation ISO
-                                </label>
-                                <select
-                                    value={createVmForm.isoPath || ''}
-                                    onChange={(e) => setCreateVmForm({ ...createVmForm, isoPath: e.target.value })}
-                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">No ISO (empty disk)</option>
-                                    {isoFiles.map((iso) => (
-                                        <option key={iso.path} value={iso.path}>
-                                            {iso.name} ({formatFileSize(iso.size)})
-                                        </option>
-                                    ))}
-                                </select>
-                                {isoFiles.length === 0 && (
-                                    <p className="text-xs text-zinc-500 mt-1">
-                                        No ISO files found. Click "Upload ISO" to add one.
-                                    </p>
-                                )}
-                            </div>
+                                    {/* OS Type */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">OS Type</label>
+                                        <select
+                                            value={createVmForm.osType}
+                                            onChange={(e) => {
+                                                const osType = e.target.value;
+                                                setCreateVmForm({ 
+                                                    ...createVmForm, 
+                                                    osType,
+                                                    clockOffset: osType === 'windows' ? 'localtime' : 'utc',
+                                                    machine: osType === 'windows' ? 'pc-q35' : createVmForm.machine,
+                                                });
+                                            }}
+                                            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {VM_OPTIONS.osTypes.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
 
-                            {/* CPU & Memory in row */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                        <Cpu size={14} className="inline mr-1" />
-                                        CPU Cores
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={64}
-                                        value={createVmForm.vcpu}
-                                        onChange={(e) => setCreateVmForm({ ...createVmForm, vcpu: parseInt(e.target.value) || 1 })}
-                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
+                                    {/* ISO Selection */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                            <Disc size={14} className="inline mr-1" />
+                                            Installation ISO
+                                        </label>
+                                        <select
+                                            value={createVmForm.isoPath || ''}
+                                            onChange={(e) => setCreateVmForm({ ...createVmForm, isoPath: e.target.value })}
+                                            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="">No ISO (empty disk)</option>
+                                            {isoFiles.map((iso) => (
+                                                <option key={iso.path} value={iso.path}>
+                                                    {iso.name} ({formatFileSize(iso.size)})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {isoFiles.length === 0 && (
+                                            <p className="text-xs text-zinc-500 mt-1">
+                                                No ISO files found. Click "Upload ISO" to add one.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Boot Order */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">Boot Order</label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {VM_OPTIONS.bootDevices.map(device => (
+                                                <label key={device.value} className="flex items-center gap-2 bg-zinc-800 px-3 py-2 rounded border border-zinc-700">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={createVmForm.bootOrder?.includes(device.value) ?? false}
+                                                        onChange={(e) => {
+                                                            const current = createVmForm.bootOrder || [];
+                                                            if (e.target.checked) {
+                                                                setCreateVmForm({ ...createVmForm, bootOrder: [...current, device.value] });
+                                                            } else {
+                                                                setCreateVmForm({ ...createVmForm, bootOrder: current.filter(d => d !== device.value) });
+                                                            }
+                                                        }}
+                                                        className="rounded border-zinc-600"
+                                                    />
+                                                    <span className="text-sm text-zinc-300">{device.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                        <MemoryStick size={14} className="inline mr-1" />
-                                        Memory (MB)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min={512}
-                                        max={262144}
-                                        step={512}
-                                        value={createVmForm.memoryMB}
-                                        onChange={(e) => setCreateVmForm({ ...createVmForm, memoryMB: parseInt(e.target.value) || 512 })}
-                                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                            </div>
+                            )}
 
-                            {/* Disk Size */}
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                    <HardDrive size={14} className="inline mr-1" />
-                                    Disk Size (GB)
-                                </label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    max={2048}
-                                    value={createVmForm.diskGB}
-                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskGB: parseInt(e.target.value) || 1 })}
-                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
+                            {/* Hardware Tab */}
+                            {createVmTab === 'hardware' && (
+                                <div className="space-y-4">
+                                    {/* CPU Cores */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                <Cpu size={14} className="inline mr-1" />
+                                                vCPU Cores
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={64}
+                                                value={createVmForm.vcpu}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, vcpu: parseInt(e.target.value) || 1 })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">CPU Mode</label>
+                                            <select
+                                                value={createVmForm.cpuMode || VM_DEFAULTS.cpuMode}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, cpuMode: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.cpuModes.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Memory */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                <MemoryStick size={14} className="inline mr-1" />
+                                                Memory (MB)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min={512}
+                                                max={262144}
+                                                step={512}
+                                                value={createVmForm.memoryMB}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, memoryMB: parseInt(e.target.value) || 512 })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Max Memory (MB)</label>
+                                            <input
+                                                type="number"
+                                                min={512}
+                                                max={262144}
+                                                step={512}
+                                                value={createVmForm.maxMemoryMB || createVmForm.memoryMB}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, maxMemoryMB: parseInt(e.target.value) || undefined })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Disk */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                <HardDrive size={14} className="inline mr-1" />
+                                                Disk Size (GB)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={2048}
+                                                value={createVmForm.diskGB}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskGB: parseInt(e.target.value) || 1 })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Disk Format</label>
+                                            <select
+                                                value={createVmForm.diskFormat || VM_DEFAULTS.diskFormat}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskFormat: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.diskFormats.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Disk Bus</label>
+                                            <select
+                                                value={createVmForm.diskBus || VM_DEFAULTS.diskBus}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskBus: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.diskBuses.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Disk Cache</label>
+                                            <select
+                                                value={createVmForm.diskCache || VM_DEFAULTS.diskCache}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskCache: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.diskCaches.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Disk I/O</label>
+                                            <select
+                                                value={createVmForm.diskIo || VM_DEFAULTS.diskIo}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskIo: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.diskIos.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Toggles */}
+                                    <div className="flex items-center gap-6 pt-2">
+                                        <label className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={createVmForm.hugepages ?? false}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, hugepages: e.target.checked })}
+                                                className="rounded border-zinc-600"
+                                            />
+                                            <span className="text-sm text-zinc-300">Enable Hugepages</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Network Tab */}
+                            {createVmTab === 'network' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Network Type</label>
+                                            <select
+                                                value={createVmForm.networkType || VM_DEFAULTS.networkType}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, networkType: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.networkTypes.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                {createVmForm.networkType === 'bridge' ? 'Bridge Interface' : 'Network Name'}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={createVmForm.networkSource || VM_DEFAULTS.networkSource}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, networkSource: e.target.value })}
+                                                placeholder={createVmForm.networkType === 'bridge' ? 'br0' : 'default'}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Network Model</label>
+                                            <select
+                                                value={createVmForm.networkModel || VM_DEFAULTS.networkModel}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, networkModel: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.networkModels.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">MAC Address (optional)</label>
+                                            <input
+                                                type="text"
+                                                value={createVmForm.macAddress || ''}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, macAddress: e.target.value })}
+                                                placeholder="52:54:00:xx:xx:xx (auto-generate if empty)"
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Display Tab */}
+                            {createVmTab === 'display' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Graphics Type</label>
+                                            <select
+                                                value={createVmForm.graphicsType || VM_DEFAULTS.graphicsType}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, graphicsType: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.graphicsTypes.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Listen Address</label>
+                                            <input
+                                                type="text"
+                                                value={createVmForm.graphicsListen || VM_DEFAULTS.graphicsListen}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, graphicsListen: e.target.value })}
+                                                placeholder="0.0.0.0"
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">VNC/SPICE Password (optional)</label>
+                                            <input
+                                                type="password"
+                                                value={createVmForm.graphicsPassword || ''}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, graphicsPassword: e.target.value })}
+                                                placeholder="Leave empty for no password"
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Port (-1 = auto)</label>
+                                            <input
+                                                type="number"
+                                                value={createVmForm.graphicsPort ?? -1}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, graphicsPort: parseInt(e.target.value) })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Video Model</label>
+                                            <select
+                                                value={createVmForm.videoModel || VM_DEFAULTS.videoModel}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, videoModel: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.videoModels.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Video RAM (KB)</label>
+                                            <input
+                                                type="number"
+                                                min={1024}
+                                                max={262144}
+                                                step={1024}
+                                                value={createVmForm.videoVram || VM_DEFAULTS.videoVram}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, videoVram: parseInt(e.target.value) })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Advanced Tab */}
+                            {createVmTab === 'advanced' && (
+                                <div className="space-y-4">
+                                    {/* Machine & Architecture */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Machine Type</label>
+                                            <select
+                                                value={createVmForm.machine || VM_DEFAULTS.machine}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, machine: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.machines.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Clock Offset</label>
+                                            <select
+                                                value={createVmForm.clockOffset || VM_DEFAULTS.clockOffset}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, clockOffset: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.clockOffsets.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Power Actions */}
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">On Poweroff</label>
+                                            <select
+                                                value={createVmForm.onPoweroff || VM_DEFAULTS.onPoweroff}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, onPoweroff: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.powerActions.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">On Reboot</label>
+                                            <select
+                                                value={createVmForm.onReboot || VM_DEFAULTS.onReboot}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, onReboot: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.powerActions.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">On Crash</label>
+                                            <select
+                                                value={createVmForm.onCrash || VM_DEFAULTS.onCrash}
+                                                onChange={(e) => setCreateVmForm({ ...createVmForm, onCrash: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {VM_OPTIONS.powerActions.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Feature Toggles */}
+                                    <div className="grid grid-cols-2 gap-4 pt-2">
+                                        <div className="space-y-3">
+                                            <h4 className="text-sm font-medium text-zinc-400">System Features</h4>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.acpi ?? VM_DEFAULTS.acpi}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, acpi: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                />
+                                                <span className="text-sm text-zinc-300">ACPI</span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.apic ?? VM_DEFAULTS.apic}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, apic: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                />
+                                                <span className="text-sm text-zinc-300">APIC</span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.uefi ?? false}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, uefi: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                />
+                                                <span className="text-sm text-zinc-300">UEFI Boot</span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.secureBoot ?? false}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, secureBoot: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                    disabled={!createVmForm.uefi}
+                                                />
+                                                <span className={`text-sm ${!createVmForm.uefi ? 'text-zinc-500' : 'text-zinc-300'}`}>Secure Boot (requires UEFI)</span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.bootMenu ?? false}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, bootMenu: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                />
+                                                <span className="text-sm text-zinc-300">Boot Menu</span>
+                                            </label>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <h4 className="text-sm font-medium text-zinc-400">Devices</h4>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.usb ?? VM_DEFAULTS.usb}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, usb: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                />
+                                                <span className="text-sm text-zinc-300">USB Controller</span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.tablet ?? VM_DEFAULTS.tablet}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, tablet: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                    disabled={!createVmForm.usb}
+                                                />
+                                                <span className={`text-sm ${!createVmForm.usb ? 'text-zinc-500' : 'text-zinc-300'}`}>USB Tablet (better mouse)</span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.serial ?? VM_DEFAULTS.serial}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, serial: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                />
+                                                <span className="text-sm text-zinc-300">Serial Console</span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.tpm ?? false}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, tpm: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                />
+                                                <span className="text-sm text-zinc-300">TPM 2.0 (Windows 11)</span>
+                                            </label>
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={createVmForm.autostart ?? false}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, autostart: e.target.checked })}
+                                                    className="rounded border-zinc-600"
+                                                />
+                                                <span className="text-sm text-zinc-300">Autostart with host</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Footer */}
-                        <div className="flex justify-end gap-3 px-5 py-4 border-t border-border">
+                        <div className="flex justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
                             <button
                                 onClick={() => setCreateVmDialogOpen(false)}
                                 className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded transition-colors"
@@ -666,7 +1160,7 @@ const KvmManager: React.FC = () => {
                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white rounded transition-colors flex items-center gap-2"
                             >
                                 {createVmLoading && <Loader2 size={16} className="animate-spin" />}
-                                Create
+                                Create VM
                             </button>
                         </div>
                     </div>

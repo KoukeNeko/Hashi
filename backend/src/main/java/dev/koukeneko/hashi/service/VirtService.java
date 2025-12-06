@@ -259,62 +259,226 @@ public class VirtService {
 
     // 產生 libvirt XML 定義
     private String generateVmXml(CreateVmDTO req, String uuid, String diskPath) {
-        String osTypeTag = "linux".equalsIgnoreCase(req.osType()) ? "hvm" : "hvm";
-        String machine = "windows".equalsIgnoreCase(req.osType()) ? "q35" : "pc";
+        StringBuilder xml = new StringBuilder();
+        
+        // 取得設定值（使用預設值）
+        String cpuMode = req.cpuMode() != null ? req.cpuMode() : "host-passthrough";
+        String diskFormat = req.diskFormat() != null ? req.diskFormat() : "qcow2";
+        String diskBus = req.diskBus() != null ? req.diskBus() : "virtio";
+        String diskCache = req.diskCache() != null ? req.diskCache() : "none";
+        String diskIo = req.diskIo() != null ? req.diskIo() : "native";
+        String networkType = req.networkType() != null ? req.networkType() : "network";
+        String networkSource = req.networkSource() != null ? req.networkSource() : "default";
+        String networkModel = req.networkModel() != null ? req.networkModel() : "virtio";
+        String graphicsType = req.graphicsType() != null ? req.graphicsType() : "vnc";
+        int graphicsPort = req.graphicsPort() != null ? req.graphicsPort() : -1;
+        String graphicsListen = req.graphicsListen() != null ? req.graphicsListen() : "0.0.0.0";
+        String videoModel = req.videoModel() != null ? req.videoModel() : "qxl";
+        int videoVram = req.videoVram() != null ? req.videoVram() : 65536;
+        String machine = req.machine() != null ? req.machine() : ("windows".equalsIgnoreCase(req.osType()) ? "pc-q35" : "pc-i440fx");
+        String arch = req.arch() != null ? req.arch() : "x86_64";
+        String onPoweroff = req.onPoweroff() != null ? req.onPoweroff() : "destroy";
+        String onReboot = req.onReboot() != null ? req.onReboot() : "restart";
+        String onCrash = req.onCrash() != null ? req.onCrash() : "destroy";
+        String clockOffset = req.clockOffset() != null ? req.clockOffset() : ("windows".equalsIgnoreCase(req.osType()) ? "localtime" : "utc");
+        boolean acpi = req.acpi() != null ? req.acpi() : true;
+        boolean apic = req.apic() != null ? req.apic() : true;
+        boolean usb = req.usb() != null ? req.usb() : true;
+        boolean tablet = req.tablet() != null ? req.tablet() : true;
+        boolean serial = req.serial() != null ? req.serial() : true;
+        long maxMemory = req.maxMemoryMB() != null ? req.maxMemoryMB() : req.memoryMB();
 
-        return """
-                <domain type='kvm'>
-                  <name>%s</name>
-                  <uuid>%s</uuid>
-                  <memory unit='MiB'>%d</memory>
-                  <currentMemory unit='MiB'>%d</currentMemory>
-                  <vcpu>%d</vcpu>
-                  <os>
-                    <type arch='x86_64' machine='%s'>%s</type>
-                    <boot dev='cdrom'/>
-                    <boot dev='hd'/>
-                  </os>
-                  <features>
-                    <acpi/>
-                    <apic/>
-                  </features>
-                  <cpu mode='host-passthrough'/>
-                  <devices>
-                    <emulator>/usr/bin/qemu-system-x86_64</emulator>
-                    <disk type='file' device='disk'>
-                      <driver name='qemu' type='qcow2'/>
-                      <source file='%s'/>
-                      <target dev='vda' bus='virtio'/>
-                    </disk>
-                    %s
-                    <interface type='network'>
-                      <source network='default'/>
-                      <model type='virtio'/>
-                    </interface>
-                    <graphics type='vnc' port='-1' autoport='yes' listen='0.0.0.0'>
-                      <listen type='address' address='0.0.0.0'/>
-                    </graphics>
-                    <video>
-                      <model type='qxl' ram='65536' vram='65536' vgamem='16384' heads='1'/>
-                    </video>
-                    <console type='pty'>
-                      <target type='serial' port='0'/>
-                    </console>
-                  </devices>
-                </domain>
-                """.formatted(
-                req.name(),
-                uuid,
-                req.memoryMB(),
-                req.memoryMB(),
-                req.vcpu(),
-                machine,
-                osTypeTag,
-                diskPath,
-                req.isoPath() != null && !req.isoPath().isBlank()
-                        ? "<disk type='file' device='cdrom'><driver name='qemu' type='raw'/><source file='" + req.isoPath() + "'/><target dev='sda' bus='sata'/><readonly/></disk>"
-                        : ""
-        );
+        // 開始建構 XML
+        xml.append("<domain type='kvm'>\n");
+        xml.append("  <name>").append(escapeXml(req.name())).append("</name>\n");
+        xml.append("  <uuid>").append(uuid).append("</uuid>\n");
+        
+        // 描述
+        if (req.description() != null && !req.description().isBlank()) {
+            xml.append("  <description>").append(escapeXml(req.description())).append("</description>\n");
+        }
+
+        // 記憶體
+        xml.append("  <memory unit='MiB'>").append(maxMemory).append("</memory>\n");
+        xml.append("  <currentMemory unit='MiB'>").append(req.memoryMB()).append("</currentMemory>\n");
+
+        // vCPU
+        xml.append("  <vcpu");
+        if (req.cpuSockets() != null || req.cpuCores() != null || req.cpuThreads() != null) {
+            xml.append(" placement='static'");
+        }
+        xml.append(">").append(req.vcpu()).append("</vcpu>\n");
+
+        // CPU 拓撲
+        if (req.cpuSockets() != null || req.cpuCores() != null || req.cpuThreads() != null) {
+            xml.append("  <cpu mode='").append(cpuMode).append("'>\n");
+            xml.append("    <topology");
+            xml.append(" sockets='").append(req.cpuSockets() != null ? req.cpuSockets() : 1).append("'");
+            xml.append(" cores='").append(req.cpuCores() != null ? req.cpuCores() : req.vcpu()).append("'");
+            xml.append(" threads='").append(req.cpuThreads() != null ? req.cpuThreads() : 1).append("'");
+            xml.append("/>\n");
+            xml.append("  </cpu>\n");
+        } else {
+            xml.append("  <cpu mode='").append(cpuMode).append("'/>\n");
+        }
+
+        // 大分頁
+        if (Boolean.TRUE.equals(req.hugepages())) {
+            xml.append("  <memoryBacking>\n");
+            xml.append("    <hugepages/>\n");
+            xml.append("  </memoryBacking>\n");
+        }
+
+        // OS 設定
+        xml.append("  <os>\n");
+        if (Boolean.TRUE.equals(req.uefi())) {
+            xml.append("    <type arch='").append(arch).append("' machine='").append(machine).append("'>hvm</type>\n");
+            xml.append("    <loader readonly='yes' secure='").append(Boolean.TRUE.equals(req.secureBoot()) ? "yes" : "no")
+               .append("' type='pflash'>/usr/share/OVMF/OVMF_CODE.fd</loader>\n");
+            xml.append("    <nvram>/var/lib/libvirt/qemu/nvram/").append(escapeXml(req.name())).append("_VARS.fd</nvram>\n");
+        } else {
+            xml.append("    <type arch='").append(arch).append("' machine='").append(machine).append("'>hvm</type>\n");
+        }
+        
+        // 開機順序
+        if (req.bootOrder() != null && !req.bootOrder().isEmpty()) {
+            for (String boot : req.bootOrder()) {
+                xml.append("    <boot dev='").append(boot).append("'/>\n");
+            }
+        } else {
+            xml.append("    <boot dev='cdrom'/>\n");
+            xml.append("    <boot dev='hd'/>\n");
+        }
+        
+        // 開機選單
+        if (Boolean.TRUE.equals(req.bootMenu())) {
+            xml.append("    <bootmenu enable='yes'/>\n");
+        }
+        xml.append("  </os>\n");
+
+        // Features
+        xml.append("  <features>\n");
+        if (acpi) xml.append("    <acpi/>\n");
+        if (apic) xml.append("    <apic/>\n");
+        xml.append("  </features>\n");
+
+        // 時鐘
+        xml.append("  <clock offset='").append(clockOffset).append("'/>\n");
+
+        // 電源管理
+        xml.append("  <on_poweroff>").append(onPoweroff).append("</on_poweroff>\n");
+        xml.append("  <on_reboot>").append(onReboot).append("</on_reboot>\n");
+        xml.append("  <on_crash>").append(onCrash).append("</on_crash>\n");
+
+        // 裝置
+        xml.append("  <devices>\n");
+        xml.append("    <emulator>/usr/bin/qemu-system-x86_64</emulator>\n");
+
+        // 磁碟
+        xml.append("    <disk type='file' device='disk'>\n");
+        xml.append("      <driver name='qemu' type='").append(diskFormat).append("'");
+        if (diskCache != null) xml.append(" cache='").append(diskCache).append("'");
+        if (diskIo != null) xml.append(" io='").append(diskIo).append("'");
+        xml.append("/>\n");
+        xml.append("      <source file='").append(diskPath).append("'/>\n");
+        String diskDev = "virtio".equals(diskBus) ? "vda" : "sda";
+        xml.append("      <target dev='").append(diskDev).append("' bus='").append(diskBus).append("'/>\n");
+        xml.append("    </disk>\n");
+
+        // CD-ROM
+        if (req.isoPath() != null && !req.isoPath().isBlank()) {
+            xml.append("    <disk type='file' device='cdrom'>\n");
+            xml.append("      <driver name='qemu' type='raw'/>\n");
+            xml.append("      <source file='").append(req.isoPath()).append("'/>\n");
+            xml.append("      <target dev='sdb' bus='sata'/>\n");
+            xml.append("      <readonly/>\n");
+            xml.append("    </disk>\n");
+        }
+
+        // 網路
+        xml.append("    <interface type='").append(networkType).append("'>\n");
+        if (req.macAddress() != null && !req.macAddress().isBlank()) {
+            xml.append("      <mac address='").append(req.macAddress()).append("'/>\n");
+        }
+        if ("network".equals(networkType)) {
+            xml.append("      <source network='").append(networkSource).append("'/>\n");
+        } else if ("bridge".equals(networkType)) {
+            xml.append("      <source bridge='").append(networkSource).append("'/>\n");
+        }
+        xml.append("      <model type='").append(networkModel).append("'/>\n");
+        xml.append("    </interface>\n");
+
+        // USB 控制器
+        if (usb) {
+            xml.append("    <controller type='usb' model='qemu-xhci'/>\n");
+            // USB 平板裝置（改善滑鼠定位）
+            if (tablet) {
+                xml.append("    <input type='tablet' bus='usb'/>\n");
+            }
+        }
+
+        // 輸入裝置
+        xml.append("    <input type='mouse' bus='ps2'/>\n");
+        xml.append("    <input type='keyboard' bus='ps2'/>\n");
+
+        // 顯示
+        xml.append("    <graphics type='").append(graphicsType).append("'");
+        xml.append(" port='").append(graphicsPort).append("'");
+        if (graphicsPort == -1) xml.append(" autoport='yes'");
+        xml.append(" listen='").append(graphicsListen).append("'");
+        if (req.graphicsPassword() != null && !req.graphicsPassword().isBlank()) {
+            xml.append(" passwd='").append(escapeXml(req.graphicsPassword())).append("'");
+        }
+        xml.append(">\n");
+        xml.append("      <listen type='address' address='").append(graphicsListen).append("'/>\n");
+        xml.append("    </graphics>\n");
+
+        // 顯示卡
+        xml.append("    <video>\n");
+        xml.append("      <model type='").append(videoModel).append("'");
+        if ("qxl".equals(videoModel)) {
+            xml.append(" ram='").append(videoVram).append("' vram='").append(videoVram).append("' vgamem='16384' heads='1'");
+        } else if ("virtio".equals(videoModel)) {
+            xml.append(" heads='1' primary='yes'");
+        }
+        xml.append("/>\n");
+        xml.append("    </video>\n");
+
+        // 串列埠
+        if (serial) {
+            xml.append("    <serial type='pty'>\n");
+            xml.append("      <target port='0'/>\n");
+            xml.append("    </serial>\n");
+            xml.append("    <console type='pty'>\n");
+            xml.append("      <target type='serial' port='0'/>\n");
+            xml.append("    </console>\n");
+        }
+
+        // TPM
+        if (Boolean.TRUE.equals(req.tpm())) {
+            xml.append("    <tpm model='tpm-crb'>\n");
+            xml.append("      <backend type='emulator' version='2.0'/>\n");
+            xml.append("    </tpm>\n");
+        }
+
+        // 記憶體氣球
+        xml.append("    <memballoon model='virtio'/>\n");
+
+        xml.append("  </devices>\n");
+        xml.append("</domain>");
+
+        return xml.toString();
+    }
+
+    // XML 字元跳脫
+    private String escapeXml(String input) {
+        if (input == null) return "";
+        return input
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     // ==================== ISO 檔案管理 ====================

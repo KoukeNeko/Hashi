@@ -711,7 +711,7 @@ const KvmManager: React.FC = () => {
                                                     ...createVmForm, 
                                                     osType,
                                                     clockOffset: osType === 'windows' ? 'localtime' : 'utc',
-                                                    machine: osType === 'windows' ? 'pc-q35' : createVmForm.machine,
+                                                    machine: osType === 'windows' ? 'q35' : createVmForm.machine,
                                                 });
                                             }}
                                             className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"

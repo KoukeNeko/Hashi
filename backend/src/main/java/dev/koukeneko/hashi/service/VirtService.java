@@ -608,7 +608,7 @@ public class VirtService {
         String graphicsListen = req.graphicsListen() != null ? req.graphicsListen() : "0.0.0.0";
         String videoModel = req.videoModel() != null ? req.videoModel() : "qxl";
         int videoVram = req.videoVram() != null ? req.videoVram() : 65536;
-        String machine = req.machine() != null ? req.machine() : ("windows".equalsIgnoreCase(req.osType()) ? "pc-q35" : "pc-i440fx");
+        String machine = req.machine() != null ? req.machine() : ("windows".equalsIgnoreCase(req.osType()) ? "q35" : "pc");
         String arch = req.arch() != null ? req.arch() : "x86_64";
         String onPoweroff = req.onPoweroff() != null ? req.onPoweroff() : "destroy";
         String onReboot = req.onReboot() != null ? req.onReboot() : "restart";
@@ -706,6 +706,39 @@ public class VirtService {
         // 裝置
         xml.append("  <devices>\n");
         xml.append("    <emulator>/usr/bin/qemu-system-x86_64</emulator>\n");
+
+        // PCI 控制器 - Q35 需要明確定義
+        if (machine.contains("q35")) {
+            xml.append("    <controller type='pci' index='0' model='pcie-root'/>\n");
+            xml.append("    <controller type='pci' index='1' model='pcie-root-port'>\n");
+            xml.append("      <model name='pcie-root-port'/>\n");
+            xml.append("      <target chassis='1' port='0x10'/>\n");
+            xml.append("      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>\n");
+            xml.append("    </controller>\n");
+            xml.append("    <controller type='pci' index='2' model='pcie-root-port'>\n");
+            xml.append("      <model name='pcie-root-port'/>\n");
+            xml.append("      <target chassis='2' port='0x11'/>\n");
+            xml.append("      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x1'/>\n");
+            xml.append("    </controller>\n");
+            xml.append("    <controller type='pci' index='3' model='pcie-root-port'>\n");
+            xml.append("      <model name='pcie-root-port'/>\n");
+            xml.append("      <target chassis='3' port='0x12'/>\n");
+            xml.append("      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x2'/>\n");
+            xml.append("    </controller>\n");
+            xml.append("    <controller type='pci' index='4' model='pcie-root-port'>\n");
+            xml.append("      <model name='pcie-root-port'/>\n");
+            xml.append("      <target chassis='4' port='0x13'/>\n");
+            xml.append("      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x3'/>\n");
+            xml.append("    </controller>\n");
+            xml.append("    <controller type='pci' index='5' model='pcie-root-port'>\n");
+            xml.append("      <model name='pcie-root-port'/>\n");
+            xml.append("      <target chassis='5' port='0x14'/>\n");
+            xml.append("      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x4'/>\n");
+            xml.append("    </controller>\n");
+            xml.append("    <controller type='sata' index='0'>\n");
+            xml.append("      <address type='pci' domain='0x0000' bus='0x00' slot='0x1f' function='0x2'/>\n");
+            xml.append("    </controller>\n");
+        }
 
         // 磁碟
         xml.append("    <disk type='file' device='disk'>\n");

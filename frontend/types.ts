@@ -186,7 +186,7 @@ export const VM_DEFAULTS = {
   videoModel: 'qxl',
   videoVram: 65536,
   bootOrder: ['cdrom', 'hd'],
-  machine: 'pc-q35',
+  machine: 'q35',
   arch: 'x86_64',
   onPoweroff: 'destroy',
   onReboot: 'restart',
@@ -251,8 +251,8 @@ export const VM_OPTIONS = {
     { value: 'cirrus', label: 'Cirrus' },
   ],
   machines: [
-    { value: 'pc-q35', label: 'Q35 (現代，支援 PCIe)' },
-    { value: 'pc-i440fx', label: 'i440FX (傳統，相容性佳)' },
+    { value: 'q35', label: 'Q35 (現代，支援 PCIe)' },
+    { value: 'pc', label: 'i440FX (傳統，相容性佳)' },
   ],
   osTypes: [
     { value: 'linux', label: 'Linux' },

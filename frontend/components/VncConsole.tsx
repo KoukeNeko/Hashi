@@ -1,18 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Maximize2, Minimize2, Loader2, AlertCircle, Copy, Check, Monitor, ExternalLink } from 'lucide-react';
 import { VirtService } from '../services/api';
+import { VncInfo } from '../types';
 
 interface VncConsoleProps {
     vmName: string;
     onClose: () => void;
 }
 
-interface VncInfo {
-    host: string;
-    port: number;
-    websocketUrl: string;
-    password?: string;
-}
+
 
 type ViewMode = 'embedded' | 'info';
 

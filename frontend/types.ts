@@ -23,12 +23,11 @@ export interface IsoFile {
   path: string;       // 完整路徑
   size: number;       // 檔案大小 (bytes)
 }
-
 export interface VncInfo {
-  host: string;
-  port: number;
-  password?: string;
-  websocketUrl: string;
+    host: string;
+    port: number;
+    websocketUrl: string;
+    password?: string;
 }
 
 // 使用者認證相關

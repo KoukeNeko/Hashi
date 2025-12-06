@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { VM, CreateVmRequest, UpdateVmRequest, IsoFile, VM_DEFAULTS, VM_OPTIONS } from '../types';
+import { VM, CreateVmRequest, UpdateVmRequest, IsoFile, VM_DEFAULTS, VM_OPTIONS, Disk } from '../types';
 import { VirtService } from '../services/api';
 import { PageHeader } from '../components/PageHeader';
 import { VncConsole } from '../components/VncConsole';
@@ -838,73 +838,195 @@ const KvmManager: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* Disk */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                                <HardDrive size={14} className="inline mr-1" />
-                                                Disk Size (GB)
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min={1}
-                                                max={2048}
-                                                value={createVmForm.diskGB}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskGB: parseInt(e.target.value) || 1 })}
-                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
+                                    {/* Primary Disk */}
+                                    <div className="border border-zinc-700 rounded-lg p-4">
+                                        <h4 className="text-sm font-medium text-zinc-200 mb-3 flex items-center gap-2">
+                                            <HardDrive size={14} />
+                                            Primary Disk (System)
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                    Size (GB)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    max={2048}
+                                                    value={createVmForm.diskGB ?? 20}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskGB: parseInt(e.target.value) || 1 })}
+                                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">Format</label>
+                                                <select
+                                                    value={createVmForm.diskFormat || VM_DEFAULTS.diskFormat}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskFormat: e.target.value })}
+                                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    {VM_OPTIONS.diskFormats.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Disk Format</label>
-                                            <select
-                                                value={createVmForm.diskFormat || VM_DEFAULTS.diskFormat}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskFormat: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            >
-                                                {VM_OPTIONS.diskFormats.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                ))}
-                                            </select>
+                                        <div className="grid grid-cols-3 gap-4 mt-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">Bus</label>
+                                                <select
+                                                    value={createVmForm.diskBus || VM_DEFAULTS.diskBus}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskBus: e.target.value })}
+                                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    {VM_OPTIONS.diskBuses.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">Cache</label>
+                                                <select
+                                                    value={createVmForm.diskCache || VM_DEFAULTS.diskCache}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskCache: e.target.value })}
+                                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    {VM_OPTIONS.diskCaches.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">I/O</label>
+                                                <select
+                                                    value={createVmForm.diskIo || VM_DEFAULTS.diskIo}
+                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskIo: e.target.value })}
+                                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    {VM_OPTIONS.diskIos.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Disk Bus</label>
-                                            <select
-                                                value={createVmForm.diskBus || VM_DEFAULTS.diskBus}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskBus: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    {/* Additional Disks */}
+                                    <div className="border border-zinc-700 rounded-lg p-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="text-sm font-medium text-zinc-200 flex items-center gap-2">
+                                                <HardDrive size={14} />
+                                                Additional Disks
+                                            </h4>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const newDisk: Disk = {
+                                                        name: `data${(createVmForm.disks?.length || 0) + 1}`,
+                                                        sizeGB: 20,
+                                                        format: 'qcow2',
+                                                        bus: 'virtio',
+                                                        cache: 'none',
+                                                        io: 'native',
+                                                    };
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        disks: [...(createVmForm.disks || []), newDisk],
+                                                    });
+                                                }}
+                                                className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors"
                                             >
-                                                {VM_OPTIONS.diskBuses.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                ))}
-                                            </select>
+                                                <Plus size={12} />
+                                                Add Disk
+                                            </button>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Disk Cache</label>
-                                            <select
-                                                value={createVmForm.diskCache || VM_DEFAULTS.diskCache}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskCache: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            >
-                                                {VM_OPTIONS.diskCaches.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+
+                                        {(!createVmForm.disks || createVmForm.disks.length === 0) ? (
+                                            <p className="text-sm text-zinc-500 text-center py-4">
+                                                No additional disks. Click "Add Disk" to add more storage.
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {createVmForm.disks.map((disk, idx) => (
+                                                    <div key={idx} className="bg-zinc-800 rounded p-3 relative">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const newDisks = [...createVmForm.disks!];
+                                                                newDisks.splice(idx, 1);
+                                                                setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                            }}
+                                                            className="absolute top-2 right-2 p-1 text-zinc-400 hover:text-rose-400 transition-colors"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                        <div className="grid grid-cols-4 gap-3">
+                                                            <div>
+                                                                <label className="block text-xs text-zinc-400 mb-1">Name</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={disk.name || ''}
+                                                                    onChange={(e) => {
+                                                                        const newDisks = [...createVmForm.disks!];
+                                                                        newDisks[idx] = { ...disk, name: e.target.value };
+                                                                        setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                                    }}
+                                                                    placeholder="data1"
+                                                                    className="w-full px-2 py-1 text-sm bg-zinc-900 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs text-zinc-400 mb-1">Size (GB)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    min={1}
+                                                                    max={2048}
+                                                                    value={disk.sizeGB || 20}
+                                                                    onChange={(e) => {
+                                                                        const newDisks = [...createVmForm.disks!];
+                                                                        newDisks[idx] = { ...disk, sizeGB: parseInt(e.target.value) || 1 };
+                                                                        setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                                    }}
+                                                                    className="w-full px-2 py-1 text-sm bg-zinc-900 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs text-zinc-400 mb-1">Format</label>
+                                                                <select
+                                                                    value={disk.format || 'qcow2'}
+                                                                    onChange={(e) => {
+                                                                        const newDisks = [...createVmForm.disks!];
+                                                                        newDisks[idx] = { ...disk, format: e.target.value };
+                                                                        setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                                    }}
+                                                                    className="w-full px-2 py-1 text-sm bg-zinc-900 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                                >
+                                                                    {VM_OPTIONS.diskFormats.map(opt => (
+                                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs text-zinc-400 mb-1">Bus</label>
+                                                                <select
+                                                                    value={disk.bus || 'virtio'}
+                                                                    onChange={(e) => {
+                                                                        const newDisks = [...createVmForm.disks!];
+                                                                        newDisks[idx] = { ...disk, bus: e.target.value };
+                                                                        setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                                    }}
+                                                                    className="w-full px-2 py-1 text-sm bg-zinc-900 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                                >
+                                                                    {VM_OPTIONS.diskBuses.map(opt => (
+                                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Disk I/O</label>
-                                            <select
-                                                value={createVmForm.diskIo || VM_DEFAULTS.diskIo}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, diskIo: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            >
-                                                {VM_OPTIONS.diskIos.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Toggles */}

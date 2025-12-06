@@ -21,12 +21,15 @@ public record CreateVmDTO(
         Long maxMemoryMB,       // 最大記憶體 (MB)
         Boolean hugepages,      // 啟用大分頁
 
-        // 磁碟設定
-        long diskGB,            // 磁碟大小 (GB)
+        // 主磁碟設定 (向後相容)
+        Long diskGB,            // 磁碟大小 (GB) - 可選，使用 disks 時可省略
         String diskFormat,      // 磁碟格式 (qcow2/raw)
         String diskBus,         // 磁碟匯流排 (virtio/sata/scsi/ide)
         String diskCache,       // 快取模式 (none/writeback/writethrough)
         String diskIo,          // I/O 模式 (native/threads)
+
+        // 多磁碟設定
+        List<DiskDTO> disks,    // 額外磁碟列表
 
         // 網路設定
         String networkType,     // 網路類型 (network/bridge/direct)

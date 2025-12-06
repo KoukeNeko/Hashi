@@ -1,3 +1,14 @@
+export interface Disk {
+  name?: string;           // 磁碟名稱 (e.g. "data", "backup")
+  sizeGB?: number;         // 磁碟大小 (GB) - 新建磁碟時使用
+  path?: string;           // 磁碟路徑 - 現有磁碟時使用
+  format?: string;         // 磁碟格式 (qcow2/raw)
+  bus?: string;            // 匯流排類型 (virtio/sata/scsi/ide)
+  cache?: string;          // 快取模式 (none/writeback/writethrough)
+  io?: string;             // I/O 模式 (native/threads)
+  bootable?: boolean;      // 是否為開機磁碟
+}
+
 export interface VM {
   id: number;
   uuid: string;
@@ -14,10 +25,16 @@ export interface VM {
   cpuCores?: number;
   cpuThreads?: number;
   hugepages?: boolean;
+  
+  // 主磁碟 (向後相容)
   diskPath?: string;
   diskFormat?: string;
   diskBus?: string;
   diskSizeBytes?: number;
+  
+  // 多磁碟
+  disks?: Disk[];
+  
   networkType?: string;
   networkSource?: string;
   networkModel?: string;
@@ -118,12 +135,15 @@ export interface CreateVmRequest {
   maxMemoryMB?: number;    // 最大記憶體 (MB)
   hugepages?: boolean;     // 啟用大分頁
 
-  // 磁碟設定
-  diskGB: number;          // 磁碟大小 (GB)
+  // 主磁碟設定 (向後相容)
+  diskGB?: number;         // 磁碟大小 (GB) - 可選，使用 disks 時可省略
   diskFormat?: string;     // 磁碟格式 (qcow2/raw)
   diskBus?: string;        // 磁碟匯流排 (virtio/sata/scsi/ide)
   diskCache?: string;      // 快取模式 (none/writeback/writethrough)
   diskIo?: string;         // I/O 模式 (native/threads)
+
+  // 多磁碟設定
+  disks?: Disk[];          // 額外磁碟列表
 
   // 網路設定
   networkType?: string;    // 網路類型 (network/bridge/direct)

@@ -1,6 +1,7 @@
 package dev.koukeneko.hashi.service;
 
 import dev.koukeneko.hashi.model.dto.CreateVmDTO;
+import dev.koukeneko.hashi.model.dto.DiskDTO;
 import dev.koukeneko.hashi.model.dto.IsoFileDTO;
 import dev.koukeneko.hashi.model.dto.UpdateVmDTO;
 import dev.koukeneko.hashi.model.dto.VmDTO;
@@ -222,22 +223,44 @@ public class VirtService {
         // Hugepages
         builder.hugepages(xml.contains("<hugepages/>"));
         
-        // Disk
+        // 解析所有磁碟
+        List<DiskDTO> disks = new ArrayList<>();
         Pattern diskPattern = Pattern.compile("<disk[^>]*device=['\"]disk['\"][^>]*>.*?</disk>", Pattern.DOTALL);
         Matcher diskMatcher = diskPattern.matcher(xml);
-        if (diskMatcher.find()) {
+        boolean isFirstDisk = true;
+        while (diskMatcher.find()) {
             String diskXml = diskMatcher.group();
-            builder.diskPath(extractXmlAttribute(diskXml, "<source file=['\"]([^'\"]+)['\"]"));
-            builder.diskFormat(extractXmlAttribute(diskXml, "type=['\"]([^'\"]+)['\"]"));
-            builder.diskBus(extractXmlAttribute(diskXml, "bus=['\"]([^'\"]+)['\"]"));
-            
             String diskPath = extractXmlAttribute(diskXml, "<source file=['\"]([^'\"]+)['\"]");
+            String diskFormat = extractXmlAttribute(diskXml, "type=['\"]([^'\"]+)['\"]");
+            String diskBus = extractXmlAttribute(diskXml, "bus=['\"]([^'\"]+)['\"]");
+            String targetDev = extractXmlAttribute(diskXml, "<target dev=['\"]([^'\"]+)['\"]");
+            
+            Long diskSize = null;
             if (diskPath != null) {
                 try {
-                    builder.diskSizeBytes(Files.size(Path.of(diskPath)));
+                    diskSize = Files.size(Path.of(diskPath));
                 } catch (Exception e) { /* ignore */ }
             }
+            
+            // 第一個磁碟設為主磁碟（向後相容）
+            if (isFirstDisk) {
+                builder.diskPath(diskPath);
+                builder.diskFormat(diskFormat);
+                builder.diskBus(diskBus);
+                builder.diskSizeBytes(diskSize);
+                isFirstDisk = false;
+            }
+            
+            // 添加到磁碟列表
+            disks.add(DiskDTO.builder()
+                    .name(targetDev)
+                    .path(diskPath)
+                    .format(diskFormat)
+                    .bus(diskBus)
+                    .sizeGB(diskSize != null ? diskSize / (1024L * 1024L * 1024L) : null)
+                    .build());
         }
+        builder.disks(disks.isEmpty() ? null : disks);
         
         // CD-ROM / ISO
         Pattern cdromPattern = Pattern.compile("<disk[^>]*device=['\"]cdrom['\"][^>]*>.*?</disk>", Pattern.DOTALL);
@@ -357,16 +380,9 @@ public class VirtService {
             // 修改 XML
             xml = applyUpdatesToXml(xml, request, isRunning);
             
-            // 如果 VM 正在運行，某些設定需要重新定義
-            if (isRunning) {
-                // 只有部分設定可以熱更新
-                // 對於需要關機的設定，我們更新定義但不立即生效
-                domain = conn.domainDefineXML(xml);
-            } else {
-                // VM 已關機，可以直接重新定義
-                domain.undefine();
-                domain = conn.domainDefineXML(xml);
-            }
+            // 重新定義 VM (無論運行狀態都可以更新定義)
+            // 注意：運行中的 VM 某些設定需要重啟才能生效
+            domain = conn.domainDefineXML(xml);
             
             // 處理 autostart
             if (request.autostart() != null) {
@@ -514,23 +530,68 @@ public class VirtService {
     // 建立新 VM
     public VmDTO createVm(CreateVmDTO request) {
         Connect conn = null;
+        List<String> createdDiskPaths = new ArrayList<>();
         try {
             conn = connect();
 
-            // 1. 建立虛擬磁碟 (qcow2 格式)
-            String diskPath = DISK_BASE_PATH + "/" + request.name() + ".qcow2";
-            createDisk(diskPath, request.diskGB());
+            // 1. 建立主磁碟 (向後相容)
+            String primaryDiskPath = null;
+            if (request.diskGB() != null && request.diskGB() > 0) {
+                primaryDiskPath = DISK_BASE_PATH + "/" + request.name() + ".qcow2";
+                String format = request.diskFormat() != null ? request.diskFormat() : "qcow2";
+                createDisk(primaryDiskPath, request.diskGB(), format);
+                createdDiskPaths.add(primaryDiskPath);
+            }
 
-            // 2. 產生 XML 定義
+            // 2. 建立額外磁碟
+            List<DiskDTO> additionalDisks = new ArrayList<>();
+            if (request.disks() != null && !request.disks().isEmpty()) {
+                for (int i = 0; i < request.disks().size(); i++) {
+                    DiskDTO disk = request.disks().get(i);
+                    String diskPath;
+                    
+                    if (disk.path() != null && !disk.path().isBlank()) {
+                        // 使用現有磁碟
+                        diskPath = disk.path();
+                    } else if (disk.sizeGB() != null && disk.sizeGB() > 0) {
+                        // 建立新磁碟
+                        String diskName = disk.name() != null ? disk.name() : "disk" + (i + 1);
+                        String format = disk.format() != null ? disk.format() : "qcow2";
+                        diskPath = DISK_BASE_PATH + "/" + request.name() + "-" + diskName + "." + format;
+                        createDisk(diskPath, disk.sizeGB(), format);
+                        createdDiskPaths.add(diskPath);
+                    } else {
+                        continue; // 跳過無效磁碟定義
+                    }
+                    
+                    additionalDisks.add(DiskDTO.builder()
+                            .name(disk.name())
+                            .path(diskPath)
+                            .format(disk.format() != null ? disk.format() : "qcow2")
+                            .bus(disk.bus() != null ? disk.bus() : "virtio")
+                            .cache(disk.cache())
+                            .io(disk.io())
+                            .bootable(disk.bootable())
+                            .build());
+                }
+            }
+
+            // 3. 產生 XML 定義
             String uuid = UUID.randomUUID().toString();
-            String xml = generateVmXml(request, uuid, diskPath);
+            String xml = generateVmXml(request, uuid, primaryDiskPath, additionalDisks);
 
-            // 3. 定義 VM (不啟動)
+            // 4. 定義 VM (不啟動)
             Domain domain = conn.domainDefineXML(xml);
 
             return mapToDTO(domain);
 
         } catch (LibvirtException | IOException e) {
+            // 清理已建立的磁碟
+            for (String diskPath : createdDiskPaths) {
+                try {
+                    Files.deleteIfExists(Path.of(diskPath));
+                } catch (IOException ignored) {}
+            }
             throw new RuntimeException("Failed to create VM: " + e.getMessage(), e);
         } finally {
             close(conn);
@@ -549,16 +610,29 @@ public class VirtService {
                 domain.destroy();
             }
 
-            // 取得磁碟路徑
-            String diskPath = DISK_BASE_PATH + "/" + name + ".qcow2";
+            // 從 XML 解析所有磁碟路徑
+            String xml = domain.getXMLDesc(0);
+            List<String> diskPaths = new ArrayList<>();
+            Pattern diskPattern = Pattern.compile("<disk[^>]*device=['\"]disk['\"][^>]*>.*?<source file=['\"]([^'\"]+)['\"].*?</disk>", Pattern.DOTALL);
+            Matcher diskMatcher = diskPattern.matcher(xml);
+            while (diskMatcher.find()) {
+                diskPaths.add(diskMatcher.group(1));
+            }
 
             // 取消定義 (刪除 VM)
             domain.undefine();
 
-            // 刪除磁碟檔案
-            Files.deleteIfExists(Path.of(diskPath));
+            // 刪除所有磁碟檔案
+            for (String diskPath : diskPaths) {
+                try {
+                    Files.deleteIfExists(Path.of(diskPath));
+                } catch (IOException e) {
+                    // 記錄但不中斷
+                    System.err.println("Failed to delete disk: " + diskPath + " - " + e.getMessage());
+                }
+            }
 
-        } catch (LibvirtException | IOException e) {
+        } catch (LibvirtException e) {
             throw new RuntimeException("Failed to delete VM: " + e.getMessage(), e);
         } finally {
             close(conn);
@@ -566,9 +640,9 @@ public class VirtService {
     }
 
     // 使用 qemu-img 建立磁碟
-    private void createDisk(String path, long sizeGB) throws IOException {
+    private void createDisk(String path, long sizeGB, String format) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(
-                "qemu-img", "create", "-f", "qcow2", path, sizeGB + "G"
+                "qemu-img", "create", "-f", format, path, sizeGB + "G"
         );
         pb.redirectErrorStream(true); // 合併 stderr 到 stdout
         Process process = pb.start();
@@ -591,7 +665,7 @@ public class VirtService {
     }
 
     // 產生 libvirt XML 定義
-    private String generateVmXml(CreateVmDTO req, String uuid, String diskPath) {
+    private String generateVmXml(CreateVmDTO req, String uuid, String primaryDiskPath, List<DiskDTO> additionalDisks) {
         StringBuilder xml = new StringBuilder();
         
         // 取得設定值（使用預設值）
@@ -740,23 +814,66 @@ public class VirtService {
             xml.append("    </controller>\n");
         }
 
-        // 磁碟
-        xml.append("    <disk type='file' device='disk'>\n");
-        xml.append("      <driver name='qemu' type='").append(diskFormat).append("'");
-        if (diskCache != null) xml.append(" cache='").append(diskCache).append("'");
-        if (diskIo != null) xml.append(" io='").append(diskIo).append("'");
-        xml.append("/>\n");
-        xml.append("      <source file='").append(diskPath).append("'/>\n");
-        String diskDev = "virtio".equals(diskBus) ? "vda" : "sda";
-        xml.append("      <target dev='").append(diskDev).append("' bus='").append(diskBus).append("'/>\n");
-        xml.append("    </disk>\n");
+        // 磁碟計數器 (用於生成裝置名稱)
+        int virtioIdx = 0;  // vda, vdb, vdc...
+        int sataIdx = 0;    // sda, sdb, sdc...
+        int scsiIdx = 0;    // sda, sdb, sdc... (SCSI)
+        int ideIdx = 0;     // hda, hdb, hdc...
 
-        // CD-ROM
+        // 主磁碟
+        if (primaryDiskPath != null) {
+            xml.append("    <disk type='file' device='disk'>\n");
+            xml.append("      <driver name='qemu' type='").append(diskFormat).append("'");
+            if (diskCache != null) xml.append(" cache='").append(diskCache).append("'");
+            if (diskIo != null) xml.append(" io='").append(diskIo).append("'");
+            xml.append("/>\n");
+            xml.append("      <source file='").append(primaryDiskPath).append("'/>\n");
+            String diskDev = getDiskDeviceName(diskBus, virtioIdx, sataIdx, scsiIdx, ideIdx);
+            xml.append("      <target dev='").append(diskDev).append("' bus='").append(diskBus).append("'/>\n");
+            xml.append("    </disk>\n");
+            
+            // 更新計數器
+            switch (diskBus) {
+                case "virtio" -> virtioIdx++;
+                case "sata" -> sataIdx++;
+                case "scsi" -> scsiIdx++;
+                case "ide" -> ideIdx++;
+            }
+        }
+
+        // 額外磁碟
+        if (additionalDisks != null) {
+            for (DiskDTO disk : additionalDisks) {
+                String bus = disk.bus() != null ? disk.bus() : "virtio";
+                String format = disk.format() != null ? disk.format() : "qcow2";
+                
+                xml.append("    <disk type='file' device='disk'>\n");
+                xml.append("      <driver name='qemu' type='").append(format).append("'");
+                if (disk.cache() != null) xml.append(" cache='").append(disk.cache()).append("'");
+                if (disk.io() != null) xml.append(" io='").append(disk.io()).append("'");
+                xml.append("/>\n");
+                xml.append("      <source file='").append(disk.path()).append("'/>\n");
+                String diskDev = getDiskDeviceName(bus, virtioIdx, sataIdx, scsiIdx, ideIdx);
+                xml.append("      <target dev='").append(diskDev).append("' bus='").append(bus).append("'/>\n");
+                xml.append("    </disk>\n");
+                
+                // 更新計數器
+                switch (bus) {
+                    case "virtio" -> virtioIdx++;
+                    case "sata" -> sataIdx++;
+                    case "scsi" -> scsiIdx++;
+                    case "ide" -> ideIdx++;
+                }
+            }
+        }
+
+        // CD-ROM (使用 SATA 匯流排)
         if (req.isoPath() != null && !req.isoPath().isBlank()) {
             xml.append("    <disk type='file' device='cdrom'>\n");
             xml.append("      <driver name='qemu' type='raw'/>\n");
             xml.append("      <source file='").append(req.isoPath()).append("'/>\n");
-            xml.append("      <target dev='sdb' bus='sata'/>\n");
+            String cdromDev = getDiskDeviceName("sata", 0, sataIdx, 0, 0);
+            xml.append("      <target dev='").append(cdromDev).append("' bus='sata'/>\n");
             xml.append("      <readonly/>\n");
             xml.append("    </disk>\n");
         }
@@ -834,6 +951,17 @@ public class VirtService {
         xml.append("</domain>");
 
         return xml.toString();
+    }
+
+    // 根據匯流排類型和索引生成磁碟裝置名稱
+    private String getDiskDeviceName(String bus, int virtioIdx, int sataIdx, int scsiIdx, int ideIdx) {
+        return switch (bus) {
+            case "virtio" -> "vd" + (char)('a' + virtioIdx);
+            case "sata" -> "sd" + (char)('a' + sataIdx);
+            case "scsi" -> "sd" + (char)('a' + scsiIdx);
+            case "ide" -> "hd" + (char)('a' + ideIdx);
+            default -> "vd" + (char)('a' + virtioIdx);
+        };
     }
 
     // XML 字元跳脫

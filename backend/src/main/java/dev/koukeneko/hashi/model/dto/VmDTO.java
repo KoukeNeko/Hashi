@@ -20,10 +20,16 @@ public record VmDTO(
         Integer cpuCores,           // 每插槽核心數
         Integer cpuThreads,         // 每核心執行緒數
         Boolean hugepages,          // 大分頁
+        
+        // 主磁碟 (向後相容)
         String diskPath,            // 磁碟路徑
         String diskFormat,          // 磁碟格式
         String diskBus,             // 磁碟匯流排
         Long diskSizeBytes,         // 磁碟大小
+        
+        // 多磁碟
+        List<DiskDTO> disks,        // 所有磁碟列表
+        
         String networkType,         // 網路類型
         String networkSource,       // 網路來源
         String networkModel,        // 網卡型號

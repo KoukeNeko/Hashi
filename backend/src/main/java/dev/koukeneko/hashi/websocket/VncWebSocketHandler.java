@@ -127,10 +127,10 @@ public class VncWebSocketHandler extends BinaryWebSocketHandler {
         if (uri == null) return null;
         
         String path = uri.getPath();
-        // /api/v1/virt/vms/{vmName}/vnc
+        // /ws/vnc/{vmName}
         String[] parts = path.split("/");
-        if (parts.length >= 6 && "vnc".equals(parts[parts.length - 1])) {
-            return parts[parts.length - 2];
+        if (parts.length >= 3 && "vnc".equals(parts[parts.length - 2])) {
+            return parts[parts.length - 1];
         }
         return null;
     }

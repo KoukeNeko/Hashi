@@ -16,7 +16,7 @@ public class VncWebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(vncWebSocketHandler, "/api/v1/virt/vms/*/vnc")
+        registry.addHandler(vncWebSocketHandler, "/ws/vnc/*")
                 .setAllowedOrigins("*");
     }
 }

@@ -149,7 +149,7 @@ public class VirtService {
                     .host("localhost")
                     .port(port)
                     .password(password)
-                    .websocketUrl("/api/v1/virt/vms/" + name + "/vnc")
+                    .websocketUrl("/ws/vnc/" + name)
                     .build();
 
         } catch (LibvirtException e) {

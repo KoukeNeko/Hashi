@@ -409,14 +409,28 @@ public class VirtService {
             }
         }
         
-        // Memory (可部分熱更新)
+        // Memory (可部分熱更新) - 支援 KiB 和 MiB 兩種單位
         if (req.memoryMB() != null) {
-            xml = xml.replaceFirst("<currentMemory unit='MiB'>\\d+</currentMemory>", 
-                    "<currentMemory unit='MiB'>" + req.memoryMB() + "</currentMemory>");
+            // 嘗試符合 KiB 單位
+            if (xml.contains("<currentMemory unit='KiB'") || xml.contains("<currentMemory unit=\"KiB\"")) {
+                xml = xml.replaceFirst("<currentMemory unit=['\"]KiB['\"]>\\d+</currentMemory>", 
+                        "<currentMemory unit='KiB'>" + (req.memoryMB() * 1024) + "</currentMemory>");
+            } else {
+                // 符合 MiB 單位
+                xml = xml.replaceFirst("<currentMemory unit=['\"]MiB['\"]>\\d+</currentMemory>", 
+                        "<currentMemory unit='MiB'>" + req.memoryMB() + "</currentMemory>");
+            }
         }
         if (req.maxMemoryMB() != null) {
-            xml = xml.replaceFirst("<memory unit='MiB'>\\d+</memory>", 
-                    "<memory unit='MiB'>" + req.maxMemoryMB() + "</memory>");
+            // 嘗試符合 KiB 單位
+            if (xml.contains("<memory unit='KiB'") || xml.contains("<memory unit=\"KiB\"")) {
+                xml = xml.replaceFirst("<memory unit=['\"]KiB['\"]>\\d+</memory>", 
+                        "<memory unit='KiB'>" + (req.maxMemoryMB() * 1024) + "</memory>");
+            } else {
+                // 符合 MiB 單位
+                xml = xml.replaceFirst("<memory unit=['\"]MiB['\"]>\\d+</memory>", 
+                        "<memory unit='MiB'>" + req.maxMemoryMB() + "</memory>");
+            }
         }
         
         // vCPU (需關機)
@@ -427,33 +441,32 @@ public class VirtService {
         // CPU Mode (需關機)
         if (req.cpuMode() != null && !isRunning) {
             if (xml.contains("<cpu mode=")) {
-                xml = xml.replaceFirst("<cpu mode='[^']*'", "<cpu mode='" + req.cpuMode() + "'");
+                xml = xml.replaceFirst("<cpu mode=['\"][^'\"]*['\"]", "<cpu mode='" + req.cpuMode() + "'");
             }
         }
         
         // Graphics Password (可熱更新)
         if (req.graphicsPassword() != null) {
             // 先移除現有密碼
-            xml = xml.replaceFirst(" passwd='[^']*'", "");
-            xml = xml.replaceFirst(" passwd=\"[^\"]*\"", "");
+            xml = xml.replaceFirst(" passwd=['\"][^'\"]*['\"]", "");
             // 加入新密碼
             if (!req.graphicsPassword().isEmpty()) {
-                xml = xml.replaceFirst("<graphics type='([^']+)'", 
+                xml = xml.replaceFirst("<graphics type=['\"]([^'\"]+)['\"]", 
                         "<graphics type='$1' passwd='" + escapeXml(req.graphicsPassword()) + "'");
             }
         }
         
         // Graphics Listen
         if (req.graphicsListen() != null) {
-            xml = xml.replaceFirst("listen='[^']*'", "listen='" + req.graphicsListen() + "'");
-            xml = xml.replaceFirst("<listen type='address' address='[^']*'/>", 
+            xml = xml.replaceFirst("listen=['\"][^'\"]*['\"]", "listen='" + req.graphicsListen() + "'");
+            xml = xml.replaceFirst("<listen type=['\"]address['\"] address=['\"][^'\"]*['\"]/>", 
                     "<listen type='address' address='" + req.graphicsListen() + "'/>");
         }
         
         // Boot Order (需關機)
         if (req.bootOrder() != null && !isRunning) {
             // 移除現有 boot 設定
-            xml = xml.replaceAll("\\s*<boot dev='[^']*'/>", "");
+            xml = xml.replaceAll("\\s*<boot dev=['\"][^'\"]*['\"]/>", "");
             // 在 </os> 前加入新的 boot 順序
             StringBuilder bootXml = new StringBuilder();
             for (String boot : req.bootOrder()) {
@@ -464,7 +477,7 @@ public class VirtService {
         
         // Boot Menu (需關機)
         if (req.bootMenu() != null && !isRunning) {
-            xml = xml.replaceFirst("<bootmenu enable='[^']*'/>", "");
+            xml = xml.replaceFirst("<bootmenu enable=['\"][^'\"]*['\"]/>", "");
             if (req.bootMenu()) {
                 xml = xml.replaceFirst("</os>", "    <bootmenu enable='yes'/>\n  </os>");
             }
@@ -486,7 +499,7 @@ public class VirtService {
         
         // Clock Offset (需關機)
         if (req.clockOffset() != null && !isRunning) {
-            xml = xml.replaceFirst("<clock offset='[^']*'", "<clock offset='" + req.clockOffset() + "'");
+            xml = xml.replaceFirst("<clock offset=['\"][^'\"]*['\"]", "<clock offset='" + req.clockOffset() + "'");
         }
         
         // CD-ROM / ISO (可熱插拔)
@@ -494,21 +507,19 @@ public class VirtService {
             if (req.isoPath().isEmpty()) {
                 // 彈出 ISO - 移除 source
                 xml = xml.replaceFirst(
-                        "(<disk[^>]*device=['\"]cdrom['\"][^>]*>.*?)<source file='[^']*'/>",
+                        "(<disk[^>]*device=['\"]cdrom['\"][^>]*>.*?)<source file=['\"][^'\"]*['\"]/>",
                         "$1");
             } else {
                 // 換 ISO
-                if (xml.contains("<disk") && xml.contains("device='cdrom'")) {
-                    // 更新現有 cdrom
-                    Pattern cdromPattern = Pattern.compile(
-                            "(<disk[^>]*device=['\"]cdrom['\"][^>]*>)(.*?)(</disk>)", Pattern.DOTALL);
-                    Matcher cdromMatcher = cdromPattern.matcher(xml);
-                    if (cdromMatcher.find()) {
-                        String cdromContent = cdromMatcher.group(2);
-                        if (cdromContent.contains("<source file=")) {
-                            cdromContent = cdromContent.replaceFirst("<source file='[^']*'/>", 
-                                    "<source file='" + req.isoPath() + "'/>");
-                        } else {
+                Pattern cdromPattern = Pattern.compile(
+                        "(<disk[^>]*device=['\"]cdrom['\"][^>]*>)(.*?)(</disk>)", Pattern.DOTALL);
+                Matcher cdromMatcher = cdromPattern.matcher(xml);
+                if (cdromMatcher.find()) {
+                    String cdromContent = cdromMatcher.group(2);
+                    if (cdromContent.contains("<source file=")) {
+                        cdromContent = cdromContent.replaceFirst("<source file=['\"][^'\"]*['\"]/>", 
+                                "<source file='" + req.isoPath() + "'/>");
+                    } else {
                             cdromContent = cdromContent.replaceFirst("<driver", 
                                     "<source file='" + req.isoPath() + "'/>\n      <driver");
                         }
@@ -516,7 +527,7 @@ public class VirtService {
                     }
                 }
             }
-        }
+
         
         return xml;
     }

@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { PageHeader } from '../components/PageHeader';
-import { MOCK_WAF_RULES } from '../constants';
+import { PageHeader } from '../../components/PageHeader';
+import { MOCK_WAF_RULES } from '../../constants';
 import { Lock, ShieldCheck, AlertTriangle, Shield, Settings } from 'lucide-react';
 
 const WafManager: React.FC = () => {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { PageHeader } from '../components/PageHeader';
-import { Tabs, TabItem } from '../components/Tabs';
-import { UserManagementService } from '../services/api';
-import { UserInfo, GroupInfo } from '../types';
+import { PageHeader } from '../../components/PageHeader';
+import { Tabs, TabItem } from '../../components/Tabs';
+import { UserManagementService } from '../../services/api';
+import { UserInfo, GroupInfo } from '../../types';
 import { 
     Users, UsersRound, Plus, Trash2, Key, Terminal, Save, 
     Loader2, Shield, Home, UserPlus, UserMinus, Lock, Unlock, Edit3
@@ -12,7 +12,7 @@ import {
     ConfirmDialog, FormInput, FormSelect, FormCheckbox,
     FormError, Toast, ActionButton,
     FormDialog, useFormDialog
-} from '../components/ui';
+} from '../../components/ui';
 
 // ==================== Tab Configuration ====================
 const tabs: TabItem[] = [

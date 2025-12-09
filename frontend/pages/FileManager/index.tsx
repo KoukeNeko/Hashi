@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { PageHeader } from '../components/PageHeader';
-import FileEditor from '../components/FileEditor';
-import { FileItem } from '../types';
-import { FileService } from '../services/api';
+import { PageHeader } from '../../components/PageHeader';
+import FileEditor from '../../components/FileEditor';
+import { FileItem } from '../../types';
+import { FileService } from '../../services/api';
 import { FileText, Folder, MoreVertical, Search, Upload, Download, Trash2, Home, RefreshCw, ChevronRight, AlertCircle, Lock, ArrowLeft, Loader2 } from 'lucide-react';
-import { ConfirmDialog } from '../components/ui';
+import { ConfirmDialog } from '../../components/ui';
 
 // 格式化檔案大小
 const formatFileSize = (bytes: number): string => {

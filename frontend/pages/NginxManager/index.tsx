@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { MOCK_NGINX_HOSTS, MOCK_SSL_CERTIFICATES } from '../constants';
-import { PageHeader } from '../components/PageHeader';
-import { Tabs } from '../components/Tabs';
+import { MOCK_NGINX_HOSTS, MOCK_SSL_CERTIFICATES } from '../../constants';
+import { PageHeader } from '../../components/PageHeader';
+import { Tabs } from '../../components/Tabs';
 import { Globe, ShieldCheck, Server, Plus, Power, RefreshCw, Trash2, Edit, Calendar } from 'lucide-react';
 
 const NginxManager: React.FC = () => {

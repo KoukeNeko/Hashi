@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { PageHeader } from '../components/PageHeader';
-import { ServiceItem } from '../types';
-import { SystemdService } from '../services/api';
+import { PageHeader } from '../../components/PageHeader';
+import { ServiceItem } from '../../types';
+import { SystemdService } from '../../services/api';
 import { Settings2, Play, Square, RefreshCw, Search, AlertCircle, Loader2, CheckCircle, X } from 'lucide-react';
-import { Toast } from '../components/ui';
+import { Toast } from '../../components/ui';
 
 // Toast 通知類型
 interface ToastItem {

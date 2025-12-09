@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PageHeader } from '../components/PageHeader';
-import { Tabs } from '../components/Tabs';
+import { PageHeader } from '../../components/PageHeader';
+import { Tabs } from '../../components/Tabs';
 import { ScrollText, Download, Trash2, Search, Pause, Play, ArrowDown, Loader2, Wifi, WifiOff } from 'lucide-react';
 
 interface LogEntry {

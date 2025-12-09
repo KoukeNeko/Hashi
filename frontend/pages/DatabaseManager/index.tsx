@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { PageHeader } from '../components/PageHeader';
-import { MOCK_DATABASES } from '../constants';
+import { PageHeader } from '../../components/PageHeader';
+import { MOCK_DATABASES } from '../../constants';
 import { Database, Plus, RefreshCw, Archive, Trash2, Settings } from 'lucide-react';
 
 const DatabaseManager: React.FC = () => {

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { INITIAL_CPU_DATA, MOCK_NGINX_HOSTS, MOCK_CONTAINERS, MOCK_FIREWALL_RULES } from '../constants';
+import { INITIAL_CPU_DATA, MOCK_NGINX_HOSTS, MOCK_CONTAINERS, MOCK_FIREWALL_RULES } from '../../constants';
 import { Server, Database, ChevronRight, Terminal, Power, Globe, Shield, Activity } from 'lucide-react';
-import { connectWebSocket } from '../services/api';
-import { SystemStatus } from '../types';
+import { connectWebSocket } from '../../services/api';
+import { SystemStatus } from '../../types';
 
 const CircularGauge = ({ value, label, subLabel, color = "#10b981" }: { value: number, label: string, subLabel: string, color?: string }) => {
     // Two layers: Track (gray) and Progress (colored)

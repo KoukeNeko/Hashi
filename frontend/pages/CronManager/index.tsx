@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { PageHeader } from '../components/PageHeader';
-import { CronService } from '../services/api';
-import { CronJob } from '../types';
+import { PageHeader } from '../../components/PageHeader';
+import { CronService } from '../../services/api';
+import { CronJob } from '../../types';
 import { Clock, Trash2, Edit, Plus, Save, Loader2 } from 'lucide-react';
 import {
     ConfirmDialog, FormDialog,
     Toast, ActionButton
-} from '../components/ui';
+} from '../../components/ui';
 
 // ==================== Cron Job Dialog ====================
 interface CronFormValues {

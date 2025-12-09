@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { PageHeader } from '../components/PageHeader';
-import { FirewallService } from '../services/api';
-import { FirewallRule } from '../types';
+import { PageHeader } from '../../components/PageHeader';
+import { FirewallService } from '../../services/api';
+import { FirewallRule } from '../../types';
 import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Loader2, RefreshCw, Power } from 'lucide-react';
 import {
     ConfirmDialog, FormDialog,
     Toast, ActionButton
-} from '../components/ui';
+} from '../../components/ui';
 
 // ==================== Protocol Options ====================
 const protocolOptions = [

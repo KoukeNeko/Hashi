@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { Command, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
-import { AuthService, SessionStorage } from '../services/api';
-import { UserInfo } from '../types';
+import { AuthService, SessionStorage } from '../../services/api';
+import { UserInfo } from '../../types';
 
 interface LoginProps {
   onLogin: (user: UserInfo) => void;

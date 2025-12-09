@@ -4,12 +4,13 @@ import { VirtService } from '../../services/api';
 import { PageHeader } from '../../components/PageHeader';
 import { VncConsole } from '../../components/VncConsole';
 import { Tabs, TabItem } from '../../components/Tabs';
-import { 
-    Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick, 
+import {
+    Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick,
     Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle,
     Plus, Trash2, Upload, Disc, X, MonitorPlay, Settings, Network, Tv, Zap, ChevronDown, ChevronUp, Info, Edit
 } from 'lucide-react';
 import { Toast, ActionButton, ConfirmDialog } from '../../components/ui';
+import { LibvirtSetupGuide } from './components/LibvirtSetupGuide';
 
 // 格式化檔案大小
 const formatFileSize = (bytes: number): string => {
@@ -46,114 +47,6 @@ const formatMemory = (kib: number): string => {
     }
     const mib = kib / 1024;
     return `${mib.toFixed(0)} MB`;
-};
-
-// ==================== Setup Guide Component ====================
-const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => {
-    const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-
-    const commands = [
-        {
-            title: 'Install KVM & Libvirt',
-            cmd: 'sudo apt update && sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils'
-        },
-        {
-            title: 'Install development libraries (required for Java)',
-            cmd: 'sudo apt install -y libvirt-dev'
-        },
-        {
-            title: 'Add user to libvirt group',
-            cmd: 'sudo usermod -aG libvirt $USER'
-        },
-        {
-            title: 'Start & enable libvirtd',
-            cmd: 'sudo systemctl enable --now libvirtd'
-        },
-        {
-            title: 'Set images directory permissions (for VM disk creation)',
-            cmd: 'sudo chown root:libvirt /var/lib/libvirt/images && sudo chmod 775 /var/lib/libvirt/images'
-        }
-    ];
-
-    const copyToClipboard = async (text: string, index: number) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopiedIndex(index);
-            setTimeout(() => setCopiedIndex(null), 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-        }
-    };
-
-    return (
-        <div className="bg-surface border border-border rounded-lg p-6 max-w-2xl mx-auto">
-            <div className="flex items-start gap-4 mb-6">
-                <div className="p-3 bg-amber-500/20 rounded-lg">
-                    <AlertCircle size={24} className="text-amber-400" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-bold text-zinc-100">Libvirt Setup Required</h3>
-                    <p className="text-sm text-zinc-400 mt-1">
-                        KVM/Libvirt is not configured on this server. Please run the following commands to set it up:
-                    </p>
-                </div>
-            </div>
-
-            <div className="space-y-4">
-                {commands.map((item, index) => (
-                    <div key={index} className="bg-zinc-900 rounded-lg overflow-hidden border border-border">
-                        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-zinc-800/50">
-                            <span className="text-xs text-zinc-400 font-medium">
-                                {index + 1}. {item.title}
-                            </span>
-                            <button
-                                onClick={() => copyToClipboard(item.cmd, index)}
-                                className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-                            >
-                                {copiedIndex === index ? (
-                                    <>
-                                        <CheckCircle size={12} className="text-emerald-400" />
-                                        <span className="text-emerald-400">Copied!</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Copy size={12} />
-                                        <span>Copy</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                        <div className="p-4">
-                            <code className="text-sm font-mono text-emerald-400 break-all">
-                                {item.cmd}
-                            </code>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <div className="flex items-start gap-3">
-                    <Terminal size={18} className="text-blue-400 mt-0.5" />
-                    <div className="text-sm text-blue-200">
-                        <p className="font-medium">After running the commands:</p>
-                        <ul className="mt-2 space-y-1 text-blue-300/80">
-                            <li>• Log out and log back in (for group changes to take effect)</li>
-                            <li>• Restart the Hashi backend service</li>
-                            <li>• Place ISO files in <code className="bg-zinc-800 px-1 rounded">/var/lib/libvirt/images/</code></li>
-                            <li>• Click the button below to retry</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-6 flex justify-center">
-                <ActionButton onClick={onRetry} icon={<RefreshCw size={16} />}>
-                    Retry Connection
-                </ActionButton>
-            </div>
-        </div>
-    );
 };
 
 // ==================== Main Component ====================
@@ -256,14 +149,14 @@ const KvmManager: React.FC = () => {
     const executeVmAction = async (vmName: string, action: 'start' | 'stop' | 'force-stop' | 'reboot' | 'delete') => {
         try {
             setActionLoading(vmName);
-            
+
             if (action === 'delete') {
                 await VirtService.deleteVm(vmName);
                 setToast({ message: `VM "${vmName}" deleted successfully`, type: 'success' });
                 loadVms();
             } else {
                 await VirtService.controlVm(vmName, action);
-                
+
                 const actionLabels = {
                     'start': 'started',
                     'stop': 'stopped',
@@ -271,7 +164,7 @@ const KvmManager: React.FC = () => {
                     'reboot': 'rebooted'
                 };
                 setToast({ message: `VM "${vmName}" ${actionLabels[action]} successfully`, type: 'success' });
-                
+
                 // 延遲重新載入，讓 libvirt 有時間更新狀態
                 setTimeout(loadVms, 1000);
             }
@@ -289,13 +182,13 @@ const KvmManager: React.FC = () => {
             setToast({ message: 'Please enter a VM name', type: 'error' });
             return;
         }
-        
+
         try {
             setCreateVmLoading(true);
             await VirtService.createVm(createVmForm);
             setToast({ message: `VM "${createVmForm.name}" created successfully`, type: 'success' });
             setCreateVmDialogOpen(false);
-            setCreateVmForm({ 
+            setCreateVmForm({
                 name: '', vcpu: 2, memoryMB: 2048, diskGB: 20, osType: 'linux', isoPath: '',
                 ...VM_DEFAULTS,
             });
@@ -317,11 +210,11 @@ const KvmManager: React.FC = () => {
             setEditVmDialogOpen(true);
             setEditVmName(vmName);
             setEditVmTab('basic');
-            
+
             // 取得 VM 詳細資訊
             const vmDetails = await VirtService.getVmDetails(vmName);
             setEditVmOriginal(vmDetails);
-            
+
             // 初始化編輯表單
             setEditVmForm({
                 description: vmDetails.description || '',
@@ -369,7 +262,7 @@ const KvmManager: React.FC = () => {
     // 更新 VM
     const handleUpdateVm = async () => {
         if (!editVmName) return;
-        
+
         try {
             setEditVmLoading(true);
             await VirtService.updateVm(editVmName, editVmForm);
@@ -434,8 +327,8 @@ const KvmManager: React.FC = () => {
                         <ActionButton
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploadProgress !== null}
-                            icon={uploadProgress !== null 
-                                ? <Loader2 size={16} className="animate-spin" /> 
+                            icon={uploadProgress !== null
+                                ? <Loader2 size={16} className="animate-spin" />
                                 : <Upload size={16} />
                             }
                             variant="secondary"
@@ -480,8 +373,8 @@ const KvmManager: React.FC = () => {
                         const isLoading = actionLoading === vm.name;
 
                         return (
-                            <div 
-                                key={vm.id} 
+                            <div
+                                key={vm.id}
                                 className="bg-surface border border-border rounded-lg p-5 hover:border-zinc-600 transition-colors relative overflow-hidden group shadow-lg"
                             >
                                 {/* Status Strip */}
@@ -610,12 +503,12 @@ const KvmManager: React.FC = () => {
                     onConfirm={() => executeVmAction(confirmDialog.vmName, confirmDialog.action)}
                     title={
                         confirmDialog.action === 'delete' ? 'Delete VM' :
-                        confirmDialog.action === 'force-stop' ? 'Force Stop VM' :
-                        confirmDialog.action === 'stop' ? 'Shutdown VM' : 'Reboot VM'
+                            confirmDialog.action === 'force-stop' ? 'Force Stop VM' :
+                                confirmDialog.action === 'stop' ? 'Shutdown VM' : 'Reboot VM'
                     }
                     message={
                         <>
-                            Are you sure you want to {confirmDialog.action === 'force-stop' ? 'force stop' : confirmDialog.action} 
+                            Are you sure you want to {confirmDialog.action === 'force-stop' ? 'force stop' : confirmDialog.action}
                             {' '}<span className="text-white font-bold">{confirmDialog.vmName}</span>?
                             {confirmDialog.action === 'force-stop' && (
                                 <p className="text-xs text-rose-400 mt-2">
@@ -633,14 +526,14 @@ const KvmManager: React.FC = () => {
                     }
                     confirmText={
                         confirmDialog.action === 'delete' ? 'Delete' :
-                        confirmDialog.action === 'force-stop' ? 'Force Stop' :
-                        confirmDialog.action === 'stop' ? 'Shutdown' : 'Reboot'
+                            confirmDialog.action === 'force-stop' ? 'Force Stop' :
+                                confirmDialog.action === 'stop' ? 'Shutdown' : 'Reboot'
                     }
                     confirmColor={confirmDialog.action === 'delete' || confirmDialog.action === 'force-stop' ? 'red' : 'amber'}
                     confirmIcon={
                         confirmDialog.action === 'delete' ? <Trash2 size={16} /> :
-                        confirmDialog.action === 'reboot' ? <RotateCcw size={16} /> :
-                        confirmDialog.action === 'force-stop' ? <Square size={16} /> : <Power size={16} />
+                            confirmDialog.action === 'reboot' ? <RotateCcw size={16} /> :
+                                confirmDialog.action === 'force-stop' ? <Square size={16} /> : <Power size={16} />
                     }
                 />
             )}
@@ -707,8 +600,8 @@ const KvmManager: React.FC = () => {
                                             value={createVmForm.osType}
                                             onChange={(e) => {
                                                 const osType = e.target.value;
-                                                setCreateVmForm({ 
-                                                    ...createVmForm, 
+                                                setCreateVmForm({
+                                                    ...createVmForm,
                                                     osType,
                                                     clockOffset: osType === 'windows' ? 'localtime' : 'utc',
                                                     machine: osType === 'windows' ? 'q35' : createVmForm.machine,

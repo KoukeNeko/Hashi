@@ -2,81 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../components/PageHeader';
 import { FirewallService } from '../../services/api';
 import { FirewallRule } from '../../types';
-import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Loader2, RefreshCw, Power } from 'lucide-react';
-import {
-    ConfirmDialog, FormDialog,
-    Toast, ActionButton
-} from '../../components/ui';
+import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Loader2, RefreshCw, Power, AlertCircle } from 'lucide-react';
+import { Toast, ActionButton } from '../../components/ui';
+import { AddRuleDialog, DeleteRuleDialog } from './components/FirewallDialogs';
 
-// ==================== Protocol Options ====================
-const protocolOptions = [
-    { value: 'tcp', label: 'TCP' },
-    { value: 'udp', label: 'UDP' },
-    { value: '', label: 'Any (TCP/UDP)' }
-];
-
-// ==================== Add Rule Dialog ====================
-interface AddRuleFormValues {
-    port: string;
-    protocol: string;
-}
-
-const AddRuleDialog: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (port: string, protocol: string) => Promise<void>;
-}> = ({ isOpen, onClose, onSave }) => {
-    return (
-        <FormDialog<AddRuleFormValues>
-            isOpen={isOpen}
-            onClose={onClose}
-            onSubmit={(values) => onSave(values.port.trim(), values.protocol)}
-            title="Add Firewall Rule"
-            titleIcon={<Shield size={20} className="text-emerald-400" />}
-            submitText="Allow Port"
-            fields={[
-                { name: 'port', label: 'Port', required: true, placeholder: '80, 443, 8080-8090', hint: 'Single port, range (8080-8090), or service name (ssh)', mono: true },
-                { name: 'protocol', label: 'Protocol', type: 'select', options: protocolOptions, defaultValue: 'tcp' }
-            ]}
-        />
-    );
-};
-
-// ==================== Delete Confirm Dialog ====================
-const DeleteRuleDialog: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    onConfirm: () => void;
-    rule: FirewallRule | null;
-    deleting: boolean;
-}> = ({ isOpen, onClose, onConfirm, rule, deleting }) => {
-    if (!rule) return null;
-
-    return (
-        <ConfirmDialog
-            isOpen={isOpen}
-            onClose={onClose}
-            onConfirm={onConfirm}
-            title="Delete Firewall Rule"
-            message="Are you sure you want to delete this rule?"
-            confirmText="Delete"
-            confirmIcon={deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-        >
-            <div className="bg-zinc-800/50 rounded p-3 font-mono text-sm">
-                <div className="flex items-center gap-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        rule.action.includes('ALLOW') 
-                            ? 'bg-emerald-500/20 text-emerald-400' 
-                            : 'bg-rose-500/20 text-rose-400'
-                    }`}>{rule.action}</span>
-                    <span className="text-zinc-200">{rule.to}</span>
-                    <span className="text-zinc-500">from</span>
-                    <span className="text-zinc-300">{rule.from}</span>
-                </div>
-            </div>
-        </ConfirmDialog>
-    );
-};
 
 const FirewallManager: React.FC = () => {
     const [rules, setRules] = useState<FirewallRule[]>([]);
@@ -121,21 +50,21 @@ const FirewallManager: React.FC = () => {
     // 切換防火牆狀態
     const handleToggleStatus = async () => {
         if (enabled === null) return;
-        
+
         try {
             setTogglingStatus(true);
             await FirewallService.setStatus(!enabled);
             setEnabled(!enabled);
-            setToast({ 
-                message: `Firewall ${!enabled ? 'enabled' : 'disabled'} successfully`, 
-                type: 'success' 
+            setToast({
+                message: `Firewall ${!enabled ? 'enabled' : 'disabled'} successfully`,
+                type: 'success'
             });
         } catch (err: any) {
             console.error('Failed to toggle firewall:', err);
             let errorMsg = 'Failed to change firewall status';
             if (err.response?.data) {
-                errorMsg = typeof err.response.data === 'string' 
-                    ? err.response.data 
+                errorMsg = typeof err.response.data === 'string'
+                    ? err.response.data
                     : err.response.data.message || JSON.stringify(err.response.data);
             }
             setToast({ message: errorMsg, type: 'error' });
@@ -160,8 +89,8 @@ const FirewallManager: React.FC = () => {
             let errorMsg = 'Failed to add rule';
             const e = err as { response?: { data?: string | { message?: string } } };
             if (e.response?.data) {
-                errorMsg = typeof e.response.data === 'string' 
-                    ? e.response.data 
+                errorMsg = typeof e.response.data === 'string'
+                    ? e.response.data
                     : e.response.data.message || JSON.stringify(e.response.data);
             }
             throw new Error(errorMsg);
@@ -176,7 +105,7 @@ const FirewallManager: React.FC = () => {
 
     const handleDeleteConfirm = async () => {
         if (!ruleToDelete) return;
-        
+
         try {
             setDeleting(true);
             await FirewallService.deleteRule(ruleToDelete.index);
@@ -188,8 +117,8 @@ const FirewallManager: React.FC = () => {
             console.error('Failed to delete rule:', err);
             let errorMsg = 'Failed to delete rule';
             if (err.response?.data) {
-                errorMsg = typeof err.response.data === 'string' 
-                    ? err.response.data 
+                errorMsg = typeof err.response.data === 'string'
+                    ? err.response.data
                     : err.response.data.message || JSON.stringify(err.response.data);
             }
             setToast({ message: errorMsg, type: 'error' });
@@ -290,19 +219,18 @@ const FirewallManager: React.FC = () => {
                                     <td className="p-4 text-zinc-500 font-mono text-xs">{rule.index}</td>
                                     <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                            rule.action.includes('ALLOW')
+                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
                                                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                 : rule.action.includes('DENY')
-                                                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                        }`}>
+                                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                            }`}>
                                             {rule.action}
                                         </span>
                                     </td>
                                     <td className="p-4 font-mono text-zinc-300">{rule.from}</td>
                                     <td className="p-4 text-right">
-                                        <button 
+                                        <button
                                             onClick={() => handleDeleteClick(rule)}
                                             className="text-zinc-500 hover:text-rose-400 transition-colors"
                                             title="Delete rule"
@@ -339,19 +267,18 @@ const FirewallManager: React.FC = () => {
                                     <td className="p-4 text-zinc-500 font-mono text-xs">{rule.index}</td>
                                     <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                            rule.action.includes('ALLOW')
+                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
                                                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                 : rule.action.includes('DENY')
-                                                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                        }`}>
+                                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                            }`}>
                                             {rule.action}
                                         </span>
                                     </td>
                                     <td className="p-4 font-mono text-zinc-300">{rule.from.replace(' (v6)', '')}</td>
                                     <td className="p-4 text-right">
-                                        <button 
+                                        <button
                                             onClick={() => handleDeleteClick(rule)}
                                             className="text-zinc-500 hover:text-rose-400 transition-colors"
                                             title="Delete rule"
@@ -371,7 +298,7 @@ const FirewallManager: React.FC = () => {
                 <div className="flex items-center gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-200 shadow-lg">
                     <AlertCircle size={20} />
                     <p className="text-sm">
-                        <strong>Error:</strong> Failed to get firewall status. Make sure <code className="bg-rose-500/20 px-1 rounded">ufw</code> is installed 
+                        <strong>Error:</strong> Failed to get firewall status. Make sure <code className="bg-rose-500/20 px-1 rounded">ufw</code> is installed
                         and the backend has <code className="bg-rose-500/20 px-1 rounded">sudo</code> permission.
                     </p>
                 </div>
@@ -382,7 +309,7 @@ const FirewallManager: React.FC = () => {
                 <div className="flex items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-200 shadow-lg">
                     <ShieldAlert size={20} />
                     <p className="text-sm">
-                        <strong>Warning:</strong> Firewall is currently <strong>inactive</strong>. All incoming traffic is allowed. 
+                        <strong>Warning:</strong> Firewall is currently <strong>inactive</strong>. All incoming traffic is allowed.
                         Click "Enable" to activate the firewall.
                     </p>
                 </div>
@@ -392,7 +319,7 @@ const FirewallManager: React.FC = () => {
             <div className="flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-blue-200 shadow-lg">
                 <ShieldAlert size={20} />
                 <p className="text-sm">
-                    Note: Rules are managed via <code className="bg-blue-500/20 px-1 rounded">ufw</code>. 
+                    Note: Rules are managed via <code className="bg-blue-500/20 px-1 rounded">ufw</code>.
                     Changes take effect immediately.
                 </p>
             </div>

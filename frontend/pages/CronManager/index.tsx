@@ -4,81 +4,8 @@ import { PageHeader } from '../../components/PageHeader';
 import { CronService } from '../../services/api';
 import { CronJob } from '../../types';
 import { Clock, Trash2, Edit, Plus, Save, Loader2 } from 'lucide-react';
-import {
-    ConfirmDialog, FormDialog,
-    Toast, ActionButton
-} from '../../components/ui';
-
-// ==================== Cron Job Dialog ====================
-interface CronFormValues {
-    expression: string;
-    command: string;
-    comment: string;
-}
-
-const CronJobDialog: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (job: CronJob) => Promise<void>;
-    job: CronJob | null;
-}> = ({ isOpen, onClose, onSave, job }) => {
-    const handleSubmit = async (values: CronFormValues) => {
-        await onSave({
-            id: job?.id,
-            expression: values.expression.trim(),
-            command: values.command.trim(),
-            comment: values.comment.trim() || undefined,
-        });
-    };
-
-    return (
-        <FormDialog<CronFormValues>
-            isOpen={isOpen}
-            onClose={onClose}
-            onSubmit={handleSubmit}
-            title={job ? 'Edit Cron Job' : 'Add Cron Job'}
-            titleIcon={<Clock size={20} className="text-emerald-400" />}
-            submitText={job ? 'Update' : 'Create'}
-            initialValues={job ? {
-                expression: job.expression,
-                command: job.command,
-                comment: job.comment || ''
-            } : undefined}
-            fields={[
-                { name: 'expression', label: 'Cron Expression', required: true, placeholder: '0 3 * * *', hint: 'Format: minute hour day month weekday', mono: true },
-                { name: 'command', label: 'Command', required: true, placeholder: '/path/to/script.sh', mono: true },
-                { name: 'comment', label: 'Comment (optional)', placeholder: 'Brief description' }
-            ]}
-        />
-    );
-};
-
-// ==================== Delete Confirm Dialog ====================
-const DeleteCronDialog: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    onConfirm: () => void;
-    job: CronJob | null;
-}> = ({ isOpen, onClose, onConfirm, job }) => {
-    if (!job) return null;
-
-    return (
-        <ConfirmDialog
-            isOpen={isOpen}
-            onClose={onClose}
-            onConfirm={onConfirm}
-            title="Delete Cron Job"
-            message="Are you sure you want to delete this cron job?"
-            confirmText="Delete"
-            confirmIcon={<Trash2 size={16} />}
-        >
-            <div className="bg-zinc-800/50 rounded p-3">
-                <p className="font-mono text-emerald-400 text-sm">{job.expression}</p>
-                <p className="font-mono text-zinc-400 text-xs mt-1 truncate">{job.command}</p>
-            </div>
-        </ConfirmDialog>
-    );
-};
+import { Toast, ActionButton } from '../../components/ui';
+import { CronJobDialog, DeleteCronDialog } from './components/CronDialogs';
 
 // 解析 Cron 表達式為人類可讀的描述
 const parseCronExpression = (expression: string): string => {
@@ -86,7 +13,7 @@ const parseCronExpression = (expression: string): string => {
     if (parts.length !== 5) return expression;
 
     const [min, hour, day, month, weekday] = parts;
-    
+
     // 簡單的解析邏輯
     if (min === '*' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
         return 'Every minute';
@@ -108,9 +35,10 @@ const parseCronExpression = (expression: string): string => {
     if (day !== '*' && month === '*' && weekday === '*') {
         return `Monthly on day ${day} at ${hour.padStart(2, '0')}:${min.padStart(2, '0')}`;
     }
-    
+
     return expression;
 };
+
 
 const CronManager: React.FC = () => {
     const [jobs, setJobs] = useState<CronJob[]>([]);
@@ -151,8 +79,8 @@ const CronManager: React.FC = () => {
             console.error('Failed to save cron jobs:', err);
             let errorMsg = 'Failed to save cron jobs';
             if (err.response?.data) {
-                errorMsg = typeof err.response.data === 'string' 
-                    ? err.response.data 
+                errorMsg = typeof err.response.data === 'string'
+                    ? err.response.data
                     : err.response.data.message || JSON.stringify(err.response.data);
             }
             setToast({ message: errorMsg, type: 'error' });
@@ -177,7 +105,7 @@ const CronManager: React.FC = () => {
     // 儲存 Job (新增或更新)
     const handleSaveJob = async (job: CronJob) => {
         let newJobs: CronJob[];
-        
+
         if (job.id) {
             // 更新現有
             newJobs = jobs.map(j => j.id === job.id ? job : j);
@@ -205,7 +133,7 @@ const CronManager: React.FC = () => {
     // 執行刪除
     const handleDeleteConfirm = async () => {
         if (!jobToDelete) return;
-        
+
         const newJobs = jobs.filter(j => j.id !== jobToDelete.id);
         const success = await saveAllJobs(newJobs);
         if (success) {
@@ -242,7 +170,7 @@ const CronManager: React.FC = () => {
                     <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
                         <Clock size={48} className="mb-4 opacity-50" />
                         <p className="text-sm">No cron jobs configured</p>
-                        <button 
+                        <button
                             onClick={handleAddJob}
                             className="mt-4 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
                         >
@@ -272,7 +200,7 @@ const CronManager: React.FC = () => {
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="flex justify-end gap-2 text-zinc-500">
-                                            <button 
+                                            <button
                                                 onClick={() => handleEditJob(job)}
                                                 disabled={saving}
                                                 className="hover:text-white transition-colors disabled:opacity-50"
@@ -280,7 +208,7 @@ const CronManager: React.FC = () => {
                                             >
                                                 <Edit size={16} />
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => handleDeleteClick(job)}
                                                 disabled={saving}
                                                 className="hover:text-rose-400 transition-colors disabled:opacity-50"

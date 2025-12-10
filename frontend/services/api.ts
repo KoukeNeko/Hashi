@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AddIptablesRuleRequest, AuthResponse, CreateFtpUserRequest, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, FtpServerInfo, FtpUser, GroupInfo, IptablesRule, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo } from '@/types';
+import { AddIptablesRuleRequest, AuthResponse, CreateFtpUserRequest, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, FtpServerInfo, FtpUser, GroupInfo, IptablesRule, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo, UpdateFtpUserRequest } from '@/types';
 
 
 export const VirtService = {
@@ -307,6 +307,9 @@ export const FtpService = {
   },
   addUser: async (type: string, user: CreateFtpUserRequest) => {
     await api.post(`/ftp/${type}/users`, user);
+  },
+  updateUser: async (type: string, username: string, data: UpdateFtpUserRequest) => {
+    await api.put(`/ftp/${type}/users/${username}`, data);
   },
   deleteUser: async (type: string, username: string) => {
     await api.delete(`/ftp/${type}/users/${username}`);

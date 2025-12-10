@@ -327,6 +327,69 @@ public class FtpService {
         }
     }
 
+    /**
+     * 更新 FTP 使用者
+     */
+    public void updateUser(String type, String username, dev.koukeneko.hashi.model.dto.UpdateFtpUserRequest request) {
+        try {
+            // 檢查使用者是否存在
+            if (!userExists(username)) {
+                throw new RuntimeException("User not found: " + username);
+            }
+
+            // 修改密碼
+            if (request.password() != null && !request.password().isBlank()) {
+                ProcessBuilder pb = new ProcessBuilder("sudo", "-n", "chpasswd");
+                Process process = pb.start();
+                try (OutputStream os = process.getOutputStream()) {
+                    os.write((username + ":" + request.password()).getBytes());
+                    os.flush();
+                }
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                    throw new RuntimeException("Failed to update password");
+                }
+            }
+
+            // 修改 Home 目錄
+            if (request.homeDir() != null && !request.homeDir().isBlank()) {
+                List<String> cmd = new ArrayList<>();
+                cmd.add("sudo");
+                cmd.add("-n");
+                cmd.add("usermod");
+                cmd.add("-d");
+                cmd.add(request.homeDir());
+
+                if (request.moveContent()) {
+                    cmd.add("-m");
+                }
+
+                cmd.add(username);
+
+                ProcessBuilder pb = new ProcessBuilder(cmd);
+                Process process = pb.start();
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                    String error = new String(process.getErrorStream().readAllBytes());
+                    throw new RuntimeException("Failed to update home directory: " + error);
+                }
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
+        }
+    }
+
+    private boolean userExists(String username) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("id", username);
+            Process process = pb.start();
+            return process.waitFor() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private void addToUserList(String type, String username) {
         ServerConfig config = SERVER_CONFIGS.get(type);
         if (config == null || config.userListPath == null)

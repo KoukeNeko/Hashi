@@ -3,7 +3,7 @@ import { FtpService } from '../../../services/api';
 import { FtpUser, FtpServerType, CreateFtpUserRequest } from '../../../types';
 import { ActionButton } from '../../../components';
 import { FormDialog, ConfirmDialog } from '../../../components/ui';
-import { Plus, Trash2, Loader2, RefreshCw, User, FolderOpen } from 'lucide-react';
+import { Plus, Trash2, Loader2, RefreshCw, User, FolderOpen, Edit } from 'lucide-react';
 
 interface FtpUsersPanelProps {
     serverType: FtpServerType;
@@ -14,6 +14,8 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
     const [users, setUsers] = useState<FtpUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [addDialogOpen, setAddDialogOpen] = useState(false);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [userToEdit, setUserToEdit] = useState<FtpUser | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<FtpUser | null>(null);
     const [deleting, setDeleting] = useState(false);
@@ -48,6 +50,29 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
         } catch (err) {
             console.error('Failed to add user:', err);
             throw new Error('Failed to create FTP user');
+        }
+    };
+
+    const handleEditClick = (user: FtpUser) => {
+        setUserToEdit(user);
+        setEditDialogOpen(true);
+    };
+
+    const handleEditUser = async (values: { password?: string; homeDir: string; moveContent: boolean }) => {
+        if (!userToEdit) return;
+        try {
+            await FtpService.updateUser(serverType, userToEdit.username, {
+                password: values.password,
+                homeDir: values.homeDir,
+                moveContent: values.moveContent
+            });
+            onToast({ message: `User "${userToEdit.username}" updated successfully`, type: 'success' });
+            loadUsers();
+            setEditDialogOpen(false);
+            setUserToEdit(null);
+        } catch (err) {
+            console.error('Failed to update user:', err);
+            throw new Error('Failed to update FTP user');
         }
     };
 
@@ -130,13 +155,22 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
                                         </div>
                                     </td>
                                     <td className="p-4 text-right">
-                                        <button
-                                            onClick={() => handleDeleteClick(user)}
-                                            className="text-zinc-500 hover:text-rose-400 transition-colors"
-                                            title="Delete user"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => handleEditClick(user)}
+                                                className="text-zinc-500 hover:text-emerald-400 transition-colors"
+                                                title="Edit user"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(user)}
+                                                className="text-zinc-500 hover:text-rose-400 transition-colors"
+                                                title="Delete user"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -157,6 +191,28 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
                     { name: 'username', label: 'Username', required: true, placeholder: 'ftpuser' },
                     { name: 'password', label: 'Password', type: 'password', required: true },
                     { name: 'homeDir', label: 'Home Directory', placeholder: '/home/ftpuser', hint: 'Leave empty for default' }
+                ]}
+            />
+
+            {/* Edit User Dialog */}
+            <FormDialog<{ password?: string; homeDir: string; moveContent: boolean }>
+                isOpen={editDialogOpen}
+                onClose={() => {
+                    setEditDialogOpen(false);
+                    setUserToEdit(null);
+                }}
+                onSubmit={handleEditUser}
+                title={`Edit User: ${userToEdit?.username}`}
+                titleIcon={<User size={20} className="text-emerald-400" />}
+                submitText="Update User"
+                initialValues={{
+                    homeDir: userToEdit?.homeDir || '',
+                    moveContent: false
+                }}
+                fields={[
+                    { name: 'password', label: 'New Password', type: 'password', placeholder: 'Leave empty to keep current', hint: 'Optional' },
+                    { name: 'homeDir', label: 'Home Directory', required: true, placeholder: '/home/ftpuser' },
+                    { name: 'moveContent', label: 'Move existing content to new home directory', type: 'checkbox' }
                 ]}
             />
 

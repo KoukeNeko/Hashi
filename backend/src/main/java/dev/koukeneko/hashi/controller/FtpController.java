@@ -112,6 +112,18 @@ public class FtpController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * 更新 FTP 使用者
+     */
+    @PutMapping("/{type}/users/{username}")
+    public ResponseEntity<Void> updateUser(
+            @PathVariable String type,
+            @PathVariable String username,
+            @RequestBody dev.koukeneko.hashi.model.dto.UpdateFtpUserRequest request) {
+        ftpService.updateUser(type, username, request);
+        return ResponseEntity.ok().build();
+    }
+
     // ==================== Logs ====================
 
     /**

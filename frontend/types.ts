@@ -428,6 +428,12 @@ export interface FtpServerInfo {
   enabled: boolean;
 }
 
+export interface UpdateFtpUserRequest {
+  password?: string;
+  homeDir?: string;
+  moveContent?: boolean;
+}
+
 export interface FtpUser {
   username: string;
   homeDir: string;

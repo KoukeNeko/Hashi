@@ -278,44 +278,7 @@ export const FormError: React.FC<FormErrorProps> = ({ message }) => (
     </div>
 );
 
-// ==================== Toast ====================
-interface ToastProps {
-    message: string;
-    type: 'success' | 'error';
-    onClose: () => void;
-    autoClose?: boolean;
-    position?: 'fixed' | 'relative';
-}
 
-export const Toast: React.FC<ToastProps> = ({
-    message,
-    type,
-    onClose,
-    autoClose = true,
-    position = 'fixed'
-}) => {
-    useEffect(() => {
-        if (autoClose) {
-            const timer = setTimeout(onClose, 4000);
-            return () => clearTimeout(timer);
-        }
-    }, [onClose, autoClose]);
-
-    const positionClasses = position === 'fixed'
-        ? 'fixed bottom-4 right-4 z-50'
-        : '';
-
-    return (
-        <div className={`${positionClasses} flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border animate-fade-in ${type === 'success'
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                : 'bg-rose-500/20 border-rose-500/50 text-rose-300'
-            }`}>
-            {type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-            <span className="text-sm font-medium">{message}</span>
-            <button onClick={onClose} className="ml-2 hover:opacity-70"><X size={16} /></button>
-        </div>
-    );
-};
 
 // ==================== Action Button ====================
 interface ActionButtonProps {

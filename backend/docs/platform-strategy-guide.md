@@ -960,6 +960,131 @@ public ServiceManager linuxServiceManager() {
 
 ---
 
+## API 端點
+
+### 平台資訊 API
+
+提供前端查詢後端運行平台和支援功能的能力。
+
+#### GET /api/v1/platform
+
+取得目前平台資訊。
+
+**回應範例：**
+```json
+{
+  "platform": "LINUX",
+  "osName": "Linux",
+  "osVersion": "6.17.0-7-generic",
+  "osArch": "amd64"
+}
+```
+
+| 欄位 | 說明 |
+|------|------|
+| `platform` | 平台類型（`LINUX`、`WINDOWS`、`UNSUPPORTED`） |
+| `osName` | 作業系統名稱 |
+| `osVersion` | 作業系統版本 |
+| `osArch` | 系統架構（`amd64`、`aarch64` 等） |
+
+#### GET /api/v1/platform/features
+
+取得支援的功能清單，前端可根據此資訊顯示/隱藏特定功能。
+
+**回應範例（Linux）：**
+```json
+{
+  "serviceManager": true,
+  "ufwFirewall": true,
+  "iptables": true,
+  "windowsFirewall": false,
+  "scheduler": true,
+  "terminal": true,
+  "logStream": true,
+  "userManagement": true
+}
+```
+
+**回應範例（Windows）：**
+```json
+{
+  "serviceManager": true,
+  "ufwFirewall": false,
+  "iptables": false,
+  "windowsFirewall": true,
+  "scheduler": true,
+  "terminal": true,
+  "logStream": true,
+  "userManagement": true
+}
+```
+
+### 前端使用範例
+
+```typescript
+import { useEffect, useState } from 'react';
+import api from '@/lib/api';
+
+interface PlatformInfo {
+  platform: 'LINUX' | 'WINDOWS' | 'UNSUPPORTED';
+  osName: string;
+  osVersion: string;
+  osArch: string;
+}
+
+interface PlatformFeatures {
+  serviceManager: boolean;
+  ufwFirewall: boolean;
+  iptables: boolean;
+  windowsFirewall: boolean;
+  scheduler: boolean;
+  terminal: boolean;
+  logStream: boolean;
+  userManagement: boolean;
+}
+
+export function usePlatform() {
+  const [platform, setPlatform] = useState<PlatformInfo | null>(null);
+  const [features, setFeatures] = useState<PlatformFeatures | null>(null);
+
+  useEffect(() => {
+    // 取得平台資訊
+    api.get('/api/v1/platform').then(res => setPlatform(res.data));
+    // 取得支援功能
+    api.get('/api/v1/platform/features').then(res => setFeatures(res.data));
+  }, []);
+
+  return { platform, features };
+}
+
+// 在元件中使用
+function FirewallPage() {
+  const { features } = usePlatform();
+
+  if (!features) return <Loading />;
+
+  return (
+    <div>
+      {features.ufwFirewall && <UfwManager />}
+      {features.iptables && <IptablesManager />}
+      {features.windowsFirewall && <WindowsFirewallManager />}
+    </div>
+  );
+}
+```
+
+### 與 Dashboard API 的差異
+
+| API | 用途 | 內容 |
+|-----|------|------|
+| `/api/v1/dashboard/status` | 系統狀態監控 | CPU、記憶體、磁碟、網路等 |
+| `/api/v1/platform` | 平台識別 | 作業系統類型、版本、架構 |
+| `/api/u1/platform/features` | 功能控制 | 各功能模組的支援狀態 |
+
+> **說明：** Dashboard 的 `osName` 是用於顯示，Platform API 的 `platform` 是用於邏輯判斷。
+
+---
+
 ## 參考資料
 
 - [Spring 條件式 Bean 文件](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.developing-auto-configuration.condition-annotations)

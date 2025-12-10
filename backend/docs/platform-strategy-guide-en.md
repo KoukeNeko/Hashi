@@ -960,6 +960,129 @@ public ServiceManager linuxServiceManager() {
 
 ---
 
+## API Endpoints
+
+### Platform Information API
+
+Provides the frontend with the ability to query the backend's running platform and supported features.
+
+#### GET /api/v1/platform
+
+Returns current platform information.
+
+**Response Example:**
+```json
+{
+  "platform": "LINUX",
+  "osName": "Linux",
+  "osVersion": "6.17.0-7-generic",
+  "osArch": "amd64"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `platform` | Platform type (`LINUX`, `WINDOWS`, `UNSUPPORTED`) |
+| `osName` | Operating system name |
+| `osVersion` | Operating system version |
+| `osArch` | System architecture (`amd64`, `aarch64`, etc.) |
+
+#### GET /api/v1/platform/features
+
+Returns supported feature list. Frontend can use this to show/hide specific features.
+
+**Response Example (Linux):**
+```json
+{
+  "serviceManager": true,
+  "ufwFirewall": true,
+  "iptables": true,
+  "windowsFirewall": false,
+  "scheduler": true,
+  "terminal": true,
+  "logStream": true,
+  "userManagement": true
+}
+```
+
+**Response Example (Windows):**
+```json
+{
+  "serviceManager": true,
+  "ufwFirewall": false,
+  "iptables": false,
+  "windowsFirewall": true,
+  "scheduler": true,
+  "terminal": true,
+  "logStream": true,
+  "userManagement": true
+}
+```
+
+### Frontend Usage Example
+
+```typescript
+import { useEffect, useState } from 'react';
+import api from '@/lib/api';
+
+interface PlatformInfo {
+  platform: 'LINUX' | 'WINDOWS' | 'UNSUPPORTED';
+  osName: string;
+  osVersion: string;
+  osArch: string;
+}
+
+interface PlatformFeatures {
+  serviceManager: boolean;
+  ufwFirewall: boolean;
+  iptables: boolean;
+  windowsFirewall: boolean;
+  scheduler: boolean;
+  terminal: boolean;
+  logStream: boolean;
+  userManagement: boolean;
+}
+
+export function usePlatform() {
+  const [platform, setPlatform] = useState<PlatformInfo | null>(null);
+  const [features, setFeatures] = useState<PlatformFeatures | null>(null);
+
+  useEffect(() => {
+    api.get('/api/v1/platform').then(res => setPlatform(res.data));
+    api.get('/api/v1/platform/features').then(res => setFeatures(res.data));
+  }, []);
+
+  return { platform, features };
+}
+
+// Usage in component
+function FirewallPage() {
+  const { features } = usePlatform();
+
+  if (!features) return <Loading />;
+
+  return (
+    <div>
+      {features.ufwFirewall && <UfwManager />}
+      {features.iptables && <IptablesManager />}
+      {features.windowsFirewall && <WindowsFirewallManager />}
+    </div>
+  );
+}
+```
+
+### Difference from Dashboard API
+
+| API | Purpose | Content |
+|-----|---------|--------|
+| `/api/v1/dashboard/status` | System monitoring | CPU, memory, disk, network, etc. |
+| `/api/v1/platform` | Platform identification | OS type, version, architecture |
+| `/api/v1/platform/features` | Feature control | Support status of each feature module |
+
+> **Note:** Dashboard's `osName` is for display purposes, while Platform API's `platform` is for logic decisions.
+
+---
+
 ## References
 
 - [Spring Conditional Bean Documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.developing-auto-configuration.condition-annotations)

@@ -1,68 +1,102 @@
-import axios from 'axios';
+/**
+ * Frontend API Services
+ * Organized by feature domain
+ */
 
+import axios from 'axios';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AddIptablesRuleRequest, AuthResponse, CreateFtpUserRequest, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, FtpServerInfo, FtpUser, GroupInfo, IptablesRule, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo, UpdateFtpUserRequest, CreateNginxHostRequest } from '@/types';
+import {
+  AddIptablesRuleRequest,
+  AuthResponse,
+  CreateFtpUserRequest,
+  CreateGroupOptions,
+  CreateUserOptions,
+  CreateNginxHostRequest,
+  CreateVmRequest,
+  CronJob,
+  FileItem,
+  FirewallRule,
+  FtpServerInfo,
+  FtpUser,
+  GroupInfo,
+  IptablesRule,
+  IsoFile,
+  PasswordInfo,
+  ServiceItem,
+  SystemStatus,
+  UpdateFtpUserRequest,
+  UpdateVmRequest,
+  UserInfo,
+  VM,
+  VncInfo,
+} from '@/types';
 
+// ==================== Core Configuration ====================
 
-export const VirtService = {
-  // VM 管理
-  listVms: async () => {
-    const response = await api.get<VM[]>('/virt/vms');
-    return response.data;
-  },
-  getVmDetails: async (name: string) => {
-    const response = await api.get<VM>(`/virt/vms/${name}`);
-    return response.data;
-  },
-  createVm: async (request: CreateVmRequest) => {
-    const response = await api.post<VM>('/virt/vms', request);
-    return response.data;
-  },
-  updateVm: async (name: string, request: UpdateVmRequest) => {
-    const response = await api.put<VM>(`/virt/vms/${name}`, request);
-    return response.data;
-  },
-  deleteVm: async (name: string) => {
-    await api.delete(`/virt/vms/${name}`);
-  },
-  controlVm: async (name: string, action: 'start' | 'stop' | 'force-stop' | 'reboot') => {
-    await api.post(`/virt/vms/${name}/${action}`);
-  },
-  getVncInfo: async (name: string) => {
-    const response = await api.get<VncInfo>(`/virt/vms/${name}/vnc-info`);
-    return response.data;
-  },
+/** API base URL (via Vite proxy) */
+export const API_BASE_URL = '/api/v1';
 
-  // ISO 管理
-  listIsoFiles: async () => {
-    const response = await api.get<IsoFile[]>('/virt/iso');
-    return response.data;
+/** Axios instance with default configuration */
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
   },
-  uploadIso: async (file: File, onProgress?: (progress: number) => void) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.post<IsoFile>('/virt/iso', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 0, // 禁用超時（大檔案上傳需要較長時間）
-      onUploadProgress: (event) => {
-        if (onProgress) {
-          // 使用檔案大小作為 total（如果 event.total 未定義）
-          const total = event.total || file.size;
-          const progress = Math.round((event.loaded * 100) / total);
-          onProgress(Math.min(progress, 99)); // 上傳完成前最多顯示 99%
+});
+
+// ==================== WebSocket ====================
+
+/** Connect to WebSocket for real-time system status updates */
+export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => void) => {
+  const client = new Client({
+    webSocketFactory: () => new SockJS('/ws'),
+    onConnect: () => {
+      console.log('Connected to WebSocket');
+      client.subscribe('/topic/status', (message) => {
+        if (message.body) {
+          const status: SystemStatus = JSON.parse(message.body);
+          onMessageReceived(status);
         }
+      });
+    },
+    onStompError: (frame) => {
+      console.error('Broker reported error: ' + frame.headers['message']);
+      console.error('Additional details: ' + frame.body);
+    },
+  });
+  client.activate();
+  return client;
+};
+
+// ==================== Session Storage ====================
+
+const USER_STORAGE_KEY = 'hashi_user';
+
+/** Browser session storage for user data */
+export const SessionStorage = {
+  getUser: (): UserInfo | null => {
+    const stored = localStorage.getItem(USER_STORAGE_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return null;
       }
-    });
-    if (onProgress) onProgress(100); // 上傳完成
-    return response.data;
+    }
+    return null;
   },
-  deleteIso: async (filename: string) => {
-    await api.delete(`/virt/iso/${filename}`);
+  setUser: (user: UserInfo): void => {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  },
+  clearUser: (): void => {
+    localStorage.removeItem(USER_STORAGE_KEY);
   }
 };
 
-// 認證相關 API
+// ==================== Authentication ====================
+
+/** Authentication API */
 export const AuthService = {
   login: async (username: string, password: string): Promise<AuthResponse> => {
     const response = await api.post<AuthResponse>('/auth/login', { username, password });
@@ -77,9 +111,11 @@ export const AuthService = {
   }
 };
 
-// 使用者管理 API
+// ==================== User Management ====================
+
+/** User and group management API */
 export const UserManagementService = {
-  // ==================== 使用者查詢 ====================
+  // User queries
   listUsers: async (): Promise<UserInfo[]> => {
     const response = await api.get<UserInfo[]>('/users');
     return response.data;
@@ -97,7 +133,7 @@ export const UserManagementService = {
     return response.data;
   },
 
-  // ==================== 使用者管理 ====================
+  // User management
   createUser: async (options: CreateUserOptions) => {
     const response = await api.post('/users', options);
     return response.data;
@@ -131,7 +167,7 @@ export const UserManagementService = {
     return response.data;
   },
 
-  // ==================== 密碼管理 ====================
+  // Password management
   changePassword: async (username: string, password: string) => {
     const response = await api.put(`/users/${username}/password`, { password });
     return response.data;
@@ -149,7 +185,7 @@ export const UserManagementService = {
     return response.data;
   },
 
-  // ==================== 帳號鎖定 ====================
+  // Account locking
   lockUser: async (username: string) => {
     const response = await api.post(`/users/${username}/lock`);
     return response.data;
@@ -163,7 +199,7 @@ export const UserManagementService = {
     return response.data;
   },
 
-  // ==================== 群組查詢 ====================
+  // Group queries
   listGroups: async (): Promise<GroupInfo[]> => {
     const response = await api.get<GroupInfo[]>('/users/groups');
     return response.data;
@@ -177,7 +213,7 @@ export const UserManagementService = {
     return response.data;
   },
 
-  // ==================== 群組成員管理 ====================
+  // Group member management
   setUserGroups: async (username: string, groups: string[]) => {
     const response = await api.put(`/users/${username}/groups`, { groups });
     return response.data;
@@ -187,7 +223,7 @@ export const UserManagementService = {
     return response.data;
   },
 
-  // ==================== 群組管理 ====================
+  // Group management
   createGroup: async (options: CreateGroupOptions) => {
     const response = await api.post('/users/groups', options);
     return response.data;
@@ -222,29 +258,68 @@ export const UserManagementService = {
   }
 };
 
-// localStorage 存儲使用者資訊的 key
-const USER_STORAGE_KEY = 'hashi_user';
+// ==================== Virtualization (KVM) ====================
 
-export const SessionStorage = {
-  getUser: (): UserInfo | null => {
-    const stored = localStorage.getItem(USER_STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return null;
+/** VM and ISO management API */
+export const VirtService = {
+  // VM management
+  listVms: async () => {
+    const response = await api.get<VM[]>('/virt/vms');
+    return response.data;
+  },
+  getVmDetails: async (name: string) => {
+    const response = await api.get<VM>(`/virt/vms/${name}`);
+    return response.data;
+  },
+  createVm: async (request: CreateVmRequest) => {
+    const response = await api.post<VM>('/virt/vms', request);
+    return response.data;
+  },
+  updateVm: async (name: string, request: UpdateVmRequest) => {
+    const response = await api.put<VM>(`/virt/vms/${name}`, request);
+    return response.data;
+  },
+  deleteVm: async (name: string) => {
+    await api.delete(`/virt/vms/${name}`);
+  },
+  controlVm: async (name: string, action: 'start' | 'stop' | 'force-stop' | 'reboot') => {
+    await api.post(`/virt/vms/${name}/${action}`);
+  },
+  getVncInfo: async (name: string) => {
+    const response = await api.get<VncInfo>(`/virt/vms/${name}/vnc-info`);
+    return response.data;
+  },
+
+  // ISO management
+  listIsoFiles: async () => {
+    const response = await api.get<IsoFile[]>('/virt/iso');
+    return response.data;
+  },
+  uploadIso: async (file: File, onProgress?: (progress: number) => void) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<IsoFile>('/virt/iso', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0,
+      onUploadProgress: (event) => {
+        if (onProgress) {
+          const total = event.total || file.size;
+          const progress = Math.round((event.loaded * 100) / total);
+          onProgress(Math.min(progress, 99));
+        }
       }
-    }
-    return null;
+    });
+    if (onProgress) onProgress(100);
+    return response.data;
   },
-  setUser: (user: UserInfo): void => {
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-  },
-  clearUser: (): void => {
-    localStorage.removeItem(USER_STORAGE_KEY);
+  deleteIso: async (filename: string) => {
+    await api.delete(`/virt/iso/${filename}`);
   }
 };
 
+// ==================== Firewall ====================
+
+/** UFW firewall management API */
 export const FirewallService = {
   getStatus: async () => {
     const response = await api.get<{ enabled: boolean }>('/firewall/status');
@@ -258,7 +333,6 @@ export const FirewallService = {
     return response.data;
   },
   addRule: async (port: string, protocol: string) => {
-    // 傳送 Query Params
     await api.post(`/firewall/allow`, null, { params: { port, protocol } });
   },
   deleteRule: async (index: number) => {
@@ -266,6 +340,7 @@ export const FirewallService = {
   }
 };
 
+/** iptables management API */
 export const IptablesService = {
   getRules: async (table: string = 'filter') => {
     const response = await api.get<IptablesRule[]>('/iptables', { params: { table } });
@@ -282,6 +357,9 @@ export const IptablesService = {
   }
 };
 
+// ==================== FTP ====================
+
+/** FTP server management API */
 export const FtpService = {
   detectServers: async () => {
     const response = await api.get<FtpServerInfo[]>('/ftp/servers');
@@ -320,6 +398,9 @@ export const FtpService = {
   }
 };
 
+// ==================== Cron ====================
+
+/** Cron job management API */
 export const CronService = {
   listJobs: async () => {
     const response = await api.get<CronJob[]>('/cron');
@@ -330,6 +411,9 @@ export const CronService = {
   }
 };
 
+// ==================== Systemd Services ====================
+
+/** Systemd service management API */
 export const SystemdService = {
   listServices: async () => {
     const response = await api.get<ServiceItem[]>('/services');
@@ -340,98 +424,51 @@ export const SystemdService = {
   }
 };
 
+// ==================== File Manager ====================
+
+/** File system management API */
 export const FileService = {
   listFiles: async (path: string = '/') => {
-    // 透過 query param 傳遞 path
-    const response = await api.get<FileItem[]>('/files/list', {
-      params: { path }
-    });
+    const response = await api.get<FileItem[]>('/files/list', { params: { path } });
     return response.data;
   },
-
   getFileContent: async (path: string) => {
     const response = await api.get<string>('/files/content', {
       params: { path },
-      responseType: 'text' // 重要：告訴 Axios 回傳的是純文字，不是 JSON
+      responseType: 'text'
     });
     return response.data;
   },
-
   saveFileContent: async (path: string, content: string) => {
     await api.post('/files/content', { path, content });
   },
-
   deleteFile: async (path: string) => {
     await api.delete('/files/delete', { params: { path } });
   }
 };
 
+// ==================== Docker ====================
 
-// WebSocket 連線函式
-export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => void) => {
-  const client = new Client({
-    // 使用 SockJS 建立連線工廠 (透過 Vite proxy)
-    webSocketFactory: () => new SockJS('/ws'),
-
-    // 連線成功時的回呼
-    onConnect: () => {
-      console.log('Connected to WebSocket');
-
-      // 訂閱後端的推播頻道
-      client.subscribe('/topic/status', (message) => {
-        if (message.body) {
-          const status: SystemStatus = JSON.parse(message.body);
-          onMessageReceived(status);
-        }
-      });
-    },
-
-    // 錯誤處理
-    onStompError: (frame) => {
-      console.error('Broker reported error: ' + frame.headers['message']);
-      console.error('Additional details: ' + frame.body);
-    },
-  });
-
-  client.activate(); // 啟動連線
-  return client; // 回傳 client 實例以便之後斷線用
-};
-
-// 設定後端的基礎 URL (透過 Vite proxy)
-export const API_BASE_URL = '/api/v1';
-
-export const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Docker 相關的 API 服務
+/** Docker container management API */
 export const DockerService = {
-  // 獲取容器列表
   getContainers: async () => {
     const response = await api.get('/docker/containers');
     return response.data;
   },
-
-  // 啟動
   startContainer: async (id: string) => {
     return api.post(`/docker/containers/${id}/start`);
   },
-
-  // 停止
   stopContainer: async (id: string) => {
     return api.post(`/docker/containers/${id}/stop`);
   },
-
-  // 重啟
   restartContainer: async (id: string) => {
     return api.post(`/docker/containers/${id}/restart`);
   }
 };
 
-// 系統監控相關 API
+// ==================== Dashboard ====================
+
+/** System monitoring API */
 export const DashboardService = {
   getSystemStatus: async () => {
     const response = await api.get('/dashboard/status');
@@ -439,9 +476,11 @@ export const DashboardService = {
   }
 };
 
-// Nginx 管理 API
+// ==================== Nginx ====================
+
+/** Nginx web server management API */
 export const NginxApiService = {
-  // 服務控制
+  // Service control
   getStatus: async () => {
     const response = await api.get('/nginx/status');
     return response.data;
@@ -455,7 +494,7 @@ export const NginxApiService = {
     return response.data;
   },
 
-  // Virtual Host 管理
+  // Virtual Host management
   listHosts: async () => {
     const response = await api.get('/nginx/hosts');
     return response.data;
@@ -489,7 +528,7 @@ export const NginxApiService = {
     return response.data;
   },
 
-  // SSL 憑證管理
+  // SSL certificate management
   listCertificates: async () => {
     const response = await api.get('/nginx/ssl');
     return response.data;

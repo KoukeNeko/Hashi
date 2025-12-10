@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Toast, ActionButton } from '../../../components';
 import { IptablesService } from '../../../services/api';
 import { IptablesRule, AddIptablesRuleRequest, IptablesTable } from '../../../types';
-import { Tabs, TabItem, Alert } from '../../../components/ui';
-import { Terminal, Plus, Trash2, Loader2, RefreshCw, Save, ChevronDown, ChevronRight } from 'lucide-react';
+import { Tabs, TabItem, Alert, DataTable, DataTableColumn, badgeCell } from '../../../components/ui';
+import { Terminal, Plus, Trash2, Loader2, RefreshCw, Save } from 'lucide-react';
 import { AddIptablesRuleDialog, DeleteIptablesRuleDialog } from './IptablesDialogs';
 
 // ==================== Constants ====================
@@ -33,86 +33,92 @@ interface ChainSectionProps {
 }
 
 const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) => {
-    const [collapsed, setCollapsed] = useState(false);
+    const columns: DataTableColumn<IptablesRule>[] = [
+        {
+            key: 'lineNumber',
+            header: '#',
+            width: '50px',
+            mono: true,
+            render: (rule) => <span className="text-zinc-500">{rule.lineNumber}</span>
+        },
+        {
+            key: 'target',
+            header: 'Target',
+            width: '180px',
+            render: (rule) => badgeCell(rule.target)
+        },
+        {
+            key: 'protocol',
+            header: 'Protocol',
+            width: '80px',
+            mono: true,
+            accessor: 'protocol'
+        },
+        {
+            key: 'source',
+            header: 'Source',
+            width: '140px',
+            render: (rule) => (
+                <span className="font-mono text-xs">
+                    {rule.source}
+                    {rule.sourcePort && <span className="text-zinc-500">:{rule.sourcePort}</span>}
+                </span>
+            )
+        },
+        {
+            key: 'destination',
+            header: 'Destination',
+            width: '140px',
+            render: (rule) => (
+                <span className="font-mono text-xs">
+                    {rule.destination}
+                    {rule.destPort && <span className="text-zinc-500">:{rule.destPort}</span>}
+                </span>
+            )
+        },
+        {
+            key: 'packets',
+            header: 'Packets',
+            width: '100px',
+            mono: true,
+            render: (rule) => <span className="text-zinc-400">{rule.packetCount.toLocaleString()}</span>
+        },
+        {
+            key: 'bytes',
+            header: 'Bytes',
+            width: '100px',
+            mono: true,
+            render: (rule) => <span className="text-zinc-400">{formatBytes(rule.byteCount)}</span>
+        },
+        {
+            key: 'actions',
+            header: 'Action',
+            width: '60px',
+            align: 'right',
+            render: (rule) => (
+                <button
+                    onClick={() => onDelete(rule)}
+                    className="text-zinc-500 hover:text-rose-400 transition-colors"
+                    title="Delete rule"
+                >
+                    <Trash2 size={16} />
+                </button>
+            )
+        }
+    ];
 
     return (
-        <div className="border border-border rounded-lg overflow-hidden">
-            {/* Chain Header */}
-            <button
-                onClick={() => setCollapsed(!collapsed)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900 hover:bg-zinc-800/80 transition-colors"
-            >
-                <div className="flex items-center gap-2">
-                    {collapsed ? <ChevronRight size={16} className="text-zinc-500" /> : <ChevronDown size={16} className="text-zinc-500" />}
-                    <span className="font-medium text-zinc-200">{chain}</span>
-                    <span className="text-zinc-500 text-sm">({rules.length} rules)</span>
-                </div>
-            </button>
-
-            {/* Rules Table */}
-            {!collapsed && (
-                <div className="overflow-x-auto">
-                    {rules.length === 0 ? (
-                        <div className="py-8 text-center text-zinc-500 text-sm">
-                            No rules in this chain
-                        </div>
-                    ) : (
-                        <table className="w-full text-left border-collapse table-fixed">
-                            <thead>
-                                <tr className="bg-zinc-900/50 border-t border-border text-xs uppercase text-zinc-500">
-                                    <th className="p-3 font-medium" style={{ width: '10px' }}>#</th>
-                                    <th className="p-3 font-medium" style={{ width: '180px' }}>Target</th>
-                                    <th className="p-3 font-medium" style={{ width: '80px' }}>Protocol</th>
-                                    <th className="p-3 font-medium" style={{ width: '140px' }}>Source</th>
-                                    <th className="p-3 font-medium" style={{ width: '140px' }}>Destination</th>
-                                    <th className="p-3 font-medium" style={{ width: '100px' }}>Packets</th>
-                                    <th className="p-3 font-medium" style={{ width: '100px' }}>Bytes</th>
-                                    <th className="p-3 font-medium text-right" style={{ width: '60px' }}>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-sm divide-y divide-border">
-                                {rules.map(rule => (
-                                    <tr key={rule.lineNumber} className="hover:bg-zinc-800/50 transition-colors">
-                                        <td className="p-3 text-zinc-500 font-mono text-xs">{rule.lineNumber}</td>
-                                        <td className="p-3">
-                                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.target === 'ACCEPT' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                                                rule.target === 'DROP' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                                                    rule.target === 'REJECT' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                                                        'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                                }`}>
-                                                {rule.target}
-                                            </span>
-                                        </td>
-                                        <td className="p-3 font-mono text-zinc-300">{rule.protocol}</td>
-                                        <td className="p-3 font-mono text-zinc-300">
-                                            {rule.source}
-                                            {rule.sourcePort && <span className="text-zinc-500">:{rule.sourcePort}</span>}
-                                        </td>
-                                        <td className="p-3 font-mono text-zinc-300">
-                                            {rule.destination}
-                                            {rule.destPort && <span className="text-zinc-500">:{rule.destPort}</span>}
-                                        </td>
-                                        <td className="p-3 text-zinc-400 font-mono text-xs">{rule.packetCount.toLocaleString()}</td>
-                                        <td className="p-3 text-zinc-400 font-mono text-xs">{formatBytes(rule.byteCount)}</td>
-                                        <td className="p-3 text-right">
-                                            <button
-                                                onClick={() => onDelete(rule)}
-                                                className="text-zinc-500 hover:text-rose-400 transition-colors"
-                                                title="Delete rule"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-            )}
-        </div>
+        <DataTable
+            data={rules}
+            columns={columns}
+            rowKey={(rule) => rule.lineNumber}
+            groupHeader={chain}
+            groupCount={rules.length}
+            emptyMessage="No rules in this chain"
+        />
     );
 };
+
 
 // ==================== Main Panel Component ====================
 

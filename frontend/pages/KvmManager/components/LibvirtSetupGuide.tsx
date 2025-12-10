@@ -40,9 +40,10 @@ export const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }
     };
 
     return (
-        <div className="bg-surface border border-border rounded-lg p-6 max-w-2xl mx-auto">
-            <div className="flex items-start gap-4 mb-6">
-                <div className="p-3 bg-amber-500/20 rounded-lg">
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-start gap-4">
+                <div className="p-3 bg-amber-500/20 rounded-lg shrink-0">
                     <AlertCircle size={24} className="text-amber-400" />
                 </div>
                 <div>
@@ -53,6 +54,7 @@ export const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }
                 </div>
             </div>
 
+            {/* Command List */}
             <div className="space-y-4">
                 {commands.map((item, index) => (
                     <div key={index} className="bg-zinc-900 rounded-lg overflow-hidden border border-border">
@@ -86,7 +88,8 @@ export const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }
                 ))}
             </div>
 
-            <Alert variant="info" icon={Terminal} className="mt-6">
+            {/* Info Alert */}
+            <Alert variant="info" icon={Terminal}>
                 <p className="font-medium">After running the commands:</p>
                 <ul className="mt-2 space-y-1 text-blue-300/80">
                     <li>• Log out and log back in (for group changes to take effect)</li>
@@ -96,7 +99,8 @@ export const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }
                 </ul>
             </Alert>
 
-            <div className="mt-6 flex justify-center">
+            {/* Retry Button */}
+            <div className="flex justify-start">
                 <ActionButton onClick={onRetry} icon={<RefreshCw size={16} />}>
                     Retry Connection
                 </ActionButton>

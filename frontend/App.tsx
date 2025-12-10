@@ -13,6 +13,7 @@ import CronManager from './pages/CronManager/index';
 import WafManager from './pages/WafManager/index';
 import LogManager from './pages/LogManager/index';
 import TerminalManager from './pages/TerminalManager/index';
+import FtpManager from './pages/FtpManager/index';
 import UserManager from './pages/UserManager/index';
 import Login from './pages/Login/index';
 import { TabView, UserInfo } from './types';
@@ -120,7 +121,7 @@ const App: React.FC = () => {
       case TabView.LOGS:
         return <LogManager />;
       case TabView.FTP:
-        return <ConstructionView title="FTP Server" />;
+        return <FtpManager />;
       case TabView.MAIL:
         return <ConstructionView title="Mail Server" />;
       case TabView.TERMINAL:

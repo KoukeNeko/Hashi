@@ -160,13 +160,20 @@ install_libvirt() {
 }
 
 install_nginx() {
-    log_info "Installing Nginx..."
+    log_info "Installing Nginx, Certbot, and dependencies..."
     case $PACKAGE_MANAGER in
-        apt)    apt-get install -y nginx ;;
-        dnf)    dnf install -y nginx ;;
-        pacman) pacman -S --noconfirm nginx ;;
+        apt)
+            apt-get install -y nginx certbot python3-certbot-nginx socat
+            ;;
+        dnf)
+            dnf install -y nginx certbot python3-certbot-nginx socat
+            ;;
+        pacman)
+            pacman -S --noconfirm nginx certbot certbot-nginx socat
+            ;;
     esac
-    log_success "Nginx installed"
+    systemctl enable --now nginx
+    log_success "Nginx and Certbot installed"
 }
 
 install_ftp() {

@@ -42,8 +42,8 @@ export const Dialog: React.FC<DialogProps> = ({
                         {titleIcon}
                         {title}
                     </h2>
-                    <button 
-                        onClick={onClose} 
+                    <button
+                        onClick={onClose}
                         className="text-zinc-500 hover:text-white transition-colors"
                     >
                         <X size={20} />
@@ -287,10 +287,10 @@ interface ToastProps {
     position?: 'fixed' | 'relative';
 }
 
-export const Toast: React.FC<ToastProps> = ({ 
-    message, 
-    type, 
-    onClose, 
+export const Toast: React.FC<ToastProps> = ({
+    message,
+    type,
+    onClose,
     autoClose = true,
     position = 'fixed'
 }) => {
@@ -301,16 +301,15 @@ export const Toast: React.FC<ToastProps> = ({
         }
     }, [onClose, autoClose]);
 
-    const positionClasses = position === 'fixed' 
-        ? 'fixed bottom-4 right-4 z-50' 
+    const positionClasses = position === 'fixed'
+        ? 'fixed bottom-4 right-4 z-50'
         : '';
 
     return (
-        <div className={`${positionClasses} flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border animate-fade-in ${
-            type === 'success' 
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' 
+        <div className={`${positionClasses} flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border animate-fade-in ${type === 'success'
+                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
                 : 'bg-rose-500/20 border-rose-500/50 text-rose-300'
-        }`}>
+            }`}>
             {type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
             <span className="text-sm font-medium">{message}</span>
             <button onClick={onClose} className="ml-2 hover:opacity-70"><X size={16} /></button>
@@ -385,7 +384,7 @@ export interface FormDialogField {
     transform?: (value: string) => string;          // e.g. toLowerCase
 }
 
-export interface FormDialogProps<T extends Record<string, unknown>> {
+export interface FormDialogProps<T extends object> {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (values: T) => Promise<void>;
@@ -401,7 +400,7 @@ export interface FormDialogProps<T extends Record<string, unknown>> {
     header?: React.ReactNode;                       // 顯示在表單之前的內容
 }
 
-export function FormDialog<T extends Record<string, unknown>>({
+export function FormDialog<T extends object>({
     isOpen,
     onClose,
     onSubmit,

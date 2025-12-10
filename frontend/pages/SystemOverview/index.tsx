@@ -4,7 +4,7 @@ import { INITIAL_CPU_DATA, MOCK_NGINX_HOSTS, MOCK_CONTAINERS, MOCK_FIREWALL_RULE
 import { Server, Database, Terminal, Power, Globe, Shield, Activity } from 'lucide-react';
 import { connectWebSocket } from '../../services/api';
 import { SystemStatus } from '../../types';
-import { CircularGauge, QuickStat, SoftwareCard } from './components/SystemWidgets';
+import { CircularGauge, QuickStat, SoftwareCard, OsIcon } from './components/SystemWidgets';
 
 
 const SystemOverview: React.FC = () => {
@@ -116,7 +116,7 @@ const SystemOverview: React.FC = () => {
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4  pb-6">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl border border-zinc-700 shadow-lg">
-                        <Server size={32} className="text-emerald-500" />
+                        <OsIcon osName={systemStatus?.osName} size={32} className="text-emerald-500" />
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-white">hashi-node-01</h2>

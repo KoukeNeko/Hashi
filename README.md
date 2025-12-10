@@ -14,3 +14,59 @@
 </p>
 
 </div>
+
+---
+
+## 📋 System Requirements
+
+- **OS**: Ubuntu 20.04+, Debian 11+, Fedora 36+, or Arch Linux
+- **Java**: JDK 17+
+- **Node.js**: 18+
+- **Docker**: 20.10+ (optional)
+- **KVM/Libvirt**: (optional, for VM management)
+
+## 🚀 Quick Start
+
+### 1. Setup System Permissions
+
+Run the permission setup script:
+
+```bash
+# Clone the repository
+git clone https://github.com/KoukeNeko/Hashi.git
+cd Hashi
+
+# Setup sudo permissions (one-time)
+sudo ./scripts/setup-permissions.sh
+```
+
+The script will:
+- Configure passwordless sudo for `ufw` (firewall management)
+- Configure passwordless sudo for `systemctl` (service management)
+- Add your user to `docker` and `libvirt` groups
+
+### 2. Start Development Servers
+
+```bash
+# Backend (Spring Boot)
+cd backend
+./gradlew bootRun
+
+# Frontend (in another terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+### 3. Access the Dashboard
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+## 🛠️ Permission Script Options
+
+```bash
+sudo ./scripts/setup-permissions.sh --setup   # Setup (default)
+sudo ./scripts/setup-permissions.sh --remove  # Remove permissions
+sudo ./scripts/setup-permissions.sh --help    # Show help
+```
+

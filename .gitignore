@@ -1,3 +1,9 @@
 frontend/node_modules/*
 frontend/dist/index.html
 frontend/dist/*
+
+# Local env files (personal config, don't commit)
+.env.local
+.env.*.local
+/frontend/.env.local
+/聖經.md

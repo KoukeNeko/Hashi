@@ -4,32 +4,37 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    const backendHost = env.VITE_BACKEND_HOST || 'localhost';
+    const backendPort = env.VITE_BACKEND_PORT || '8080';
+    const httpTarget = `http://${backendHost}:${backendPort}`;
+    const wsTarget = `ws://${backendHost}:${backendPort}`;
+
     return {
       server: {
         port: 3000,
         host: '0.0.0.0',
         proxy: {
           '/api': {
-            target: 'http://localhost:8080',
+            target: httpTarget,
             changeOrigin: true,
           },
           '/ws': {
-            target: 'http://localhost:8080',
+            target: httpTarget,
             changeOrigin: true,
             ws: true,
           },
           '/terminal': {
-            target: 'ws://localhost:8080',
+            target: wsTarget,
             changeOrigin: true,
             ws: true,
           },
           '/logs': {
-            target: 'ws://localhost:8080',
+            target: wsTarget,
             changeOrigin: true,
             ws: true,
           },
           '/novnc': {
-            target: 'http://localhost:8080',
+            target: httpTarget,
             changeOrigin: true,
           },
         },

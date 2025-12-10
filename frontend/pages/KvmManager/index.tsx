@@ -305,7 +305,7 @@ const KvmManager: React.FC = () => {
     const isRunning = (vm: VM) => vm.state === 'VIR_DOMAIN_RUNNING';
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="animate-fade-in">
             {/* Hidden file input */}
             <input
                 type="file"

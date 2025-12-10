@@ -46,6 +46,10 @@ const FtpSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
             </div>
         </div>
 
+        <Alert variant="info">
+            After installing, restart Hashi backend for changes to take effect.
+        </Alert>
+
         <div className="flex">
             <ActionButton onClick={onRetry} icon={<RefreshCw size={16} />}>
                 Retry Detection

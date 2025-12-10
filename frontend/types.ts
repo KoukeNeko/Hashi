@@ -416,6 +416,30 @@ export interface CronJob {
   comment?: string;   // (選用) 註解
 }
 
+// ==================== FTP Types ====================
+
+export type FtpServerType = 'vsftpd' | 'proftpd' | 'pure-ftpd';
+
+export interface FtpServerInfo {
+  type: FtpServerType;
+  serviceName: string;
+  configPath: string;
+  running: boolean;
+  enabled: boolean;
+}
+
+export interface FtpUser {
+  username: string;
+  homeDir: string;
+  enabled: boolean;
+}
+
+export interface CreateFtpUserRequest {
+  username: string;
+  password: string;
+  homeDir?: string;
+}
+
 export interface ServiceItem {
   name: string;
   description: string;

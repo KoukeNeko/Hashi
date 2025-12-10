@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AddIptablesRuleRequest, AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, IptablesRule, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo } from '@/types';
+import { AddIptablesRuleRequest, AuthResponse, CreateFtpUserRequest, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, FtpServerInfo, FtpUser, GroupInfo, IptablesRule, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo } from '@/types';
 
 
 export const VirtService = {
@@ -279,6 +279,41 @@ export const IptablesService = {
   },
   saveRules: async () => {
     await api.post('/iptables/save');
+  }
+};
+
+export const FtpService = {
+  detectServers: async () => {
+    const response = await api.get<FtpServerInfo[]>('/ftp/servers');
+    return response.data;
+  },
+  getStatus: async (type: string) => {
+    const response = await api.get<FtpServerInfo>(`/ftp/${type}/status`);
+    return response.data;
+  },
+  setEnabled: async (type: string, enabled: boolean) => {
+    await api.post(`/ftp/${type}/status`, null, { params: { enabled } });
+  },
+  getConfig: async (type: string) => {
+    const response = await api.get<{ content: string }>(`/ftp/${type}/config`);
+    return response.data.content;
+  },
+  updateConfig: async (type: string, content: string) => {
+    await api.put(`/ftp/${type}/config`, { content });
+  },
+  listUsers: async (type: string) => {
+    const response = await api.get<FtpUser[]>(`/ftp/${type}/users`);
+    return response.data;
+  },
+  addUser: async (type: string, user: CreateFtpUserRequest) => {
+    await api.post(`/ftp/${type}/users`, user);
+  },
+  deleteUser: async (type: string, username: string) => {
+    await api.delete(`/ftp/${type}/users/${username}`);
+  },
+  getLogs: async (type: string, lines: number = 100) => {
+    const response = await api.get<string[]>(`/ftp/${type}/logs`, { params: { lines } });
+    return response.data;
   }
 };
 

@@ -60,7 +60,7 @@ const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) =
                         <table className="w-full text-left border-collapse table-fixed">
                             <thead>
                                 <tr className="bg-zinc-900/50 border-t border-border text-xs uppercase text-zinc-500">
-                                    <th className="p-3 font-medium" style={{ width: '50px' }}>#</th>
+                                    <th className="p-3 font-medium" style={{ width: '10px' }}>#</th>
                                     <th className="p-3 font-medium" style={{ width: '180px' }}>Target</th>
                                     <th className="p-3 font-medium" style={{ width: '80px' }}>Protocol</th>
                                     <th className="p-3 font-medium" style={{ width: '140px' }}>Source</th>

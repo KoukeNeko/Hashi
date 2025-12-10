@@ -57,17 +57,17 @@ const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) =
                             No rules in this chain
                         </div>
                     ) : (
-                        <table className="w-full text-left border-collapse min-w-[700px]">
+                        <table className="w-full text-left border-collapse table-fixed">
                             <thead>
                                 <tr className="bg-zinc-900/50 border-t border-border text-xs uppercase text-zinc-500">
-                                    <th className="p-3 font-medium w-12">#</th>
-                                    <th className="p-3 font-medium whitespace-nowrap">Target</th>
-                                    <th className="p-3 font-medium w-20">Protocol</th>
-                                    <th className="p-3 font-medium">Source</th>
-                                    <th className="p-3 font-medium">Destination</th>
-                                    <th className="p-3 font-medium w-28">Packets</th>
-                                    <th className="p-3 font-medium w-28">Bytes</th>
-                                    <th className="p-3 font-medium text-right w-16">Action</th>
+                                    <th className="p-3 font-medium" style={{ width: '50px' }}>#</th>
+                                    <th className="p-3 font-medium" style={{ width: '180px' }}>Target</th>
+                                    <th className="p-3 font-medium" style={{ width: '80px' }}>Protocol</th>
+                                    <th className="p-3 font-medium" style={{ width: '140px' }}>Source</th>
+                                    <th className="p-3 font-medium" style={{ width: '140px' }}>Destination</th>
+                                    <th className="p-3 font-medium" style={{ width: '100px' }}>Packets</th>
+                                    <th className="p-3 font-medium" style={{ width: '100px' }}>Bytes</th>
+                                    <th className="p-3 font-medium text-right" style={{ width: '60px' }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody className="text-sm divide-y divide-border">

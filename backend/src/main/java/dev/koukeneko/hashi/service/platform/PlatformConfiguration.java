@@ -88,4 +88,7 @@ public class PlatformConfiguration {
     public UserService linuxUserService() {
         return new LinuxUserManager();
     }
+
+    // ==================== Windows Beans ====================
+    // (for future implementation)
 }

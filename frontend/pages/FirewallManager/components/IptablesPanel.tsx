@@ -61,7 +61,7 @@ const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) =
                             <thead>
                                 <tr className="bg-zinc-900/50 border-t border-border text-xs uppercase text-zinc-500">
                                     <th className="p-3 font-medium w-12">#</th>
-                                    <th className="p-3 font-medium w-24">Target</th>
+                                    <th className="p-3 font-medium whitespace-nowrap">Target</th>
                                     <th className="p-3 font-medium w-20">Protocol</th>
                                     <th className="p-3 font-medium">Source</th>
                                     <th className="p-3 font-medium">Destination</th>

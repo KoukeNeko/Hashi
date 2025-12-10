@@ -398,8 +398,10 @@ const DockerManager: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-      );
+        </>
+      )}
+    </div>
+  );
 };
 
-      export default DockerManager;
+export default DockerManager;

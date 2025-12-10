@@ -438,3 +438,119 @@ export const DashboardService = {
     return response.data;
   }
 };
+
+// Nginx 管理 API
+export const NginxApiService = {
+  // 服務控制
+  getStatus: async () => {
+    const response = await api.get('/nginx/status');
+    return response.data;
+  },
+  reload: async () => {
+    const response = await api.post('/nginx/reload');
+    return response.data;
+  },
+  testConfig: async () => {
+    const response = await api.post('/nginx/test');
+    return response.data;
+  },
+
+  // Virtual Host 管理
+  listHosts: async () => {
+    const response = await api.get('/nginx/hosts');
+    return response.data;
+  },
+  getHost: async (name: string) => {
+    const response = await api.get(`/nginx/hosts/${name}`);
+    return response.data;
+  },
+  getHostConfig: async (name: string) => {
+    const response = await api.get(`/nginx/hosts/${name}/config`, { responseType: 'text' });
+    return response.data;
+  },
+  createHost: async (request: CreateNginxHostRequest) => {
+    const response = await api.post('/nginx/hosts', request);
+    return response.data;
+  },
+  updateHostConfig: async (name: string, content: string) => {
+    const response = await api.put(`/nginx/hosts/${name}/config`, { content });
+    return response.data;
+  },
+  deleteHost: async (name: string) => {
+    const response = await api.delete(`/nginx/hosts/${name}`);
+    return response.data;
+  },
+  enableHost: async (name: string) => {
+    const response = await api.post(`/nginx/hosts/${name}/enable`);
+    return response.data;
+  },
+  disableHost: async (name: string) => {
+    const response = await api.post(`/nginx/hosts/${name}/disable`);
+    return response.data;
+  },
+
+  // SSL 憑證管理
+  listCertificates: async () => {
+    const response = await api.get('/nginx/ssl');
+    return response.data;
+  },
+  requestCertbotCert: async (domain: string, email: string) => {
+    const response = await api.post('/nginx/ssl/certbot', { domain, email });
+    return response.data;
+  },
+  requestAcmeCert: async (domain: string, email: string) => {
+    const response = await api.post('/nginx/ssl/acme', { domain, email });
+    return response.data;
+  }
+};
+
+// Types for NginxService
+export interface NginxHost {
+  name: string;
+  domain: string;
+  port: number;
+  type: 'static' | 'proxy' | 'php';
+  root?: string;
+  proxyPass?: string;
+  sslEnabled: boolean;
+  enabled: boolean;
+  configPath: string;
+  gzip: boolean;
+  rateLimit: boolean;
+  rateLimitRate?: number;
+  aliases: string[];
+}
+
+export interface NginxStatus {
+  running: boolean;
+  enabled: boolean;
+  version: string;
+  configValid: boolean;
+  configMessage: string;
+}
+
+export interface SslCert {
+  domain: string;
+  issuer: string;
+  expireDate: string;
+  daysRemaining: number;
+  autoRenew: boolean;
+  certPath: string;
+  keyPath: string;
+  source: string;
+}
+
+export interface CreateNginxHostRequest {
+  name?: string;
+  domain: string;
+  port?: number;
+  type?: 'static' | 'proxy' | 'php';
+  root?: string;
+  proxyPass?: string;
+  requestSsl?: boolean;
+  sslProvider?: 'certbot' | 'acme';
+  gzip?: boolean;
+  rateLimit?: boolean;
+  rateLimitRate?: number;
+  aliases?: string[];
+}

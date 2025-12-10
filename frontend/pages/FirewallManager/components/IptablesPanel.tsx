@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Toast, ActionButton } from '../../../components';
 import { IptablesService } from '../../../services/api';
 import { IptablesRule, AddIptablesRuleRequest, IptablesTable } from '../../../types';
-import { Tabs, TabItem } from '../../../components/ui/Tabs';
-import { Terminal, Plus, Trash2, Loader2, RefreshCw, Save, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
+import { Tabs, TabItem, Alert } from '../../../components/ui';
+import { Terminal, Plus, Trash2, Loader2, RefreshCw, Save, ChevronDown, ChevronRight } from 'lucide-react';
 import { AddIptablesRuleDialog, DeleteIptablesRuleDialog } from './IptablesDialogs';
 
 // ==================== Constants ====================
@@ -76,9 +76,9 @@ const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) =
                                         <td className="p-3 text-zinc-500 font-mono text-xs">{rule.lineNumber}</td>
                                         <td className="p-3">
                                             <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.target === 'ACCEPT' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                                                    rule.target === 'DROP' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                                                        rule.target === 'REJECT' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                                                            'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                                rule.target === 'DROP' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                                                    rule.target === 'REJECT' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                                                        'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                                                 }`}>
                                                 {rule.target}
                                             </span>
@@ -292,12 +292,9 @@ const IptablesPanel: React.FC = () => {
 
             {/* Error State */}
             {error && (
-                <div className="flex items-center gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-200">
-                    <AlertCircle size={20} />
-                    <p className="text-sm">
-                        <strong>Error:</strong> {error}
-                    </p>
-                </div>
+                <Alert variant="error" title="Error:">
+                    {error}
+                </Alert>
             )}
 
             {/* Loading State */}
@@ -320,12 +317,9 @@ const IptablesPanel: React.FC = () => {
             )}
 
             {/* Info Note */}
-            <div className="flex items-center gap-3 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-cyan-200">
-                <Terminal size={20} />
-                <div className="text-sm">
-                    <strong>Advanced:</strong> iptables rules are low-level firewall rules. Click "Save Rules" to persist changes across reboots.
-                </div>
-            </div>
+            <Alert variant="info" icon={Terminal} title="Advanced:">
+                iptables rules are low-level firewall rules. Click "Save Rules" to persist changes across reboots.
+            </Alert>
 
             {/* Dialogs */}
             <AddIptablesRuleDialog

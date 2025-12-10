@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Toast, ActionButton } from '../../../components';
 import { FirewallService } from '../../../services/api';
 import { FirewallRule } from '../../../types';
+import { Alert } from '../../../components/ui';
 import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Loader2, RefreshCw, Power, AlertCircle } from 'lucide-react';
 import { AddRuleDialog, DeleteRuleDialog } from './FirewallDialogs';
 
@@ -293,34 +294,25 @@ const UfwPanel: React.FC = () => {
 
             {/* API Error */}
             {statusError && (
-                <div className="flex items-center gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-200 shadow-lg">
-                    <AlertCircle size={20} />
-                    <p className="text-sm">
-                        <strong>Error:</strong> Failed to get firewall status. Make sure <code className="bg-rose-500/20 px-1 rounded">ufw</code> is installed
-                        and the backend has <code className="bg-rose-500/20 px-1 rounded">sudo</code> permission.
-                    </p>
-                </div>
+                <Alert variant="error" icon={AlertCircle} title="Error:">
+                    Failed to get firewall status. Make sure <code className="bg-rose-500/20 px-1 rounded">ufw</code> is installed
+                    and the backend has <code className="bg-rose-500/20 px-1 rounded">sudo</code> permission.
+                </Alert>
             )}
 
             {/* Disabled Warning */}
             {enabled === false && !statusError && (
-                <div className="flex items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-200 shadow-lg">
-                    <ShieldAlert size={20} />
-                    <p className="text-sm">
-                        <strong>Warning:</strong> Firewall is currently <strong>inactive</strong>. All incoming traffic is allowed.
-                        Click "Enable" to activate the firewall.
-                    </p>
-                </div>
+                <Alert variant="warning" icon={ShieldAlert} title="Warning:">
+                    Firewall is currently <strong>inactive</strong>. All incoming traffic is allowed.
+                    Click "Enable" to activate the firewall.
+                </Alert>
             )}
 
             {/* Info Note */}
-            <div className="flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-blue-200 shadow-lg">
-                <ShieldAlert size={20} />
-                <p className="text-sm">
-                    Note: Rules are managed via <code className="bg-blue-500/20 px-1 rounded">ufw</code>.
-                    Changes take effect immediately.
-                </p>
-            </div>
+            <Alert variant="info" icon={ShieldAlert}>
+                Note: Rules are managed via <code className="bg-blue-500/20 px-1 rounded">ufw</code>.
+                Changes take effect immediately.
+            </Alert>
 
             {/* Dialogs */}
             <AddRuleDialog

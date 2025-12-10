@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertCircle, Terminal, Copy, CheckCircle, RefreshCw } from 'lucide-react';
-import { ActionButton } from '../../../components/ui';
+import { ActionButton, Alert } from '../../../components/ui';
 
 // ==================== Setup Guide Component ====================
 export const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => {
@@ -86,20 +86,15 @@ export const LibvirtSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }
                 ))}
             </div>
 
-            <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <div className="flex items-start gap-3">
-                    <Terminal size={18} className="text-blue-400 mt-0.5" />
-                    <div className="text-sm text-blue-200">
-                        <p className="font-medium">After running the commands:</p>
-                        <ul className="mt-2 space-y-1 text-blue-300/80">
-                            <li>• Log out and log back in (for group changes to take effect)</li>
-                            <li>• Restart the Hashi backend service</li>
-                            <li>• Place ISO files in <code className="bg-zinc-800 px-1 rounded">/var/lib/libvirt/images/</code></li>
-                            <li>• Click the button below to retry</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+            <Alert variant="info" icon={Terminal} className="mt-6">
+                <p className="font-medium">After running the commands:</p>
+                <ul className="mt-2 space-y-1 text-blue-300/80">
+                    <li>• Log out and log back in (for group changes to take effect)</li>
+                    <li>• Restart the Hashi backend service</li>
+                    <li>• Place ISO files in <code className="bg-zinc-800 px-1 rounded">/var/lib/libvirt/images/</code></li>
+                    <li>• Click the button below to retry</li>
+                </ul>
+            </Alert>
 
             <div className="mt-6 flex justify-center">
                 <ActionButton onClick={onRetry} icon={<RefreshCw size={16} />}>

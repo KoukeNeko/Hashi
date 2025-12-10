@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PageHeader, Toast } from '../../components';
 import { ServiceItem } from '../../types';
 import { SystemdService } from '../../services/api';
-import { Settings2, Play, Square, RefreshCw, Search, AlertCircle, Loader2, CheckCircle, X } from 'lucide-react';
+import { Alert } from '../../components/ui';
+import { Settings2, Play, Square, RefreshCw, Search, AlertCircle, Loader2 } from 'lucide-react';
 
 // Toast 通知類型
 interface ToastItem {
@@ -158,12 +159,13 @@ const ServiceManager: React.FC = () => {
 
             {/* Error State */}
             {error && (
-                <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-4 rounded-lg flex items-center gap-3">
-                    <AlertCircle size={20} />
-                    <span>{error}</span>
+                <div className="flex items-center gap-3">
+                    <Alert variant="error" icon={AlertCircle} className="flex-1">
+                        {error}
+                    </Alert>
                     <button
                         onClick={() => setError(null)}
-                        className="ml-auto text-rose-400 hover:text-rose-300"
+                        className="text-rose-400 hover:text-rose-300 p-2"
                     >
                         ✕
                     </button>
@@ -214,10 +216,10 @@ const ServiceManager: React.FC = () => {
                                     </td>
                                     <td className="p-4">
                                         <span className={`text-xs px-2 py-1 rounded ${svc.loadState === 'loaded'
-                                                ? 'text-emerald-400 bg-emerald-400/10'
-                                                : svc.loadState === 'not-found'
-                                                    ? 'text-rose-400 bg-rose-400/10'
-                                                    : 'text-zinc-400 bg-zinc-700'
+                                            ? 'text-emerald-400 bg-emerald-400/10'
+                                            : svc.loadState === 'not-found'
+                                                ? 'text-rose-400 bg-rose-400/10'
+                                                : 'text-zinc-400 bg-zinc-700'
                                             }`}>
                                             {svc.loadState}
                                         </span>
@@ -225,7 +227,7 @@ const ServiceManager: React.FC = () => {
                                     <td className="p-4">
                                         <span className={`flex items-center gap-2`}>
                                             <span className={`w-2 h-2 rounded-full ${svc.activeState === 'active' ? 'bg-emerald-500' :
-                                                    svc.activeState === 'failed' ? 'bg-rose-500' : 'bg-zinc-500'
+                                                svc.activeState === 'failed' ? 'bg-rose-500' : 'bg-zinc-500'
                                                 }`}></span>
                                             <span className={
                                                 svc.activeState === 'active' ? 'text-emerald-400' :

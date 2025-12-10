@@ -1,23 +1,23 @@
-package dev.koukeneko.hashi.service.impl;
+package dev.koukeneko.hashi.service.platform.auth;
 
 import dev.koukeneko.hashi.model.dto.UserInfoDTO;
 import dev.koukeneko.hashi.service.AuthService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Optional;
 
-@Service
+/**
+ * Linux PAM 認證提供者實作
+ */
 @Slf4j
-public class AuthServiceImpl implements AuthService {
+public class LinuxPamAuthProvider implements AuthService {
 
     @Override
     public Optional<UserInfoDTO> authenticate(String username, String password) {
         try {
             // 使用 su 命令驗證密碼
-            // su -c "exit" username 會要求輸入密碼，如果密碼正確就成功退出
             ProcessBuilder pb = new ProcessBuilder("su", "-c", "exit", username);
             pb.redirectErrorStream(true);
             Process process = pb.start();
@@ -27,7 +27,6 @@ public class AuthServiceImpl implements AuthService {
             process.getOutputStream().flush();
             process.getOutputStream().close();
 
-            // 等待行程結束
             int exitCode = process.waitFor();
 
             if (exitCode == 0) {

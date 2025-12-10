@@ -1,11 +1,10 @@
-package dev.koukeneko.hashi.service.impl;
+package dev.koukeneko.hashi.service.platform.user;
 
 import dev.koukeneko.hashi.model.dto.GroupInfoDTO;
 import dev.koukeneko.hashi.model.dto.PasswordInfoDTO;
 import dev.koukeneko.hashi.model.dto.UserInfoDTO;
 import dev.koukeneko.hashi.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,9 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-@Service
 @Slf4j
-public class UserServiceImpl implements UserService {
+public class LinuxUserManager implements UserService {
 
     // ==================== 輔助方法 ====================
 
@@ -26,7 +24,7 @@ public class UserServiceImpl implements UserService {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
             Process process = pb.start();
-            
+
             // 讀取輸出（避免阻塞）
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
@@ -34,7 +32,7 @@ public class UserServiceImpl implements UserService {
                     log.debug("Command output: {}", line);
                 }
             }
-            
+
             return process.waitFor();
         } catch (Exception e) {
             log.error("Error executing command: {}", e.getMessage());
@@ -107,17 +105,16 @@ public class UserServiceImpl implements UserService {
                     if (parts.length >= 7) {
                         String username = parts[0];
                         UserInfoDTO user = new UserInfoDTO(
-                            username,
-                            Integer.parseInt(parts[2]),
-                            Integer.parseInt(parts[3]),
-                            parts[4],
-                            parts[5],
-                            parts[6],
-                            getUserGroups(username),
-                            isUserLocked(username),
-                            null,
-                            null
-                        );
+                                username,
+                                Integer.parseInt(parts[2]),
+                                Integer.parseInt(parts[3]),
+                                parts[4],
+                                parts[5],
+                                parts[6],
+                                getUserGroups(username),
+                                isUserLocked(username),
+                                null,
+                                null);
                         users.add(user);
                     }
                 }
@@ -137,19 +134,18 @@ public class UserServiceImpl implements UserService {
             if (parts.length >= 7) {
                 PasswordInfoDTO pwInfo = getPasswordInfo(username);
                 String expireDate = pwInfo != null ? pwInfo.expireDate() : null;
-                
+
                 return new UserInfoDTO(
-                    parts[0],
-                    Integer.parseInt(parts[2]),
-                    Integer.parseInt(parts[3]),
-                    parts[4],
-                    parts[5],
-                    parts[6],
-                    getUserGroups(username),
-                    isUserLocked(username),
-                    expireDate,
-                    getLastLogin(username)
-                );
+                        parts[0],
+                        Integer.parseInt(parts[2]),
+                        Integer.parseInt(parts[3]),
+                        parts[4],
+                        parts[5],
+                        parts[6],
+                        getUserGroups(username),
+                        isUserLocked(username),
+                        expireDate,
+                        getLastLogin(username));
             }
         }
         return null;
@@ -158,7 +154,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public PasswordInfoDTO getPasswordInfo(String username) {
         String output = executeCommandWithOutput(Arrays.asList("chage", "-l", username));
-        if (output.isEmpty()) return null;
+        if (output.isEmpty())
+            return null;
 
         int minDays = 0;
         int maxDays = 99999;
@@ -169,8 +166,9 @@ public class UserServiceImpl implements UserService {
 
         for (String line : output.split("\n")) {
             String[] parts = line.split(":\\s*", 2);
-            if (parts.length < 2) continue;
-            
+            if (parts.length < 2)
+                continue;
+
             String key = parts[0].trim().toLowerCase();
             String value = parts[1].trim();
 
@@ -188,17 +186,16 @@ public class UserServiceImpl implements UserService {
                 lastChange = value;
             }
         }
-        
+
         return new PasswordInfoDTO(
-            username,
-            minDays,
-            maxDays,
-            warnDays,
-            inactiveDays,
-            expireDate,
-            lastChange,
-            isUserLocked(username)
-        );
+                username,
+                minDays,
+                maxDays,
+                warnDays,
+                inactiveDays,
+                expireDate,
+                lastChange,
+                isUserLocked(username));
     }
 
     private int parseIntOrDefault(String value, int defaultValue) {
@@ -231,56 +228,56 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean createUser(String username, String password, String shell, boolean createHome,
-                              Integer uid, Integer gid, List<String> groups, String gecos,
-                              String homeDir, boolean system, String expireDate) {
+            Integer uid, Integer gid, List<String> groups, String gecos,
+            String homeDir, boolean system, String expireDate) {
         try {
             List<String> cmd = new ArrayList<>(Arrays.asList("useradd"));
-            
+
             if (createHome) {
                 cmd.add("-m");
             } else {
                 cmd.add("-M");
             }
-            
+
             if (shell != null && !shell.isEmpty()) {
                 cmd.add("-s");
                 cmd.add(shell);
             }
-            
+
             if (uid != null) {
                 cmd.add("-u");
                 cmd.add(String.valueOf(uid));
             }
-            
+
             if (gid != null) {
                 cmd.add("-g");
                 cmd.add(String.valueOf(gid));
             }
-            
+
             if (groups != null && !groups.isEmpty()) {
                 cmd.add("-G");
                 cmd.add(String.join(",", groups));
             }
-            
+
             if (gecos != null && !gecos.isEmpty()) {
                 cmd.add("-c");
                 cmd.add(gecos);
             }
-            
+
             if (homeDir != null && !homeDir.isEmpty()) {
                 cmd.add("-d");
                 cmd.add(homeDir);
             }
-            
+
             if (system) {
                 cmd.add("-r");
             }
-            
+
             if (expireDate != null && !expireDate.isEmpty()) {
                 cmd.add("-e");
                 cmd.add(expireDate);
             }
-            
+
             cmd.add(username);
 
             int exitCode = executeCommand(cmd);
@@ -292,7 +289,7 @@ public class UserServiceImpl implements UserService {
             if (password != null && !password.isEmpty()) {
                 return changePassword(username, password);
             }
-            
+
             log.info("User {} created successfully", username);
             return true;
         } catch (Exception e) {
@@ -444,9 +441,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean setPasswordPolicy(String username, Integer minDays, Integer maxDays,
-                                      Integer warnDays, Integer inactiveDays) {
+            Integer warnDays, Integer inactiveDays) {
         List<String> cmd = new ArrayList<>(Arrays.asList("chage"));
-        
+
         if (minDays != null) {
             cmd.add("-m");
             cmd.add(String.valueOf(minDays));
@@ -463,9 +460,9 @@ public class UserServiceImpl implements UserService {
             cmd.add("-I");
             cmd.add(String.valueOf(inactiveDays));
         }
-        
+
         cmd.add(username);
-        
+
         int exitCode = executeCommand(cmd);
         if (exitCode == 0) {
             log.info("Password policy updated for user {}", username);
@@ -501,7 +498,7 @@ public class UserServiceImpl implements UserService {
         List<String> cmd = new ArrayList<>(Arrays.asList("chage", "-E"));
         cmd.add(expireDate != null && !expireDate.isEmpty() ? expireDate : "-1");
         cmd.add(username);
-        
+
         int exitCode = executeCommand(cmd);
         if (exitCode == 0) {
             log.info("Expire date set for user {} to {}", username, expireDate);
@@ -526,13 +523,12 @@ public class UserServiceImpl implements UserService {
                     String[] parts = line.split(":");
                     if (parts.length >= 3) {
                         List<String> members = parts.length > 3 && !parts[3].isEmpty()
-                            ? Arrays.asList(parts[3].split(","))
-                            : new ArrayList<>();
+                                ? Arrays.asList(parts[3].split(","))
+                                : new ArrayList<>();
                         GroupInfoDTO group = new GroupInfoDTO(
-                            parts[0],
-                            Integer.parseInt(parts[2]),
-                            members
-                        );
+                                parts[0],
+                                Integer.parseInt(parts[2]),
+                                members);
                         groups.add(group);
                     }
                 }
@@ -551,13 +547,12 @@ public class UserServiceImpl implements UserService {
             String[] parts = output.split(":");
             if (parts.length >= 3) {
                 List<String> members = parts.length > 3 && !parts[3].isEmpty()
-                    ? Arrays.asList(parts[3].split(","))
-                    : new ArrayList<>();
+                        ? Arrays.asList(parts[3].split(","))
+                        : new ArrayList<>();
                 return new GroupInfoDTO(
-                    parts[0],
-                    Integer.parseInt(parts[2]),
-                    members
-                );
+                        parts[0],
+                        Integer.parseInt(parts[2]),
+                        members);
             }
         }
         return null;
@@ -603,8 +598,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean addUserToGroups(String username, List<String> groups) {
-        if (groups == null || groups.isEmpty()) return true;
-        
+        if (groups == null || groups.isEmpty())
+            return true;
+
         String groupList = String.join(",", groups);
         int exitCode = executeCommand(Arrays.asList("usermod", "-a", "-G", groupList, username));
         if (exitCode == 0) {
@@ -619,16 +615,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean createGroup(String groupName, Integer gid, boolean system, List<String> users) {
         List<String> cmd = new ArrayList<>(Arrays.asList("groupadd"));
-        
+
         if (gid != null) {
             cmd.add("-g");
             cmd.add(String.valueOf(gid));
         }
-        
+
         if (system) {
             cmd.add("-r");
         }
-        
+
         cmd.add(groupName);
 
         int exitCode = executeCommand(cmd);
@@ -636,14 +632,14 @@ public class UserServiceImpl implements UserService {
             log.error("Failed to create group {}", groupName);
             return false;
         }
-        
+
         // 新增初始成員
         if (users != null && !users.isEmpty()) {
             for (String user : users) {
                 addMemberToGroup(groupName, user);
             }
         }
-        
+
         log.info("Group {} created", groupName);
         return true;
     }

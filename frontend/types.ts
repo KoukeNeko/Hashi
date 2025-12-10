@@ -17,7 +17,7 @@ export interface VM {
   vcpu: number;
   memory: number;
   maxMemory?: number;
-  
+
   // 詳細設定 (由 getVmDetails 填充)
   description?: string;
   cpuMode?: string;
@@ -25,16 +25,16 @@ export interface VM {
   cpuCores?: number;
   cpuThreads?: number;
   hugepages?: boolean;
-  
+
   // 主磁碟 (向後相容)
   diskPath?: string;
   diskFormat?: string;
   diskBus?: string;
   diskSizeBytes?: number;
-  
+
   // 多磁碟
   disks?: Disk[];
-  
+
   networkType?: string;
   networkSource?: string;
   networkModel?: string;
@@ -300,10 +300,10 @@ export interface IsoFile {
   size: number;       // 檔案大小 (bytes)
 }
 export interface VncInfo {
-    host: string;
-    port: number;
-    websocketUrl: string;
-    password?: string;
+  host: string;
+  port: number;
+  websocketUrl: string;
+  password?: string;
 }
 
 // 使用者認證相關
@@ -370,6 +370,43 @@ export interface FirewallRule {
   action: string;
   from: string;
   ipv6: boolean;
+}
+
+// ==================== iptables Types ====================
+
+export interface IptablesRule {
+  lineNumber: number;
+  table: string;
+  chain: string;
+  target: string;
+  protocol: string;
+  source: string;
+  destination: string;
+  inInterface: string;
+  outInterface: string;
+  sourcePort?: number;
+  destPort?: number;
+  options: string;
+  packetCount: number;
+  byteCount: number;
+}
+
+export type IptablesTable = 'filter' | 'nat' | 'mangle';
+
+export type IptablesChain = 'INPUT' | 'OUTPUT' | 'FORWARD' | 'PREROUTING' | 'POSTROUTING';
+
+export interface AddIptablesRuleRequest {
+  table?: string;
+  chain: string;
+  target: string;
+  protocol?: string;
+  source?: string;
+  destination?: string;
+  inInterface?: string;
+  outInterface?: string;
+  sourcePort?: number;
+  destPort?: number;
+  append?: boolean;
 }
 
 export interface CronJob {

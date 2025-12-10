@@ -2,7 +2,8 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo } from '@/types';
+import { AddIptablesRuleRequest, AuthResponse, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, GroupInfo, IptablesRule, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo } from '@/types';
+
 
 export const VirtService = {
   // VM 管理
@@ -32,7 +33,7 @@ export const VirtService = {
     const response = await api.get<VncInfo>(`/virt/vms/${name}/vnc-info`);
     return response.data;
   },
-  
+
   // ISO 管理
   listIsoFiles: async () => {
     const response = await api.get<IsoFile[]>('/virt/iso');
@@ -60,7 +61,7 @@ export const VirtService = {
     await api.delete(`/virt/iso/${filename}`);
   }
 };
-  
+
 // 認證相關 API
 export const AuthService = {
   login: async (username: string, password: string): Promise<AuthResponse> => {
@@ -265,6 +266,22 @@ export const FirewallService = {
   }
 };
 
+export const IptablesService = {
+  getRules: async (table: string = 'filter') => {
+    const response = await api.get<IptablesRule[]>('/iptables', { params: { table } });
+    return response.data;
+  },
+  addRule: async (rule: AddIptablesRuleRequest) => {
+    await api.post('/iptables', rule);
+  },
+  deleteRule: async (table: string, chain: string, lineNumber: number) => {
+    await api.delete(`/iptables/${table}/${chain}/${lineNumber}`);
+  },
+  saveRules: async () => {
+    await api.post('/iptables/save');
+  }
+};
+
 export const CronService = {
   listJobs: async () => {
     const response = await api.get<CronJob[]>('/cron');
@@ -317,11 +334,11 @@ export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => vo
   const client = new Client({
     // 使用 SockJS 建立連線工廠 (透過 Vite proxy)
     webSocketFactory: () => new SockJS('/ws'),
-    
+
     // 連線成功時的回呼
     onConnect: () => {
       console.log('Connected to WebSocket');
-      
+
       // 訂閱後端的推播頻道
       client.subscribe('/topic/status', (message) => {
         if (message.body) {
@@ -330,7 +347,7 @@ export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => vo
         }
       });
     },
-    
+
     // 錯誤處理
     onStompError: (frame) => {
       console.error('Broker reported error: ' + frame.headers['message']);
@@ -346,40 +363,40 @@ export const connectWebSocket = (onMessageReceived: (status: SystemStatus) => vo
 export const API_BASE_URL = '/api/v1';
 
 export const api = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // Docker 相關的 API 服務
 export const DockerService = {
-    // 獲取容器列表
-    getContainers: async () => {
-        const response = await api.get('/docker/containers');
-        return response.data;
-    },
+  // 獲取容器列表
+  getContainers: async () => {
+    const response = await api.get('/docker/containers');
+    return response.data;
+  },
 
-    // 啟動
-    startContainer: async (id: string) => {
-        return api.post(`/docker/containers/${id}/start`);
-    },
+  // 啟動
+  startContainer: async (id: string) => {
+    return api.post(`/docker/containers/${id}/start`);
+  },
 
-    // 停止
-    stopContainer: async (id: string) => {
-        return api.post(`/docker/containers/${id}/stop`);
-    },
+  // 停止
+  stopContainer: async (id: string) => {
+    return api.post(`/docker/containers/${id}/stop`);
+  },
 
-    // 重啟
-    restartContainer: async (id: string) => {
-        return api.post(`/docker/containers/${id}/restart`);
-    }
+  // 重啟
+  restartContainer: async (id: string) => {
+    return api.post(`/docker/containers/${id}/restart`);
+  }
 };
 
 // 系統監控相關 API
 export const DashboardService = {
-    getSystemStatus: async () => {
-        const response = await api.get('/dashboard/status');
-        return response.data;
-    }
+  getSystemStatus: async () => {
+    const response = await api.get('/dashboard/status');
+    return response.data;
+  }
 };

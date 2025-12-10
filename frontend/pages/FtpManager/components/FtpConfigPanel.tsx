@@ -91,7 +91,7 @@ const FtpConfigPanel: React.FC<FtpConfigPanelProps> = ({ serverType, configPath,
 
             {/* Config Editor */}
             {loading ? (
-                <div className="flex items-center justify-center py-16 border border-border rounded-lg bg-zinc-900">
+                <div className="flex items-center justify-center h-[500px] w-full border border-border rounded-lg bg-zinc-900">
                     <Loader2 size={32} className="animate-spin text-zinc-500" />
                 </div>
             ) : (

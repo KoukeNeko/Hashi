@@ -108,9 +108,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     };
 
     return (
-        <div className="border border-border rounded-lg overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden" style={{ height }}>
             <Editor
-                height={height}
+                height="100%"
                 language={language}
                 value={value}
                 onChange={handleChange}
@@ -129,7 +129,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
                     padding: { top: 12, bottom: 12 },
                 }}
                 loading={
-                    <div className="flex items-center justify-center h-full bg-zinc-900">
+                    <div className="flex items-center justify-center w-full h-full bg-zinc-900">
                         <Loader2 size={32} className="animate-spin text-emerald-500" />
                     </div>
                 }

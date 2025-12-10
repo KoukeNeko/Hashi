@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { PageHeader } from '../../components/PageHeader';
+import { PageHeader, Toast } from '../../components';
 import { ServiceItem } from '../../types';
 import { SystemdService } from '../../services/api';
 import { Settings2, Play, Square, RefreshCw, Search, AlertCircle, Loader2, CheckCircle, X } from 'lucide-react';
-import { Toast } from '../../components/ui';
 
 // Toast 通知類型
 interface ToastItem {
@@ -77,8 +76,8 @@ const ServiceManager: React.FC = () => {
             // 處理錯誤訊息，確保是字串
             let errorMsg = 'Unknown error';
             if (err.response?.data) {
-                errorMsg = typeof err.response.data === 'string' 
-                    ? err.response.data 
+                errorMsg = typeof err.response.data === 'string'
+                    ? err.response.data
                     : err.response.data.message || err.response.data.error || JSON.stringify(err.response.data);
             } else if (err.message) {
                 errorMsg = err.message;
@@ -162,7 +161,7 @@ const ServiceManager: React.FC = () => {
                 <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-4 rounded-lg flex items-center gap-3">
                     <AlertCircle size={20} />
                     <span>{error}</span>
-                    <button 
+                    <button
                         onClick={() => setError(null)}
                         className="ml-auto text-rose-400 hover:text-rose-300"
                     >
@@ -214,25 +213,23 @@ const ServiceManager: React.FC = () => {
                                         {svc.description || '-'}
                                     </td>
                                     <td className="p-4">
-                                        <span className={`text-xs px-2 py-1 rounded ${
-                                            svc.loadState === 'loaded' 
-                                                ? 'text-emerald-400 bg-emerald-400/10' 
+                                        <span className={`text-xs px-2 py-1 rounded ${svc.loadState === 'loaded'
+                                                ? 'text-emerald-400 bg-emerald-400/10'
                                                 : svc.loadState === 'not-found'
-                                                ? 'text-rose-400 bg-rose-400/10'
-                                                : 'text-zinc-400 bg-zinc-700'
-                                        }`}>
+                                                    ? 'text-rose-400 bg-rose-400/10'
+                                                    : 'text-zinc-400 bg-zinc-700'
+                                            }`}>
                                             {svc.loadState}
                                         </span>
                                     </td>
                                     <td className="p-4">
                                         <span className={`flex items-center gap-2`}>
-                                            <span className={`w-2 h-2 rounded-full ${
-                                                svc.activeState === 'active' ? 'bg-emerald-500' :
-                                                svc.activeState === 'failed' ? 'bg-rose-500' : 'bg-zinc-500'
-                                            }`}></span>
+                                            <span className={`w-2 h-2 rounded-full ${svc.activeState === 'active' ? 'bg-emerald-500' :
+                                                    svc.activeState === 'failed' ? 'bg-rose-500' : 'bg-zinc-500'
+                                                }`}></span>
                                             <span className={
                                                 svc.activeState === 'active' ? 'text-emerald-400' :
-                                                svc.activeState === 'failed' ? 'text-rose-400' : 'text-zinc-500'
+                                                    svc.activeState === 'failed' ? 'text-rose-400' : 'text-zinc-500'
                                             }>
                                                 {svc.activeState}
                                             </span>
@@ -244,10 +241,10 @@ const ServiceManager: React.FC = () => {
                                     <td className="p-4 text-right">
                                         <div className="flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                                             {svc.activeState !== 'active' && (
-                                                <button 
+                                                <button
                                                     onClick={() => handleControl(svc.name, 'start')}
                                                     disabled={actionLoading !== null}
-                                                    className="p-1.5 hover:bg-emerald-500/20 hover:text-emerald-400 rounded transition-colors disabled:opacity-50" 
+                                                    className="p-1.5 hover:bg-emerald-500/20 hover:text-emerald-400 rounded transition-colors disabled:opacity-50"
                                                     title="Start"
                                                 >
                                                     {actionLoading === `${svc.name}-start` ? (
@@ -258,10 +255,10 @@ const ServiceManager: React.FC = () => {
                                                 </button>
                                             )}
                                             {svc.activeState === 'active' && (
-                                                <button 
+                                                <button
                                                     onClick={() => handleControl(svc.name, 'stop')}
                                                     disabled={actionLoading !== null}
-                                                    className="p-1.5 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors disabled:opacity-50" 
+                                                    className="p-1.5 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors disabled:opacity-50"
                                                     title="Stop"
                                                 >
                                                     {actionLoading === `${svc.name}-stop` ? (
@@ -271,10 +268,10 @@ const ServiceManager: React.FC = () => {
                                                     )}
                                                 </button>
                                             )}
-                                            <button 
+                                            <button
                                                 onClick={() => handleControl(svc.name, 'restart')}
                                                 disabled={actionLoading !== null || svc.activeState !== 'active'}
-                                                className="p-1.5 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors disabled:opacity-50" 
+                                                className="p-1.5 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors disabled:opacity-50"
                                                 title="Restart"
                                             >
                                                 {actionLoading === `${svc.name}-restart` ? (

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ContainerDTO } from '../../types';
 import { MOCK_IMAGES, MOCK_NETWORKS, MOCK_VOLUMES } from '../../constants';
-import { PageHeader } from '../../components/PageHeader';
-import { Tabs } from '../../components/Tabs';
+import { PageHeader, Tabs } from '../../components';
 import { DockerService } from '../../services/api';
 import { Box, Play, Square, RefreshCw, Activity, Layers, Network, Database, Search, Plus, Trash2 } from 'lucide-react';
 
@@ -69,11 +68,11 @@ const DockerManager: React.FC = () => {
   // Initial fetch and polling
   useEffect(() => {
     fetchContainers();
-    
+
     const interval = setInterval(() => {
       fetchContainers();
     }, 10000); // Refresh every 10 seconds
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -110,7 +109,7 @@ const DockerManager: React.FC = () => {
                 className="bg-zinc-900 border border-zinc-700 text-zinc-300 pl-9 pr-4 py-2 rounded text-sm focus:outline-none focus:border-emerald-500 w-full sm:w-64 transition-colors shadow-lg"
               />
             </div>
-            <button 
+            <button
               onClick={fetchContainers}
               className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-lg whitespace-nowrap"
             >
@@ -145,7 +144,7 @@ const DockerManager: React.FC = () => {
                 {error}
               </div>
             )}
-            
+
             {/* Desktop Header */}
             <div className="hidden lg:grid grid-cols-12 gap-4 px-4 py-3 bg-zinc-900 border-b border-border text-xs uppercase text-zinc-500 font-medium">
               <div className="col-span-1">State</div>
@@ -188,24 +187,24 @@ const DockerManager: React.FC = () => {
                         <RefreshCw className="animate-spin text-zinc-400" size={16} />
                       ) : (
                         <>
-                          <button 
+                          <button
                             onClick={() => handleStartContainer(container.id)}
-                            className="p-1.5 hover:bg-emerald-500/20 hover:text-emerald-400 rounded transition-colors disabled:opacity-50" 
+                            className="p-1.5 hover:bg-emerald-500/20 hover:text-emerald-400 rounded transition-colors disabled:opacity-50"
                             title="Start"
                             disabled={container.state === 'running'}
                           >
                             <Play size={16} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleRestartContainer(container.id)}
-                            className="p-1.5 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors" 
+                            className="p-1.5 hover:bg-amber-500/20 hover:text-amber-400 rounded transition-colors"
                             title="Restart"
                           >
                             <RefreshCw size={16} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleStopContainer(container.id)}
-                            className="p-1.5 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors disabled:opacity-50" 
+                            className="p-1.5 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors disabled:opacity-50"
                             title="Stop"
                             disabled={container.state !== 'running'}
                           >

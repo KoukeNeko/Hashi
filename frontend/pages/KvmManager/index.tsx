@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { VM, CreateVmRequest, UpdateVmRequest, IsoFile, VM_DEFAULTS, VM_OPTIONS, Disk } from '../../types';
 import { VirtService } from '../../services/api';
-import { PageHeader } from '../../components/PageHeader';
-import { VncConsole } from '../../components/VncConsole';
-import { Tabs, TabItem } from '../../components/Tabs';
+import { PageHeader, VncConsole, Tabs, Toast, ActionButton, ConfirmDialog, type TabItem } from '../../components';
 import {
     Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick,
     Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle,
     Plus, Trash2, Upload, Disc, X, MonitorPlay, Settings, Network, Tv, Zap, ChevronDown, ChevronUp, Info, Edit
 } from 'lucide-react';
-import { Toast, ActionButton, ConfirmDialog } from '../../components/ui';
 import { LibvirtSetupGuide } from './components/LibvirtSetupGuide';
 
 // 格式化檔案大小

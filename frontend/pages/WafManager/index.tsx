@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { PageHeader } from '../../components/PageHeader';
+import { PageHeader } from '../../components';
 import { MOCK_WAF_RULES } from '../../constants';
 import { Lock, ShieldCheck, AlertTriangle, Shield, Settings } from 'lucide-react';
 

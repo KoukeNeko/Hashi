@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PageHeader } from '../../components/PageHeader';
-import { Tabs } from '../../components/Tabs';
+import { PageHeader, Tabs } from '../../components';
 import { ScrollText, Download, Trash2, Search, Pause, Play, ArrowDown, Loader2, Wifi, WifiOff } from 'lucide-react';
 
 interface LogEntry {
@@ -15,20 +14,20 @@ interface LogEntry {
 // 解析 journalctl 輸出
 const parseLogLine = (line: string, id: number): LogEntry | null => {
     if (!line.trim()) return null;
-    
+
     // journalctl 格式範例: 
     // Dec 05 12:34:56 hostname service[pid]: message
     // 或: Dec 05 12:34:56 hostname kernel: message
     const match = line.match(/^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+(\S+?)(?:\[\d+\])?:\s*(.*)$/);
-    
+
     if (match) {
         const [, timestamp, , service, message] = match;
-        
+
         // 偵測 log level
         let level: LogEntry['level'] = 'INFO';
         const lowerMsg = message.toLowerCase();
         const lowerService = service.toLowerCase();
-        
+
         if (lowerMsg.includes('error') || lowerMsg.includes('failed') || lowerMsg.includes('fatal')) {
             level = 'ERROR';
         } else if (lowerMsg.includes('warn') || lowerMsg.includes('warning')) {
@@ -42,10 +41,10 @@ const parseLogLine = (line: string, id: number): LogEntry | null => {
         } else if (lowerService.includes('kernel')) {
             level = 'DEBUG';
         }
-        
+
         return { id, timestamp, level, service: service.replace(/\[\d+\]$/, ''), message, raw: line };
     }
-    
+
     // 無法解析，直接當作 raw log
     return { id, timestamp: '', level: 'UNKNOWN', service: '', message: line, raw: line };
 };
@@ -58,7 +57,7 @@ const LogManager: React.FC = () => {
     const [autoScroll, setAutoScroll] = useState(true);
     const [connected, setConnected] = useState(false);
     const [connecting, setConnecting] = useState(true);
-    
+
     const wsRef = useRef<WebSocket | null>(null);
     const logContainerRef = useRef<HTMLDivElement>(null);
     const logIdRef = useRef(0);
@@ -77,7 +76,7 @@ const LogManager: React.FC = () => {
         if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
         setConnecting(true);
-        
+
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const ws = new WebSocket(`${wsProtocol}//${window.location.host}/logs`);
         wsRef.current = ws;
@@ -91,13 +90,13 @@ const LogManager: React.FC = () => {
         ws.onmessage = (event) => {
             const data = event.data as string;
             const lines = data.split('\n');
-            
+
             const newLogs: LogEntry[] = [];
             for (const line of lines) {
                 const parsed = parseLogLine(line, logIdRef.current++);
                 if (parsed) newLogs.push(parsed);
             }
-            
+
             if (newLogs.length === 0) return;
 
             setLogs(prev => {
@@ -111,7 +110,7 @@ const LogManager: React.FC = () => {
             setConnected(false);
             setConnecting(false);
             wsRef.current = null;
-            
+
             // 5 秒後自動重連
             setTimeout(() => {
                 connectWebSocket();
@@ -146,7 +145,7 @@ const LogManager: React.FC = () => {
     const filteredLogs = logs.filter(log => {
         if (paused) return true; // 暫停時不過濾，保持原狀
         const matchFilter = filter === 'ALL' || log.level === filter;
-        const matchSearch = !searchQuery || 
+        const matchSearch = !searchQuery ||
             log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
             log.service.toLowerCase().includes(searchQuery.toLowerCase());
         return matchFilter && matchSearch;
@@ -154,7 +153,7 @@ const LogManager: React.FC = () => {
         // 再次過濾（非暫停時）
         if (!paused) return true;
         const matchFilter = filter === 'ALL' || log.level === filter;
-        const matchSearch = !searchQuery || 
+        const matchSearch = !searchQuery ||
             log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
             log.service.toLowerCase().includes(searchQuery.toLowerCase());
         return matchFilter && matchSearch;
@@ -236,13 +235,12 @@ const LogManager: React.FC = () => {
                 }
                 actions={
                     <div className="flex gap-2">
-                        <button 
+                        <button
                             onClick={() => setPaused(!paused)}
-                            className={`px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 shadow-lg border ${
-                                paused 
+                            className={`px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 shadow-lg border ${paused
                                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/50 hover:bg-emerald-500/20'
                                     : 'bg-amber-500/10 text-amber-400 border-amber-500/50 hover:bg-amber-500/20'
-                            }`}
+                                }`}
                         >
                             {paused ? <Play size={16} /> : <Pause size={16} />}
                             {paused ? 'Resume' : 'Pause'}
@@ -252,13 +250,13 @@ const LogManager: React.FC = () => {
                                 </span>
                             )}
                         </button>
-                        <button 
+                        <button
                             onClick={handleExport}
                             className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 shadow-lg"
                         >
                             <Download size={16} /> Export
                         </button>
-                        <button 
+                        <button
                             onClick={handleClear}
                             className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 shadow-lg"
                         >
@@ -292,7 +290,7 @@ const LogManager: React.FC = () => {
             {/* Log Container */}
             <div className="relative">
                 <div className="bg-black border border-zinc-800 rounded-lg overflow-hidden shadow-2xl font-mono text-xs">
-                    <div 
+                    <div
                         ref={logContainerRef}
                         onScroll={handleScroll}
                         className="h-[600px] overflow-y-auto p-4 space-y-0.5"
@@ -342,7 +340,7 @@ const LogManager: React.FC = () => {
                     {paused && <span className="ml-2 text-amber-400">(Paused)</span>}
                 </span>
                 <span className="flex items-center gap-2">
-                    Auto-scroll: 
+                    Auto-scroll:
                     <span className={autoScroll ? 'text-emerald-400' : 'text-zinc-500'}>
                         {autoScroll ? 'ON' : 'OFF'}
                     </span>

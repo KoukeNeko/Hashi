@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { PageHeader } from '../../components/PageHeader';
-import { Tabs, TabItem } from '../../components/Tabs';
+import { PageHeader, Tabs, ConfirmDialog, Toast, ActionButton, type TabItem } from '../../components';
 import { UserManagementService } from '../../services/api';
 import { UserInfo, GroupInfo } from '../../types';
 import { Users, UsersRound, Plus, Loader2, Trash2 } from 'lucide-react';
-import { ConfirmDialog, Toast, ActionButton } from '../../components/ui';
 import {
     CreateUserDialog,
     ChangePasswordDialog,

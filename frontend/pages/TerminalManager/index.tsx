@@ -1,6 +1,5 @@
 import React from 'react';
-import { PageHeader } from '../../components/PageHeader';
-import WebTerminal from '../../components/WebTerminal';
+import { PageHeader, WebTerminal } from '../../components';
 import { TerminalSquare, Plus } from 'lucide-react';
 
 const TerminalManager: React.FC = () => {

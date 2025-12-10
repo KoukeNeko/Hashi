@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { PageHeader } from '../../components/PageHeader';
+import { PageHeader } from '../../components';
 import { MOCK_DATABASES } from '../../constants';
 import { Database, Plus, RefreshCw, Archive, Trash2, Settings } from 'lucide-react';
 
@@ -24,8 +23,8 @@ const DatabaseManager: React.FC = () => {
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-3">
                                 <div className={`p-3 rounded-lg ${db.type === 'MySQL' ? 'bg-blue-500/10 text-blue-400' :
-                                        db.type === 'PostgreSQL' ? 'bg-indigo-500/10 text-indigo-400' :
-                                            'bg-rose-500/10 text-rose-400'
+                                    db.type === 'PostgreSQL' ? 'bg-indigo-500/10 text-indigo-400' :
+                                        'bg-rose-500/10 text-rose-400'
                                     }`}>
                                     <Database size={24} />
                                 </div>
@@ -35,8 +34,8 @@ const DatabaseManager: React.FC = () => {
                                 </div>
                             </div>
                             <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${db.status === 'online'
-                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                    : 'bg-rose-500/10 text-rose-400'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-400'
                                 }`}>
                                 {db.status}
                             </span>

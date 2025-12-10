@@ -1,11 +1,8 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { PageHeader } from '../../components/PageHeader';
-import FileEditor from '../../components/FileEditor';
+import { PageHeader, FileEditor, ConfirmDialog } from '../../components';
 import { FileItem } from '../../types';
 import { FileService } from '../../services/api';
 import { FileText, Folder, MoreVertical, Search, Upload, Download, Trash2, Home, RefreshCw, ChevronRight, AlertCircle, Lock, ArrowLeft, Loader2 } from 'lucide-react';
-import { ConfirmDialog } from '../../components/ui';
 
 // 格式化檔案大小
 const formatFileSize = (bytes: number): string => {
@@ -27,11 +24,11 @@ const FileManager: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [accessDenied, setAccessDenied] = useState(false);
-    
+
     // File Editor 狀態
     const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
-    
+
     // Delete Dialog 狀態
     const [fileToDelete, setFileToDelete] = useState<FileItem | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -51,7 +48,7 @@ const FileManager: React.FC = () => {
                 return a.name.localeCompare(b.name);
             });
             setFiles(sorted);
-            
+
             // 如果回傳空陣列且不是根目錄，可能是權限問題
             if (sorted.length === 0 && path !== '/') {
                 setAccessDenied(true);
@@ -119,7 +116,7 @@ const FileManager: React.FC = () => {
     // 確認刪除
     const handleConfirmDelete = async () => {
         if (!fileToDelete) return;
-        
+
         setDeleting(true);
         try {
             await FileService.deleteFile(fileToDelete.path);
@@ -171,7 +168,7 @@ const FileManager: React.FC = () => {
                                 className="bg-zinc-900 border border-zinc-700 text-zinc-300 pl-9 pr-4 py-2 rounded text-sm focus:outline-none focus:border-emerald-500 w-64 shadow-lg"
                             />
                         </div>
-                        <button 
+                        <button
                             onClick={() => loadFiles(currentPath)}
                             className="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 border border-zinc-700"
                             title="Refresh"
@@ -240,7 +237,7 @@ const FileManager: React.FC = () => {
                         <tbody className="text-sm divide-y divide-border">
                             {/* 上層目錄連結 */}
                             {currentPath !== '/' && (
-                                <tr 
+                                <tr
                                     className="hover:bg-zinc-800/50 transition-colors cursor-pointer"
                                     onClick={goBack}
                                 >
@@ -300,8 +297,8 @@ const FileManager: React.FC = () => {
 
                             {/* File List */}
                             {!loading && filteredFiles.map((file) => (
-                                <tr 
-                                    key={file.path} 
+                                <tr
+                                    key={file.path}
                                     className="hover:bg-zinc-800/50 transition-colors group cursor-pointer"
                                     onClick={() => handleItemClick(file)}
                                 >
@@ -325,27 +322,27 @@ const FileManager: React.FC = () => {
                                         {file.lastModified}
                                     </td>
                                     <td className="p-4 text-right">
-                                        <div 
+                                        <div
                                             className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             {!file.isDirectory && (
-                                                <button 
-                                                    className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white" 
+                                                <button
+                                                    className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white"
                                                     title="Download"
                                                 >
                                                     <Download size={16} />
                                                 </button>
                                             )}
-                                            <button 
+                                            <button
                                                 onClick={() => handleDeleteClick(file)}
-                                                className="p-1.5 hover:bg-rose-500/20 rounded text-zinc-400 hover:text-rose-400" 
+                                                className="p-1.5 hover:bg-rose-500/20 rounded text-zinc-400 hover:text-rose-400"
                                                 title="Delete"
                                             >
                                                 <Trash2 size={16} />
                                             </button>
-                                            <button 
-                                                className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white" 
+                                            <button
+                                                className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white"
                                                 title="More"
                                             >
                                                 <MoreVertical size={16} />

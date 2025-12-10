@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { PageHeader } from '../../components/PageHeader';
+import { PageHeader, Toast, ActionButton } from '../../components';
 import { FirewallService } from '../../services/api';
 import { FirewallRule } from '../../types';
 import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Loader2, RefreshCw, Power, AlertCircle } from 'lucide-react';
-import { Toast, ActionButton } from '../../components/ui';
 import { AddRuleDialog, DeleteRuleDialog } from './components/FirewallDialogs';
 
 
@@ -220,10 +219,10 @@ const FirewallManager: React.FC = () => {
                                     <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
                                     <td className="p-4">
                                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
-                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                : rule.action.includes('DENY')
-                                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                            : rule.action.includes('DENY')
+                                                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                             }`}>
                                             {rule.action}
                                         </span>
@@ -268,10 +267,10 @@ const FirewallManager: React.FC = () => {
                                     <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
                                     <td className="p-4">
                                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
-                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                : rule.action.includes('DENY')
-                                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                            : rule.action.includes('DENY')
+                                                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                             }`}>
                                             {rule.action}
                                         </span>

@@ -23,41 +23,30 @@ const FTP_TABS: TabItem[] = [
 // ==================== Setup Guide Component ====================
 
 const FtpSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
-    <div className="bg-surface border border-border rounded-lg p-6 max-w-2xl mx-auto">
-        <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 bg-amber-500/20 rounded-lg">
-                <AlertCircle size={24} className="text-amber-400" />
+    <div className="space-y-6">
+        <Alert variant="warning" icon={AlertCircle} title="No FTP Server Detected">
+            Install one of the following FTP servers to continue:
+        </Alert>
+
+        <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded border border-border">
+                <div>
+                    <span className="text-sm font-medium text-zinc-200">vsftpd</span>
+                    <span className="ml-2 text-xs text-emerald-400">(Recommended)</span>
+                </div>
+                <code className="text-sm font-mono text-zinc-400">sudo apt install vsftpd</code>
             </div>
-            <div>
-                <h3 className="text-lg font-bold text-zinc-100">No FTP Server Detected</h3>
-                <p className="text-sm text-zinc-400 mt-1">
-                    Install one of the following FTP servers to continue:
-                </p>
+            <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded border border-border">
+                <span className="text-sm font-medium text-zinc-200">proftpd</span>
+                <code className="text-sm font-mono text-zinc-400">sudo apt install proftpd</code>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded border border-border">
+                <span className="text-sm font-medium text-zinc-200">pure-ftpd</span>
+                <code className="text-sm font-mono text-zinc-400">sudo apt install pure-ftpd</code>
             </div>
         </div>
 
-        <div className="space-y-4">
-            <div className="bg-zinc-900 rounded-lg p-4 border border-border">
-                <h4 className="text-sm font-medium text-zinc-200 mb-2">vsftpd (Recommended)</h4>
-                <code className="text-sm font-mono text-emerald-400">
-                    sudo apt install vsftpd
-                </code>
-            </div>
-            <div className="bg-zinc-900 rounded-lg p-4 border border-border">
-                <h4 className="text-sm font-medium text-zinc-200 mb-2">proftpd</h4>
-                <code className="text-sm font-mono text-emerald-400">
-                    sudo apt install proftpd
-                </code>
-            </div>
-            <div className="bg-zinc-900 rounded-lg p-4 border border-border">
-                <h4 className="text-sm font-medium text-zinc-200 mb-2">pure-ftpd</h4>
-                <code className="text-sm font-mono text-emerald-400">
-                    sudo apt install pure-ftpd
-                </code>
-            </div>
-        </div>
-
-        <div className="mt-6 flex justify-center">
+        <div className="flex">
             <ActionButton onClick={onRetry} icon={<RefreshCw size={16} />}>
                 Retry Detection
             </ActionButton>

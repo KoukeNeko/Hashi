@@ -21,6 +21,11 @@ const SystemOverview: React.FC = () => {
             setLoading(false);
             setConnected(true);
             setError(null);
+
+            // Cache OS Name
+            if (status.osName) {
+                localStorage.setItem('cached_os_name', status.osName);
+            }
         });
 
         // Handle connection error after timeout
@@ -36,6 +41,14 @@ const SystemOverview: React.FC = () => {
             client.deactivate();
         };
     }, []);
+
+    // Helper to get OS name (live or cached)
+    const getDisplayOsName = () => {
+        if (systemStatus?.osName) return systemStatus.osName;
+        return localStorage.getItem('cached_os_name');
+    };
+
+    const displayOsName = getDisplayOsName();
 
     // Update network chart when systemStatus changes
     useEffect(() => {
@@ -116,14 +129,14 @@ const SystemOverview: React.FC = () => {
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4  pb-6">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl border border-zinc-700 shadow-lg">
-                        <OsIcon osName={systemStatus?.osName} size={32} className="text-emerald-500" />
+                        <OsIcon osName={displayOsName || undefined} size={32} className="text-emerald-500" />
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-white">hashi-node-01</h2>
                         <p className="text-zinc-400 text-sm flex items-center gap-3 mt-1">
                             <span className="flex items-center gap-1.5">
                                 <Activity size={14} className="text-emerald-500" />
-                                {loading ? 'Loading...' : (systemStatus?.osName || 'Unknown')}
+                                {(!displayOsName && loading) ? 'Loading...' : (displayOsName || 'Unknown')}
                             </span>
                             <span className="text-zinc-700">|</span>
                             <span>{systemStatus?.coreCount || '--'} Core(s)</span>

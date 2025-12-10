@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { AddIptablesRuleRequest, AuthResponse, CreateFtpUserRequest, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, FtpServerInfo, FtpUser, GroupInfo, IptablesRule, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo, UpdateFtpUserRequest } from '@/types';
+import { AddIptablesRuleRequest, AuthResponse, CreateFtpUserRequest, CreateGroupOptions, CreateUserOptions, CreateVmRequest, UpdateVmRequest, CronJob, FileItem, FirewallRule, FtpServerInfo, FtpUser, GroupInfo, IptablesRule, IsoFile, PasswordInfo, ServiceItem, SystemStatus, UserInfo, VM, VncInfo, UpdateFtpUserRequest, CreateNginxHostRequest } from '@/types';
 
 
 export const VirtService = {
@@ -503,54 +503,3 @@ export const NginxApiService = {
     return response.data;
   }
 };
-
-// Types for NginxService
-export interface NginxHost {
-  name: string;
-  domain: string;
-  port: number;
-  type: 'static' | 'proxy' | 'php';
-  root?: string;
-  proxyPass?: string;
-  sslEnabled: boolean;
-  enabled: boolean;
-  configPath: string;
-  gzip: boolean;
-  rateLimit: boolean;
-  rateLimitRate?: number;
-  aliases: string[];
-}
-
-export interface NginxStatus {
-  running: boolean;
-  enabled: boolean;
-  version: string;
-  configValid: boolean;
-  configMessage: string;
-}
-
-export interface SslCert {
-  domain: string;
-  issuer: string;
-  expireDate: string;
-  daysRemaining: number;
-  autoRenew: boolean;
-  certPath: string;
-  keyPath: string;
-  source: string;
-}
-
-export interface CreateNginxHostRequest {
-  name?: string;
-  domain: string;
-  port?: number;
-  type?: 'static' | 'proxy' | 'php';
-  root?: string;
-  proxyPass?: string;
-  requestSsl?: boolean;
-  sslProvider?: 'certbot' | 'acme';
-  gzip?: boolean;
-  rateLimit?: boolean;
-  rateLimitRate?: number;
-  aliases?: string[];
-}

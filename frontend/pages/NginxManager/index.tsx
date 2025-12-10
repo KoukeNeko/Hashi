@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader, Tabs, Alert } from '../../components';
-import { NginxApiService, NginxHost, NginxStatus, SslCert } from '../../services/api';
+import { NginxApiService } from '../../services/api';
+import { NginxHostDTO, NginxStatusDTO, SslCertDTO } from '../../types';
 import { AddHostDialog } from './components';
 import {
     Globe, ShieldCheck, Server, Plus, Power, RefreshCw, Trash2, Edit,
@@ -11,9 +12,9 @@ const NginxManager: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'hosts' | 'ssl'>('hosts');
 
     // 資料狀態
-    const [hosts, setHosts] = useState<NginxHost[]>([]);
-    const [certificates, setCertificates] = useState<SslCert[]>([]);
-    const [status, setStatus] = useState<NginxStatus | null>(null);
+    const [hosts, setHosts] = useState<NginxHostDTO[]>([]);
+    const [certificates, setCertificates] = useState<SslCertDTO[]>([]);
+    const [status, setStatus] = useState<NginxStatusDTO | null>(null);
 
     // UI 狀態
     const [loading, setLoading] = useState(true);
@@ -66,7 +67,7 @@ const NginxManager: React.FC = () => {
     };
 
     // 切換 Host 狀態
-    const handleToggleHost = async (host: NginxHost) => {
+    const handleToggleHost = async (host: NginxHostDTO) => {
         setTogglingHost(host.name);
         try {
             if (host.enabled) {

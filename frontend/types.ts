@@ -649,3 +649,57 @@ export enum TabView {
   TERMINAL = 'terminal',
   SETTINGS = 'settings'
 }
+
+// ==================== Nginx Types ====================
+
+export type NginxHostType = 'static' | 'proxy' | 'php';
+
+export interface NginxHostDTO {
+  name: string;
+  domain: string;
+  port: number;
+  type: NginxHostType;
+  root?: string;
+  proxyPass?: string;
+  sslEnabled: boolean;
+  enabled: boolean;
+  configPath: string;
+  gzip: boolean;
+  rateLimit: boolean;
+  rateLimitRate?: number;
+  aliases: string[];
+}
+
+export interface NginxStatusDTO {
+  running: boolean;
+  enabled: boolean;
+  version: string;
+  configValid: boolean;
+  configMessage: string;
+}
+
+export interface SslCertDTO {
+  domain: string;
+  issuer: string;
+  expireDate: string;
+  daysRemaining: number;
+  autoRenew: boolean;
+  certPath: string;
+  keyPath: string;
+  source: string;
+}
+
+export interface CreateNginxHostRequest {
+  name?: string;
+  domain: string;
+  port?: number;
+  type?: NginxHostType;
+  root?: string;
+  proxyPass?: string;
+  requestSsl?: boolean;
+  sslProvider?: 'certbot' | 'acme';
+  gzip?: boolean;
+  rateLimit?: boolean;
+  rateLimitRate?: number;
+  aliases?: string[];
+}

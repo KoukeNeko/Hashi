@@ -7,9 +7,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.nio.file.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.*;
 
@@ -119,99 +116,95 @@ public class NginxServiceImpl implements NginxService {
     public NginxHostDTO createHost(CreateNginxHostRequest request) {
         String name = request.name() != null ? request.name() : request.domain();
         String config = generateConfig(request);
-        Path configPath = Path.of(SITES_AVAILABLE, name);
+        String configPath = SITES_AVAILABLE + "/" + name;
 
-        try {
-            // 寫入設定檔
-            Files.writeString(configPath, config);
-            log.info("Created nginx config: {}", configPath);
-
-            // 自動啟用
-            enableHost(name);
-
-            // 驗證並重載
-            String testResult = testConfig();
-            if (testResult.contains("syntax is ok")) {
-                reload();
-            } else {
-                log.warn("Config syntax error, not reloading: {}", testResult);
-            }
-
-            return getHost(name);
-        } catch (IOException e) {
-            log.error("Failed to create host: {}", name, e);
+        // 使用 sudo tee 寫入設定檔
+        if (!writeFileWithSudo(configPath, config)) {
+            log.error("Failed to create host config: {}", name);
             return null;
         }
+        log.info("Created nginx config: {}", configPath);
+
+        // 自動啟用
+        enableHost(name);
+
+        // 驗證並重載
+        String testResult = testConfig();
+        if (testResult.contains("syntax is ok")) {
+            reload();
+        } else {
+            log.warn("Config syntax error, not reloading: {}", testResult);
+        }
+
+        return getHost(name);
     }
 
     @Override
     public boolean updateHostConfig(String name, String content) {
-        try {
-            Path configPath = Path.of(SITES_AVAILABLE, name);
-            Files.writeString(configPath, content);
+        String configPath = SITES_AVAILABLE + "/" + name;
+        if (writeFileWithSudo(configPath, content)) {
             log.info("Updated nginx config: {}", name);
             return true;
-        } catch (IOException e) {
-            log.error("Failed to update config for host: {}", name, e);
-            return false;
         }
+        log.error("Failed to update config for host: {}", name);
+        return false;
     }
 
     @Override
     public boolean deleteHost(String name) {
-        try {
-            // 先停用
-            disableHost(name);
+        // 先停用
+        disableHost(name);
 
-            // 刪除設定檔
-            Path configPath = Path.of(SITES_AVAILABLE, name);
-            Files.deleteIfExists(configPath);
-            log.info("Deleted nginx config: {}", name);
-
-            reload();
-            return true;
-        } catch (IOException e) {
-            log.error("Failed to delete host: {}", name, e);
+        // 刪除設定檔 (使用 sudo rm)
+        String configPath = SITES_AVAILABLE + "/" + name;
+        if (!executeCommand("sudo", "rm", "-f", configPath)) {
+            log.error("Failed to delete host: {}", name);
             return false;
         }
+        log.info("Deleted nginx config: {}", name);
+
+        reload();
+        return true;
     }
 
     @Override
     public boolean enableHost(String name) {
-        Path available = Path.of(SITES_AVAILABLE, name);
-        Path enabled = Path.of(SITES_ENABLED, name);
+        String available = SITES_AVAILABLE + "/" + name;
+        String enabled = SITES_ENABLED + "/" + name;
 
-        if (!Files.exists(available)) {
+        if (!Files.exists(Path.of(available))) {
             log.warn("Config not found: {}", available);
             return false;
         }
 
-        try {
-            if (!Files.exists(enabled)) {
-                Files.createSymbolicLink(enabled, available);
-                log.info("Enabled host: {}", name);
-            }
-            return true;
-        } catch (IOException e) {
-            log.error("Failed to enable host: {}", name, e);
-            return false;
+        // 使用 sudo ln -sf 建立 symlink
+        if (Files.exists(Path.of(enabled))) {
+            return true; // 已啟用
         }
+
+        if (executeCommand("sudo", "ln", "-sf", available, enabled)) {
+            log.info("Enabled host: {}", name);
+            return true;
+        }
+        log.error("Failed to enable host: {}", name);
+        return false;
     }
 
     @Override
     public boolean disableHost(String name) {
-        Path enabled = Path.of(SITES_ENABLED, name);
+        String enabled = SITES_ENABLED + "/" + name;
 
-        try {
-            if (Files.exists(enabled)) {
-                Files.delete(enabled);
-                log.info("Disabled host: {}", name);
-            }
-            return true;
-        } catch (IOException e) {
-            log.error("Failed to disable host: {}", name, e);
-            return false;
+        if (!Files.exists(Path.of(enabled))) {
+            return true; // 已停用
         }
+
+        // 使用 sudo rm 刪除 symlink
+        if (executeCommand("sudo", "rm", "-f", enabled)) {
+            log.info("Disabled host: {}", name);
+            return true;
+        }
+        log.error("Failed to disable host: {}", name);
+        return false;
     }
 
     // ==================== SSL 憑證管理 ====================
@@ -469,6 +462,33 @@ public class NginxServiceImpl implements NginxService {
         } catch (Exception e) {
             log.error("Failed to parse certificate: {}", domainDir, e);
             return null;
+        }
+    }
+
+    /**
+     * 使用 sudo tee 將內容寫入檔案
+     */
+    private boolean writeFileWithSudo(String filePath, String content) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("sudo", "tee", filePath);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            // 將內容寫入 stdin
+            try (OutputStream os = process.getOutputStream()) {
+                os.write(content.getBytes());
+                os.flush();
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                String output = readProcessOutput(process);
+                log.error("Failed to write file {}: {}", filePath, output);
+            }
+            return exitCode == 0;
+        } catch (Exception e) {
+            log.error("Failed to write file with sudo: {}", filePath, e);
+            return false;
         }
     }
 

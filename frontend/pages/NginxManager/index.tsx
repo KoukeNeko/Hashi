@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader, Tabs, Alert } from '../../components';
 import { NginxApiService, NginxHost, NginxStatus, SslCert } from '../../services/api';
+import { AddHostDialog } from './components';
 import {
     Globe, ShieldCheck, Server, Plus, Power, RefreshCw, Trash2, Edit,
     Calendar, Loader2, AlertCircle, CheckCircle, XCircle, ArrowUpDown
@@ -19,6 +20,7 @@ const NginxManager: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [reloading, setReloading] = useState(false);
     const [togglingHost, setTogglingHost] = useState<string | null>(null);
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
     const tabs = [
         { id: 'hosts', label: 'Virtual Hosts', icon: Server },
@@ -173,7 +175,10 @@ const NginxManager: React.FC = () => {
                         </button>
 
                         {/* 新增按鈕 */}
-                        <button className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-medium text-sm transition-colors border border-emerald-500/50 flex items-center gap-2 shadow-lg shadow-emerald-900/20">
+                        <button
+                            onClick={() => setIsAddDialogOpen(true)}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-medium text-sm transition-colors border border-emerald-500/50 flex items-center gap-2 shadow-lg shadow-emerald-900/20"
+                        >
                             <Plus size={16} /> <span className="hidden sm:inline">Add Host</span>
                         </button>
                     </div>
@@ -326,10 +331,10 @@ const NginxManager: React.FC = () => {
                                             <td className="p-4 font-mono text-zinc-300">{cert.expireDate}</td>
                                             <td className="p-4">
                                                 <span className={`px-2 py-0.5 rounded text-xs font-bold ${cert.daysRemaining <= 7
-                                                        ? 'bg-rose-500/10 text-rose-400'
-                                                        : cert.daysRemaining <= 30
-                                                            ? 'bg-amber-500/10 text-amber-400'
-                                                            : 'bg-emerald-500/10 text-emerald-400'
+                                                    ? 'bg-rose-500/10 text-rose-400'
+                                                    : cert.daysRemaining <= 30
+                                                        ? 'bg-amber-500/10 text-amber-400'
+                                                        : 'bg-emerald-500/10 text-emerald-400'
                                                     }`}>
                                                     {cert.daysRemaining} days
                                                 </span>
@@ -389,7 +394,7 @@ const NginxManager: React.FC = () => {
                                     <div className="flex justify-between text-sm">
                                         <span className="text-zinc-500">Days Left</span>
                                         <span className={`text-xs font-medium ${cert.daysRemaining <= 7 ? 'text-rose-400' :
-                                                cert.daysRemaining <= 30 ? 'text-amber-400' : 'text-emerald-400'
+                                            cert.daysRemaining <= 30 ? 'text-amber-400' : 'text-emerald-400'
                                             }`}>
                                             {cert.daysRemaining} days
                                         </span>
@@ -412,6 +417,13 @@ const NginxManager: React.FC = () => {
                     </div>
                 </>
             )}
+
+            {/* Add Host Dialog */}
+            <AddHostDialog
+                isOpen={isAddDialogOpen}
+                onClose={() => setIsAddDialogOpen(false)}
+                onSuccess={loadData}
+            />
         </div>
     );
 };

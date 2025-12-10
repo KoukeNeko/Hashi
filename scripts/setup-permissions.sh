@@ -35,14 +35,54 @@ setup_sudoers() {
 # Hashi Server Management Panel - Sudo Permissions
 # Generated on $(date)
 
-# UFW Firewall
+# ==================== Systemd Services ====================
+$HASHI_USER ALL=(ALL) NOPASSWD: /bin/systemctl
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl
+
+# ==================== UFW Firewall ====================
 $HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/ufw
 
-# Systemd Services
-$HASHI_USER ALL=(ALL) NOPASSWD: /bin/systemctl
+# ==================== iptables ====================
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/iptables
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/iptables-save
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/iptables-restore
 
-# Nginx
+# ==================== Nginx ====================
 $HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/nginx
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/nginx
+
+# ==================== SSL Certificates ====================
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/certbot
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/local/bin/certbot
+$HASHI_USER ALL=(ALL) NOPASSWD: /root/.acme.sh/acme.sh
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/local/bin/acme.sh
+
+# ==================== File Operations (Nginx sites) ====================
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/ln
+$HASHI_USER ALL=(ALL) NOPASSWD: /bin/ln
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/rm
+$HASHI_USER ALL=(ALL) NOPASSWD: /bin/rm
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/tee
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/cat
+
+# ==================== User Management ====================
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/useradd
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/userdel
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/usermod
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/groupadd
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/groupdel
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/groupmod
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/passwd
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/chage
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/gpasswd
+
+# ==================== Cron Management ====================
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/crontab
+
+# ==================== FTP Management ====================
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/vsftpd
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/proftpd
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/pure-ftpd
 EOF
 
     chmod 440 "$SUDOERS_FILE"

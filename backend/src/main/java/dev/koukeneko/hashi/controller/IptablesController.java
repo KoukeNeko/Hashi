@@ -21,9 +21,10 @@ public class IptablesController {
     private final IptablesManager iptablesManager;
 
     /**
-     * 取得指定 table 的規則列表
-     * 
-     * @param table filter / nat / mangle (預設 filter)
+     * 取得指定表格的 iptables 規則列表
+     *
+     * @param table 表格名稱，例如: filter, nat, mangle (預設為 filter)
+     * @return 規則列表
      */
     @GetMapping
     public ResponseEntity<List<IptablesRuleDTO>> getRules(
@@ -32,7 +33,10 @@ public class IptablesController {
     }
 
     /**
-     * 新增規則
+     * 新增 iptables 規則
+     *
+     * @param request 新增規則請求參數
+     * @return 成功回傳 200 OK
      */
     @PostMapping
     public ResponseEntity<Void> addRule(@RequestBody AddIptablesRuleRequest request) {
@@ -41,11 +45,12 @@ public class IptablesController {
     }
 
     /**
-     * 刪除規則
-     * 
-     * @param table      table 名稱
-     * @param chain      chain 名稱
+     * 刪除 iptables 規則
+     *
+     * @param table      表格名稱
+     * @param chain      鏈名稱
      * @param lineNumber 規則行號
+     * @return 成功回傳 200 OK
      */
     @DeleteMapping("/{table}/{chain}/{lineNumber}")
     public ResponseEntity<Void> deleteRule(
@@ -57,7 +62,9 @@ public class IptablesController {
     }
 
     /**
-     * 保存規則（持久化）
+     * 保存 iptables 規則至系統檔 (持久化)
+     *
+     * @return 成功回傳 200 OK
      */
     @PostMapping("/save")
     public ResponseEntity<Void> saveRules() {

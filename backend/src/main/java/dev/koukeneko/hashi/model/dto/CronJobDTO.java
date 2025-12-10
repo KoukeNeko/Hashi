@@ -2,10 +2,17 @@ package dev.koukeneko.hashi.model.dto;
 
 import lombok.Builder;
 
+/**
+ * 排程任務 (Cron Job) DTO
+ */
 @Builder
 public record CronJobDTO(
-        String id,          // 前端用的唯一識別碼 UUID
-        String expression,  // e.g. "0 3 * * *"
-        String command,     // e.g. "/backup.sh"
-        String comment      // (選用) 如果想解析註解的話
-) {}
+                /** 前端用的唯一識別碼 UUID */
+                String id,
+                /** Cron 表達式 (e.g. "0 3 * * *") */
+                String expression,
+                /** 要執行的指令 (e.g. "/backup.sh") */
+                String command,
+                /** 註解 (選用) */
+                String comment) {
+}

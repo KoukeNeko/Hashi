@@ -3,58 +3,104 @@ package dev.koukeneko.hashi.model.dto;
 import lombok.Builder;
 import java.util.List;
 
+/**
+ * VM 資訊 DTO
+ */
 @Builder
 public record VmDTO(
-                int id, // 執行中的 ID (關機時為 -1)
-                String uuid, // 唯一識別碼
-                String name, // 名稱 (e.g. "win10-lab")
-                String state, // 狀態 (Running, Paused, Shutoff)
-                int vcpu, // CPU 核心數
-                long memory, // 記憶體 (Bytes)
-                long maxMemory, // 最大分配記憶體
+        /** 執行中的 ID (關機時為 -1) */
+        int id,
+        /** 唯一識別碼 */
+        String uuid,
+        /** 名稱 (e.g. "win10-lab") */
+        String name,
+        /** 狀態 (Running, Paused, Shutoff) */
+        String state,
+        /** CPU 核心數 */
+        int vcpu,
+        /** 記憶體 (Bytes) */
+        long memory,
+        /** 最大分配記憶體 */
+        long maxMemory,
 
-                // 詳細設定 (由 getVmDetails 填充)
-                String description, // 描述
-                String cpuMode, // CPU 模式
-                Integer cpuSockets, // CPU 插槽數
-                Integer cpuCores, // 每插槽核心數
-                Integer cpuThreads, // 每核心執行緒數
-                Boolean hugepages, // 大分頁
+        // === 詳細設定 (由 getVmDetails 填充) ===
+        /** 描述 */
+        String description,
+        /** CPU 模式 */
+        String cpuMode,
+        /** CPU 插槽數 */
+        Integer cpuSockets,
+        /** 每插槽核心數 */
+        Integer cpuCores,
+        /** 每核心執行緒數 */
+        Integer cpuThreads,
+        /** 大分頁 */
+        Boolean hugepages,
 
-                // 主磁碟 (向後相容)
-                String diskPath, // 磁碟路徑
-                String diskFormat, // 磁碟格式
-                String diskBus, // 磁碟匯流排
-                Long diskSizeBytes, // 磁碟大小
+        // === 主磁碟 (向後相容) ===
+        /** 磁碟路徑 */
+        String diskPath,
+        /** 磁碟格式 */
+        String diskFormat,
+        /** 磁碟匯流排 */
+        String diskBus,
+        /** 磁碟大小 */
+        Long diskSizeBytes,
 
-                // 多磁碟
-                List<DiskDTO> disks, // 所有磁碟列表
+        // === 多磁碟 ===
+        /** 所有磁碟列表 */
+        List<DiskDTO> disks,
 
-                String networkType, // 網路類型
-                String networkSource, // 網路來源
-                String networkModel, // 網卡型號
-                String macAddress, // MAC 地址
-                String graphicsType, // 顯示類型
-                Integer graphicsPort, // 顯示埠號
-                String graphicsListen, // 監聽地址
-                String videoModel, // 顯示卡型號
-                Integer videoVram, // 顯示記憶體
-                List<String> bootOrder, // 開機順序
-                Boolean bootMenu, // 開機選單
-                Boolean uefi, // UEFI 開機
-                String osType, // 作業系統類型
-                String machine, // 機器類型
-                String onPoweroff, // 關機動作
-                String onReboot, // 重啟動作
-                String onCrash, // 當機動作
-                Boolean acpi, // ACPI
-                Boolean apic, // APIC
-                Boolean autostart, // 自動啟動
-                String clockOffset, // 時鐘偏移
-                String isoPath, // 目前掛載的 ISO
-                Boolean usb, // USB 控制器
-                Boolean tablet, // USB 平板
-                Boolean serial, // 串列埠
-                Boolean tpm // TPM
-) {
+        /** 網路類型 */
+        String networkType,
+        /** 網路來源 */
+        String networkSource,
+        /** 網卡型號 */
+        String networkModel,
+        /** MAC 地址 */
+        String macAddress,
+        /** 顯示類型 */
+        String graphicsType,
+        /** 顯示埠號 */
+        Integer graphicsPort,
+        /** 監聽地址 */
+        String graphicsListen,
+        /** 顯示卡型號 */
+        String videoModel,
+        /** 顯示記憶體 */
+        Integer videoVram,
+        /** 開機順序 */
+        List<String> bootOrder,
+        /** 開機選單 */
+        Boolean bootMenu,
+        /** UEFI 開機 */
+        Boolean uefi,
+        /** 作業系統類型 */
+        String osType,
+        /** 機器類型 */
+        String machine,
+        /** 關機動作 */
+        String onPoweroff,
+        /** 重啟動作 */
+        String onReboot,
+        /** 當機動作 */
+        String onCrash,
+        /** ACPI */
+        Boolean acpi,
+        /** APIC */
+        Boolean apic,
+        /** 自動啟動 */
+        Boolean autostart,
+        /** 時鐘偏移 */
+        String clockOffset,
+        /** 目前掛載的 ISO */
+        String isoPath,
+        /** USB 控制器 */
+        Boolean usb,
+        /** USB 平板 */
+        Boolean tablet,
+        /** 串列埠 */
+        Boolean serial,
+        /** TPM */
+        Boolean tpm) {
 }

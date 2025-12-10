@@ -21,17 +21,26 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 檔案管理服務
+ * 提供檔案瀏覽、讀取、寫入與刪除功能
+ */
 @Service
 @Slf4j
 public class FileService {
 
-    // 禁止刪除的系統關鍵目錄
+    /** 禁止刪除的系統關鍵目錄 */
     private static final List<String> PROTECTED_PATHS = List.of(
             "/", "/home", "/root", "/etc", "/var", "/usr",
             "/bin", "/sbin", "/boot", "/lib", "/lib64",
             "/proc", "/sys", "/dev", "/run", "/tmp");
 
-    // 列出指定路徑下的檔案
+    /**
+     * 列出指定路徑下的檔案與資料夾
+     *
+     * @param pathString 目錄路徑
+     * @return 檔案項目列表 (資料夾優先，依檔名排序)
+     */
     public List<FileItemDTO> listFiles(String pathString) {
         Path path = Paths.get(pathString);
 
@@ -104,7 +113,13 @@ public class FileService {
         }
     }
 
-    // 讀取檔案內容
+    /**
+     * 讀取檔案內容 (純文字，UTF-8)
+     *
+     * @param pathString 檔案路徑
+     * @return 檔案內容字串
+     * @throws RuntimeException 檔案不存在、是目錄或超過 1MB
+     */
     public String getFileContent(String pathString) {
         Path path = Paths.get(pathString);
 
@@ -124,7 +139,13 @@ public class FileService {
         }
     }
 
-    // 儲存檔案內容
+    /**
+     * 儲存檔案內容
+     *
+     * @param pathString 檔案路徑
+     * @param content    新內容
+     * @throws RuntimeException 寫入失敗
+     */
     public void saveFileContent(String pathString, String content) {
         Path path = Paths.get(pathString);
 
@@ -136,7 +157,12 @@ public class FileService {
         }
     }
 
-    // 刪除檔案或資料夾
+    /**
+     * 刪除檔案或資料夾
+     *
+     * @param pathString 檔案或資料夾路徑
+     * @throws RuntimeException 刪除失敗或嘗試刪除系統目錄
+     */
     public void deleteFile(String pathString) {
         Path path = Paths.get(pathString);
 

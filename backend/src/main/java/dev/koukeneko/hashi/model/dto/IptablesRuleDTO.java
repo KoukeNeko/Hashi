@@ -8,18 +8,32 @@ import lombok.Builder;
  */
 @Builder
 public record IptablesRuleDTO(
-        int lineNumber,         // 規則行號（刪除時使用）
-        String table,           // filter / nat / mangle
-        String chain,           // INPUT / OUTPUT / FORWARD / PREROUTING / POSTROUTING
-        String target,          // ACCEPT / DROP / REJECT / MASQUERADE / SNAT / DNAT
-        String protocol,        // tcp / udp / icmp / all
-        String source,          // 來源 IP/CIDR
-        String destination,     // 目標 IP/CIDR
-        String inInterface,     // 進入介面
-        String outInterface,    // 輸出介面
-        Integer sourcePort,     // 來源 port
-        Integer destPort,       // 目標 port
-        String options,         // 其他選項（原始字串）
-        long packetCount,       // 封包計數
-        long byteCount          // 位元組計數
-) {}
+                /** 規則行號（刪除時使用） */
+                int lineNumber,
+                /** 表格名稱: filter / nat / mangle */
+                String table,
+                /** 鏈名稱: INPUT / OUTPUT / FORWARD / PREROUTING / POSTROUTING */
+                String chain,
+                /** 目標動作: ACCEPT / DROP / REJECT / MASQUERADE / SNAT / DNAT */
+                String target,
+                /** 協定: tcp / udp / icmp / all */
+                String protocol,
+                /** 來源 IP/CIDR */
+                String source,
+                /** 目標 IP/CIDR */
+                String destination,
+                /** 進入介面 */
+                String inInterface,
+                /** 輸出介面 */
+                String outInterface,
+                /** 來源 Port */
+                Integer sourcePort,
+                /** 目標 Port */
+                Integer destPort,
+                /** 其他選項（原始字串） */
+                String options,
+                /** 封包計數 */
+                long packetCount,
+                /** 位元組計數 */
+                long byteCount) {
+}

@@ -21,7 +21,7 @@ public class PlatformController {
 
     /**
      * 取得目前平台資訊
-     * 
+     * <p>
      * 回傳範例：
      * {
      * "platform": "LINUX",
@@ -29,6 +29,9 @@ public class PlatformController {
      * "osVersion": "5.15.0-generic",
      * "osArch": "amd64"
      * }
+     * </p>
+     *
+     * @return 平台資訊 Map
      */
     @GetMapping
     public ResponseEntity<Map<String, String>> getPlatformInfo() {
@@ -42,8 +45,12 @@ public class PlatformController {
     }
 
     /**
-     * 取得支援的功能清單
-     * 前端可根據此資訊顯示/隱藏特定功能
+     * 取得平台支援的功能清單
+     * <p>
+     * 前端可根據此資訊顯示或隱藏特定功能區塊
+     * </p>
+     *
+     * @return 支援功能 Map
      */
     @GetMapping("/features")
     public ResponseEntity<Map<String, Boolean>> getSupportedFeatures() {

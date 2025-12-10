@@ -6,20 +6,26 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+/**
+ * WebSocket 推播服務
+ * 定時推送系統狀態給訂閱的前端客戶端
+ */
 @Service
 @RequiredArgsConstructor
 public class PushService {
 
     private final DashboardService dashboardService;
-    private final SimpMessagingTemplate messagingTemplate; // Spring 用來推送 WebSocket 的工具
+    private final SimpMessagingTemplate messagingTemplate;
 
-    // 每 1000 毫秒 (1秒) 執行一次
+    /**
+     * 定時推送系統狀態
+     * <p>
+     * 每秒執行一次，將最新的系統狀態推送至 /topic/status 頻道
+     * </p>
+     */
     @Scheduled(fixedRate = 1000)
     public void pushSystemStatus() {
-        // 1. 獲取最新狀態
         SystemStatusDTO status = dashboardService.getSystemStatus();
-
-        // 2. 推送到訂閱了 "/topic/status" 的前端客戶端
         messagingTemplate.convertAndSend("/topic/status", status);
     }
 }

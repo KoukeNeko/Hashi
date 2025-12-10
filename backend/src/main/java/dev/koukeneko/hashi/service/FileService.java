@@ -20,8 +20,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -31,8 +29,7 @@ public class FileService {
     private static final List<String> PROTECTED_PATHS = List.of(
             "/", "/home", "/root", "/etc", "/var", "/usr",
             "/bin", "/sbin", "/boot", "/lib", "/lib64",
-            "/proc", "/sys", "/dev", "/run", "/tmp"
-    );
+            "/proc", "/sys", "/dev", "/run", "/tmp");
 
     // 列出指定路徑下的檔案
     public List<FileItemDTO> listFiles(String pathString) {
@@ -52,7 +49,7 @@ public class FileService {
         // 使用 File.listFiles() 替代 Files.list()，更能處理權限問題
         File dir = path.toFile();
         File[] files = dir.listFiles();
-        
+
         if (files == null) {
             log.warn("Cannot list files in directory (permission denied or I/O error): {}", pathString);
             return Collections.emptyList();
@@ -107,7 +104,7 @@ public class FileService {
         }
     }
 
-    //讀取檔案內容
+    // 讀取檔案內容
     public String getFileContent(String pathString) {
         Path path = Paths.get(pathString);
 
@@ -142,17 +139,17 @@ public class FileService {
     // 刪除檔案或資料夾
     public void deleteFile(String pathString) {
         Path path = Paths.get(pathString);
-        
+
         // 安全檢查：不允許刪除根目錄或系統關鍵目錄
         String absPath = path.toAbsolutePath().toString();
         if (PROTECTED_PATHS.contains(absPath)) {
             throw new RuntimeException("Cannot delete system directories");
         }
-        
+
         if (!Files.exists(path)) {
             throw new RuntimeException("File or directory does not exist");
         }
-        
+
         try {
             if (Files.isDirectory(path)) {
                 // 遞迴刪除資料夾及其內容
@@ -169,12 +166,12 @@ public class FileService {
             throw new RuntimeException("Failed to delete file", e);
         }
     }
-    
+
     // 遞迴刪除資料夾
     private void deleteDirectoryRecursively(Path directory) throws IOException {
         File dir = directory.toFile();
         File[] files = dir.listFiles();
-        
+
         if (files != null) {
             for (File file : files) {
                 if (file.isDirectory()) {
@@ -186,7 +183,7 @@ public class FileService {
                 }
             }
         }
-        
+
         // 刪除空資料夾
         if (!dir.delete()) {
             throw new IOException("Failed to delete directory: " + directory);

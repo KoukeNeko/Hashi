@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -20,12 +19,12 @@ public class FtpService {
 
     // Server 設定資訊
     private static final Map<String, ServerConfig> SERVER_CONFIGS = Map.of(
-        "vsftpd", new ServerConfig("vsftpd", "vsftpd", "/etc/vsftpd.conf", "/etc/vsftpd.userlist"),
-        "proftpd", new ServerConfig("proftpd", "proftpd", "/etc/proftpd/proftpd.conf", null),
-        "pure-ftpd", new ServerConfig("pure-ftpd", "pure-ftpd", "/etc/pure-ftpd/pure-ftpd.conf", null)
-    );
+            "vsftpd", new ServerConfig("vsftpd", "vsftpd", "/etc/vsftpd.conf", "/etc/vsftpd.userlist"),
+            "proftpd", new ServerConfig("proftpd", "proftpd", "/etc/proftpd/proftpd.conf", null),
+            "pure-ftpd", new ServerConfig("pure-ftpd", "pure-ftpd", "/etc/pure-ftpd/pure-ftpd.conf", null));
 
-    private record ServerConfig(String type, String serviceName, String configPath, String userListPath) {}
+    private record ServerConfig(String type, String serviceName, String configPath, String userListPath) {
+    }
 
     // ==================== Server Detection ====================
 
@@ -40,12 +39,11 @@ public class FtpService {
                 boolean running = isServiceRunning(config.serviceName);
                 boolean enabled = isServiceEnabled(config.serviceName);
                 servers.add(new FtpServerInfo(
-                    config.type,
-                    config.serviceName,
-                    config.configPath,
-                    running,
-                    enabled
-                ));
+                        config.type,
+                        config.serviceName,
+                        config.configPath,
+                        running,
+                        enabled));
             }
         }
 
@@ -61,7 +59,8 @@ public class FtpService {
             ProcessBuilder pb = new ProcessBuilder("which", type);
             Process process = pb.start();
             int exitCode = process.waitFor();
-            if (exitCode == 0) return true;
+            if (exitCode == 0)
+                return true;
 
             // 檢查 systemd service
             pb = new ProcessBuilder("systemctl", "list-unit-files", type + ".service");
@@ -69,7 +68,8 @@ public class FtpService {
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.contains(type)) return true;
+                if (line.contains(type))
+                    return true;
             }
 
             return false;
@@ -93,12 +93,11 @@ public class FtpService {
         boolean enabled = isServiceEnabled(config.serviceName);
 
         return new FtpServerInfo(
-            config.type,
-            config.serviceName,
-            config.configPath,
-            running,
-            enabled
-        );
+                config.type,
+                config.serviceName,
+                config.configPath,
+                running,
+                enabled);
     }
 
     /**
@@ -253,7 +252,8 @@ public class FtpService {
 
         try {
             Path path = Paths.get(config.userListPath);
-            if (!Files.exists(path)) return true;
+            if (!Files.exists(path))
+                return true;
 
             List<String> lines = Files.readAllLines(path);
             return lines.stream().anyMatch(line -> line.trim().equals(username));
@@ -277,12 +277,11 @@ public class FtpService {
 
             // 建立系統使用者
             List<String> cmd = new ArrayList<>(Arrays.asList(
-                "sudo", "-n", "useradd",
-                "-m",  // 建立 home 目錄
-                "-d", homeDir,
-                "-s", "/bin/bash",
-                username
-            ));
+                    "sudo", "-n", "useradd",
+                    "-m", // 建立 home 目錄
+                    "-d", homeDir,
+                    "-s", "/bin/bash",
+                    username));
 
             ProcessBuilder pb = new ProcessBuilder(cmd);
             Process process = pb.start();
@@ -330,7 +329,8 @@ public class FtpService {
 
     private void addToUserList(String type, String username) {
         ServerConfig config = SERVER_CONFIGS.get(type);
-        if (config == null || config.userListPath == null) return;
+        if (config == null || config.userListPath == null)
+            return;
 
         try {
             Path path = Paths.get(config.userListPath);
@@ -354,15 +354,17 @@ public class FtpService {
 
     private void removeFromUserList(String type, String username) {
         ServerConfig config = SERVER_CONFIGS.get(type);
-        if (config == null || config.userListPath == null) return;
+        if (config == null || config.userListPath == null)
+            return;
 
         try {
             Path path = Paths.get(config.userListPath);
-            if (!Files.exists(path)) return;
+            if (!Files.exists(path))
+                return;
 
             List<String> users = Files.readAllLines(path).stream()
-                .filter(line -> !line.trim().equals(username))
-                .collect(Collectors.toList());
+                    .filter(line -> !line.trim().equals(username))
+                    .collect(Collectors.toList());
 
             String content = String.join("\n", users) + "\n";
 
@@ -390,8 +392,7 @@ public class FtpService {
 
         try {
             ProcessBuilder pb = new ProcessBuilder(
-                "journalctl", "-u", config.serviceName, "-n", String.valueOf(lines), "--no-pager"
-            );
+                    "journalctl", "-u", config.serviceName, "-n", String.valueOf(lines), "--no-pager");
             Process process = pb.start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));

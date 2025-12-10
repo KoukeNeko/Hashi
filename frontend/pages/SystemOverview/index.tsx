@@ -4,6 +4,7 @@ import { INITIAL_CPU_DATA, MOCK_NGINX_HOSTS, MOCK_CONTAINERS, MOCK_FIREWALL_RULE
 import { Server, Database, Terminal, Power, Globe, Shield, Activity } from 'lucide-react';
 import { connectWebSocket } from '../../services/api';
 import { SystemStatus } from '../../types';
+import { PageHeader } from '../../components';
 import { CircularGauge, QuickStat, SoftwareCard, OsIcon } from './components/SystemWidgets';
 
 
@@ -123,39 +124,41 @@ const SystemOverview: React.FC = () => {
 
     const dbCount = MOCK_CONTAINERS.filter(c => c.name.includes('db') || c.name.includes('redis') || c.name.includes('sql')).length;
 
+    // Wrapper for OsIcon to be compatible with PageHeader's icon prop
+    const DashboardIcon = (props: any) => (
+        <OsIcon osName={displayOsName || undefined} {...props} />
+    );
+
     return (
         <div className="space-y-6 animate-fade-in pb-8">
-            {/* Header Section */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4  pb-6">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl border border-zinc-700 shadow-lg">
-                        <OsIcon osName={displayOsName || undefined} size={32} className="text-emerald-500" />
+            <PageHeader
+                title="hashi-node-01"
+                icon={DashboardIcon}
+                description={
+                    <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1.5">
+                            <Activity size={14} className="text-emerald-500" />
+                            {(!displayOsName && loading) ? 'Loading...' : (displayOsName || 'Unknown')}
+                        </span>
+                        <span className="text-zinc-700">|</span>
+                        <span>{systemStatus?.coreCount || '--'} Core(s)</span>
                     </div>
-                    <div>
-                        <h2 className="text-2xl font-bold text-white">hashi-node-01</h2>
-                        <p className="text-zinc-400 text-sm flex items-center gap-3 mt-1">
-                            <span className="flex items-center gap-1.5">
-                                <Activity size={14} className="text-emerald-500" />
-                                {(!displayOsName && loading) ? 'Loading...' : (displayOsName || 'Unknown')}
-                            </span>
-                            <span className="text-zinc-700">|</span>
-                            <span>{systemStatus?.coreCount || '--'} Core(s)</span>
-                        </p>
-                    </div>
-                </div>
-                <div className="flex gap-3 w-full lg:w-auto">
-                    <div className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium border border-zinc-700 shadow-sm">
-                        <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`}></span>
-                        <span className="hidden sm:inline">{connected ? 'Live' : 'Connecting...'}</span>
-                    </div>
-                    <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-all border border-zinc-700 hover:border-zinc-600 shadow-sm">
-                        <Terminal size={16} /> <span className="hidden sm:inline">Fix</span>
-                    </button>
-                    <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 hover:border-rose-500/30 rounded-lg text-sm font-medium transition-all shadow-sm">
-                        <Power size={16} /> <span className="hidden sm:inline">Restart</span>
-                    </button>
-                </div>
-            </div>
+                }
+                actions={
+                    <>
+                        <div className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium border border-zinc-700 shadow-sm">
+                            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`}></span>
+                            <span className="hidden sm:inline">{connected ? 'Live' : 'Connecting...'}</span>
+                        </div>
+                        <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-all border border-zinc-700 hover:border-zinc-600 shadow-sm">
+                            <Terminal size={16} /> <span className="hidden sm:inline">Fix</span>
+                        </button>
+                        <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 hover:border-rose-500/30 rounded-lg text-sm font-medium transition-all shadow-sm">
+                            <Power size={16} /> <span className="hidden sm:inline">Restart</span>
+                        </button>
+                    </>
+                }
+            />
 
             {/* Top Section: Status Gauges & Disk */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

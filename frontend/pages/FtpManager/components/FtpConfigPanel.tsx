@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FtpService } from '../../../services/api';
 import { FtpServerType } from '../../../types';
 import { ActionButton } from '../../../components';
+import CodeEditor, { getLanguageFromFileName } from '../../../components/CodeEditor';
 import { Alert } from '../../../components/ui';
 import { Save, Loader2, RefreshCw, FileText, AlertTriangle } from 'lucide-react';
 
@@ -50,9 +51,10 @@ const FtpConfigPanel: React.FC<FtpConfigPanelProps> = ({ serverType, configPath,
     };
 
     const hasChanges = content !== originalContent;
+    const language = getLanguageFromFileName(configPath);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-zinc-400">
@@ -88,20 +90,19 @@ const FtpConfigPanel: React.FC<FtpConfigPanelProps> = ({ serverType, configPath,
             )}
 
             {/* Config Editor */}
-            <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-lg">
-                {loading ? (
-                    <div className="flex items-center justify-center py-16">
-                        <Loader2 size={32} className="animate-spin text-zinc-500" />
-                    </div>
-                ) : (
-                    <textarea
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        className="w-full h-[500px] p-4 bg-zinc-900 text-zinc-200 font-mono text-sm resize-none focus:outline-none"
-                        spellCheck={false}
-                    />
-                )}
-            </div>
+            {loading ? (
+                <div className="flex items-center justify-center py-16 border border-border rounded-lg bg-zinc-900">
+                    <Loader2 size={32} className="animate-spin text-zinc-500" />
+                </div>
+            ) : (
+                <CodeEditor
+                    value={content}
+                    onChange={setContent}
+                    language={language}
+                    height="500px"
+                    showMinimap={true}
+                />
+            )}
 
             {/* Info */}
             <Alert variant="info">

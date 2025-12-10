@@ -8,4 +8,5 @@ export { default as Sidebar } from './Sidebar';
 // Interactive Components
 export { default as WebTerminal } from './WebTerminal';
 export { default as FileEditor } from './FileEditor';
+export { default as CodeEditor, getLanguageFromFileName } from './CodeEditor';
 export { VncConsole } from './VncConsole';

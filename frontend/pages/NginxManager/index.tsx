@@ -5,6 +5,7 @@ import { NginxHostDTO, NginxStatusDTO, SslCertDTO } from '../../types';
 import AddHostDialog from './components/AddHostDialog';
 import EditConfigDialog from './components/EditConfigDialog';
 import SslRequestDialog from './components/SslRequestDialog';
+import NginxSetupGuide from './components/NginxSetupGuide';
 import {
     Globe, ShieldCheck, Server, Plus, Power, RefreshCw, Trash2, Edit,
     Calendar, Loader2, AlertCircle, CheckCircle, XCircle, ArrowUpDown, Lock
@@ -217,23 +218,7 @@ const NginxManager: React.FC = () => {
             )}
 
             {!isNginxInstalled ? (
-                <div className="space-y-6">
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6">
-                        <h2 className="text-lg font-bold text-zinc-200 mb-2 flex items-center gap-2">
-                            <AlertCircle className="text-amber-500" size={20} />
-                            Nginx Not Installed
-                        </h2>
-                        <p className="text-zinc-400 mb-6">
-                            The Nginx web server is not detected on this system. To use this feature, please install Nginx and Certbot by running the following command:
-                        </p>
-
-                        <div className="bg-black/50 border border-zinc-700 rounded-md p-4 font-mono text-sm group relative">
-                            <code className="text-emerald-400 break-all select-all">
-                                sudo apt update && sudo apt install -y nginx certbot python3-certbot-nginx socat
-                            </code>
-                        </div>
-                    </div>
-                </div>
+                <NginxSetupGuide onRetry={loadData} />
             ) : (
                 <>
                     <Tabs

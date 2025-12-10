@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader, Toast, ActionButton } from '../../components';
-import { Tabs, TabItem, Alert } from '../../components/ui';
+import { Tabs, TabItem, Alert, CommandCard } from '../../components/ui';
 import { FtpService } from '../../services/api';
 import { FtpServerInfo, FtpServerType } from '../../types';
 import { Server, Users, FileText, ScrollText, RefreshCw, Loader2, Download, AlertCircle } from 'lucide-react';
@@ -24,26 +24,33 @@ const FTP_TABS: TabItem[] = [
 
 const FtpSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
     <div className="space-y-6">
-        <Alert variant="warning" icon={AlertCircle} title="No FTP Server Detected">
-            Install one of the following FTP servers to continue:
-        </Alert>
+        {/* Header */}
+        <div className="flex items-start gap-4">
+            <div className="p-3 bg-amber-500/20 rounded-lg shrink-0">
+                <AlertCircle size={24} className="text-amber-400" />
+            </div>
+            <div>
+                <h3 className="text-lg font-bold text-zinc-100">No FTP Server Detected</h3>
+                <p className="text-sm text-zinc-400 mt-1">
+                    Install one of the following FTP servers to continue:
+                </p>
+            </div>
+        </div>
 
+        {/* Installation Options */}
         <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded border border-border">
-                <div>
-                    <span className="text-sm font-medium text-zinc-200">vsftpd</span>
-                    <span className="ml-2 text-xs text-emerald-400">(Recommended)</span>
-                </div>
-                <code className="text-sm font-mono text-zinc-400">sudo apt install vsftpd</code>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded border border-border">
-                <span className="text-sm font-medium text-zinc-200">proftpd</span>
-                <code className="text-sm font-mono text-zinc-400">sudo apt install proftpd</code>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded border border-border">
-                <span className="text-sm font-medium text-zinc-200">pure-ftpd</span>
-                <code className="text-sm font-mono text-zinc-400">sudo apt install pure-ftpd</code>
-            </div>
+            <CommandCard
+                title="vsftpd (Recommended)"
+                command="sudo apt install vsftpd"
+            />
+            <CommandCard
+                title="proftpd"
+                command="sudo apt install proftpd"
+            />
+            <CommandCard
+                title="pure-ftpd"
+                command="sudo apt install pure-ftpd"
+            />
         </div>
 
         <Alert variant="info">

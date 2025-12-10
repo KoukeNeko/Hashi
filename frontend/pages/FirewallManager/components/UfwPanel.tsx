@@ -5,6 +5,7 @@ import { FirewallRule } from '../../../types';
 import { Alert } from '../../../components/ui';
 import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Loader2, RefreshCw, Power, AlertCircle } from 'lucide-react';
 import { AddRuleDialog, DeleteRuleDialog } from './FirewallDialogs';
+import { UfwSetupGuide } from './UfwSetupGuide';
 
 /**
  * UFW 防火牆管理面板
@@ -292,12 +293,9 @@ const UfwPanel: React.FC = () => {
                 </div>
             )}
 
-            {/* API Error */}
+            {/* UFW Not Installed Guide */}
             {statusError && (
-                <Alert variant="error" icon={AlertCircle} title="Error:">
-                    Failed to get firewall status. Make sure <code className="bg-rose-500/20 px-1 rounded">ufw</code> is installed
-                    and the backend has <code className="bg-rose-500/20 px-1 rounded">sudo</code> permission.
-                </Alert>
+                <UfwSetupGuide onRetry={() => { loadStatus(); loadRules(); }} />
             )}
 
             {/* Disabled Warning */}

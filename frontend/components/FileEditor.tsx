@@ -66,7 +66,7 @@ const getLanguageFromFileName = (fileName: string): string => {
         'docker': 'dockerfile',
         'nginx': 'nginx',
     };
-    
+
     // 特殊檔名判斷
     const specialFiles: Record<string, string> = {
         'dockerfile': 'dockerfile',
@@ -77,35 +77,27 @@ const getLanguageFromFileName = (fileName: string): string => {
         '.bashrc': 'shell',
         '.zshrc': 'shell',
     };
-    
+
     const lowerName = fileName.toLowerCase();
     if (specialFiles[lowerName]) {
         return specialFiles[lowerName];
     }
-    
+
     return languageMap[ext] || 'plaintext';
 };
 
-// 判斷是否為可編輯的文字檔案
-const isTextFile = (fileName: string): boolean => {
-    const textExtensions = [
-        'txt', 'md', 'json', 'jsonl', 'xml', 'html', 'htm', 'css', 'scss', 'less',
-        'js', 'jsx', 'ts', 'tsx', 'vue', 'svelte',
-        'java', 'py', 'rb', 'php', 'go', 'rs', 'c', 'cpp', 'h', 'hpp', 'cs',
-        'yml', 'yaml', 'toml', 'ini', 'conf', 'cfg', 'properties',
-        'sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd',
-        'sql', 'log', 'csv', 'env', 'gitignore', 'dockerignore',
+/**
+ * 判斷是否為圖片檔案 (不應嘗試用編輯器開啟)
+ * 其他所有檔案都嘗試用編輯器開啟
+ */
+const isImageFile = (fileName: string): boolean => {
+    const imageExtensions = [
+        'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif',
+        'heic', 'heif', 'avif', 'raw', 'psd', 'ai', 'eps'
     ];
-    
+
     const ext = fileName.split('.').pop()?.toLowerCase() || '';
-    const lowerName = fileName.toLowerCase();
-    
-    // 特殊檔名
-    if (['dockerfile', 'makefile', '.gitignore', '.env', '.bashrc', '.zshrc'].includes(lowerName)) {
-        return true;
-    }
-    
-    return textExtensions.includes(ext);
+    return imageExtensions.includes(ext);
 };
 
 // 格式化檔案大小
@@ -133,10 +125,10 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
 
     const loadFileContent = async () => {
         if (!file) return;
-        
+
         setLoading(true);
         setError(null);
-        
+
         try {
             const text = await FileService.getFileContent(file.path);
             setContent(text);
@@ -158,7 +150,7 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
 
     const handleSave = async () => {
         if (!file || !onSave) return;
-        
+
         setSaving(true);
         try {
             await onSave(file.path, content);
@@ -190,7 +182,7 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
 
     const handleDownload = () => {
         if (!file) return;
-        
+
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -214,11 +206,11 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
                 }
             }
         };
-        
+
         if (isOpen) {
             window.addEventListener('keydown', handleKeyDown);
         }
-        
+
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
@@ -226,17 +218,17 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
 
     if (!isOpen || !file) return null;
 
-    const canEdit = isTextFile(file.name);
+    const canEdit = !isImageFile(file.name);
     const language = getLanguageFromFileName(file.name);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Backdrop */}
-            <div 
+            <div
                 className="absolute inset-0 bg-black/70 backdrop-blur-sm"
                 onClick={handleClose}
             />
-            
+
             {/* Dialog */}
             <div className="relative w-[90vw] h-[85vh] max-w-6xl bg-zinc-900 rounded-lg border border-zinc-700 shadow-2xl flex flex-col overflow-hidden animate-fade-in">
                 {/* Header */}
@@ -255,7 +247,7 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
                             </p>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                         {canEdit && onSave && (
                             <button

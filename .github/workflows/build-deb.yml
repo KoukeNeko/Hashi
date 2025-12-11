@@ -316,17 +316,17 @@ jobs:
       - name: Move DEB packages
         run: |
           SUITE="${{ needs.build-jar.outputs.suite }}"
-          mkdir -p pkg-repo/apt/pool/$SUITE
-          find ./incoming-deb -name "*.deb" -exec mv {} pkg-repo/apt/pool/$SUITE/ \; 2>/dev/null || true
-          echo "📦 DEB packages ($SUITE):"
-          ls -la pkg-repo/apt/pool/$SUITE/ 2>/dev/null || echo "No DEB packages"
+          mkdir -p pkg-repo/apt/pool/$SUITE/hashi
+          find ./incoming-deb -name "*.deb" -exec mv {} pkg-repo/apt/pool/$SUITE/hashi/ \; 2>/dev/null || true
+          echo "📦 DEB packages ($SUITE/hashi):"
+          ls -la pkg-repo/apt/pool/$SUITE/hashi/ 2>/dev/null || echo "No DEB packages"
 
       - name: Move RPM packages
         run: |
-          mkdir -p pkg-repo/rpm/packages
-          find ./incoming-rpm -name "*.rpm" -exec mv {} pkg-repo/rpm/packages/ \; 2>/dev/null || true
+          mkdir -p pkg-repo/rpm/packages/hashi
+          find ./incoming-rpm -name "*.rpm" -exec mv {} pkg-repo/rpm/packages/hashi/ \; 2>/dev/null || true
           echo "📦 RPM packages:"
-          ls -la pkg-repo/rpm/packages/ 2>/dev/null || echo "No RPM packages"
+          ls -la pkg-repo/rpm/packages/hashi/ 2>/dev/null || echo "No RPM packages"
 
       - name: Install createrepo
         run: sudo apt-get update && sudo apt-get install -y createrepo-c

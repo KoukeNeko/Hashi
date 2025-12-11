@@ -31,13 +31,10 @@
 
 **Debian / Ubuntu:**
 ```bash
-# Stable (default)
 curl -fsSL https://koukeneko.github.io/pkg-repo/apt/install.sh | sudo bash
-
-# Or choose a suite: beta, dev
-# curl ... | sudo bash -s beta
-
 sudo apt install hashi
+
+# Install specific version: apt install hashi=X.Y.Z~beta or X.Y.Z~dev
 ```
 
 **RHEL / CentOS / Fedora:**

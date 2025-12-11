@@ -251,50 +251,69 @@ jobs:
           retention-days: 30
 
   # ===========================================================================
-  # Publish to APT Repository (only for tag or manual dispatch)
+  # Publish to Package Repository (only for tag or manual dispatch)
   # ===========================================================================
-  publish-to-apt-repo:
-    name: Publish to APT Repository
-    needs: [build-jar, build-deb]
+  publish-to-pkg-repo:
+    name: Publish to Package Repository
+    needs: [build-jar, build-deb, build-rpm]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
 
     steps:
-      - name: Checkout apt-repo
+      - name: Checkout pkg-repo
         uses: actions/checkout@v4
         with:
-          repository: KoukeNeko/apt-repo
+          repository: KoukeNeko/pkg-repo
           token: ${{ secrets.APT_REPO_TOKEN }}
-          path: apt-repo
+          path: pkg-repo
 
       - name: Download all DEB artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: hashi-backend-*-deb-*
-          path: ./incoming
+          path: ./incoming-deb
           merge-multiple: true
 
-      - name: Move packages to pool
+      - name: Download all RPM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: hashi-backend-*-rpm-*
+          path: ./incoming-rpm
+          merge-multiple: true
+
+      - name: Move DEB packages
         run: |
-          mkdir -p apt-repo/pool/main
-          find ./incoming -name "*.deb" -exec mv {} apt-repo/pool/main/ \;
-          ls -la apt-repo/pool/main/
+          mkdir -p pkg-repo/apt/pool/main
+          find ./incoming-deb -name "*.deb" -exec mv {} pkg-repo/apt/pool/main/ \; 2>/dev/null || true
+          echo "📦 DEB packages:"
+          ls -la pkg-repo/apt/pool/main/ 2>/dev/null || echo "No DEB packages"
+
+      - name: Move RPM packages
+        run: |
+          mkdir -p pkg-repo/rpm/packages
+          find ./incoming-rpm -name "*.rpm" -exec mv {} pkg-repo/rpm/packages/ \; 2>/dev/null || true
+          echo "📦 RPM packages:"
+          ls -la pkg-repo/rpm/packages/ 2>/dev/null || echo "No RPM packages"
+
+      - name: Install createrepo
+        run: sudo apt-get update && sudo apt-get install -y createrepo-c
 
       - name: Import GPG key
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
 
       - name: Update repository index
-        working-directory: apt-repo
+        working-directory: pkg-repo
         run: |
           chmod +x scripts/update-repo.sh
           ./scripts/update-repo.sh
 
       - name: Commit and push
-        working-directory: apt-repo
+        working-directory: pkg-repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "📦 Add hashi-backend ${{ needs.build-jar.outputs.version }} (amd64 + arm64)" || echo "No changes"
+          git commit -m "📦 Add hashi-backend ${{ needs.build-jar.outputs.version }} (DEB + RPM, amd64 + arm64)" || echo "No changes"
           git push
+

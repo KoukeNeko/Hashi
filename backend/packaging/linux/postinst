@@ -47,10 +47,27 @@ echo "   ✅ Sudoers configuration created"
 # -----------------------------------------------------------------------------
 echo "⚙️ Creating systemd service..."
 
-# Determine package name and executable path dynamically
-# DPKG_MAINTSCRIPT_PACKAGE is set by dpkg during installation
-PKG_NAME="${DPKG_MAINTSCRIPT_PACKAGE:-hashi}"
-EXEC_PATH="/opt/${PKG_NAME}/bin/${PKG_NAME}"
+# Detect installed package by looking for the executable in /opt
+# jpackage installs to /opt/{package-name}/bin/{package-name}
+# We look for directories matching /opt/hashi* that contain a bin directory
+EXEC_PATH=""
+for dir in /opt/hashi*/bin; do
+    if [ -d "$dir" ]; then
+        # Find the executable in this bin directory
+        for exe in "$dir"/*; do
+            if [ -x "$exe" ] && [ -f "$exe" ]; then
+                EXEC_PATH="$exe"
+                break 2
+            fi
+        done
+    fi
+done
+
+# Fallback if nothing found
+if [ -z "$EXEC_PATH" ]; then
+    EXEC_PATH="/opt/hashi/bin/hashi"
+    echo "   ⚠️ Could not detect executable, using default: $EXEC_PATH"
+fi
 
 cat > /etc/systemd/system/hashi.service << EOF
 [Unit]

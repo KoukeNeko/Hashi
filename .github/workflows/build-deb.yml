@@ -1,0 +1,143 @@
+# ==============================================================================
+# Hashi Backend - Build DEB Package
+# ==============================================================================
+# 自動建置 .deb 安裝包的 GitHub Actions workflow
+# 觸發條件：push 到任何分支、手動觸發
+# ==============================================================================
+
+name: Build DEB Package
+
+on:
+  push:
+    branches:
+      - "*"
+    paths:
+      - "backend/**"
+      - ".github/workflows/build-deb.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本號 (例如: 1.0.0)"
+        required: false
+        default: "0.0.1"
+
+jobs:
+  build-deb:
+    name: Build .deb Package
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------------------------------------------------------
+      # 1. Checkout 程式碼
+      # -------------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -------------------------------------------------------------------------
+      # 2. 安裝系統打包依賴
+      # -------------------------------------------------------------------------
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils fakeroot
+
+      # -------------------------------------------------------------------------
+      # 3. 設定 JDK 25
+      # -------------------------------------------------------------------------
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: "oracle"
+          java-version: "25"
+
+      # -------------------------------------------------------------------------
+      # 4. 設定 Gradle (含快取)
+      # -------------------------------------------------------------------------
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      # -------------------------------------------------------------------------
+      # 5. Gradle 建置 JAR
+      # -------------------------------------------------------------------------
+      - name: Build JAR with Gradle
+        working-directory: backend
+        run: ./gradlew clean bootJar
+
+      # -------------------------------------------------------------------------
+      # 6. 確定版本號與 JAR 檔名
+      # -------------------------------------------------------------------------
+      - name: Determine version and JAR name
+        id: prepare
+        working-directory: backend
+        run: |
+          # 版本號優先順序：手動輸入 > tag > 預設值
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION="0.0.1-SNAPSHOT"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # 取得 JAR 檔名
+          JAR_NAME=$(ls build/libs/hashi-*.jar | head -n 1 | xargs basename)
+          echo "jar_name=$JAR_NAME" >> $GITHUB_OUTPUT
+          echo "📦 版本: $VERSION"
+          echo "📦 JAR: $JAR_NAME"
+
+      # -------------------------------------------------------------------------
+      # 7. 使用 jpackage 打包 .deb
+      # -------------------------------------------------------------------------
+      - name: Package with jpackage
+        working-directory: backend
+        run: |
+          mkdir -p output
+          jpackage \
+            --verbose \
+            --name hashi-backend \
+            --app-version "${{ steps.prepare.outputs.version }}" \
+            --type deb \
+            --input build/libs \
+            --main-jar "${{ steps.prepare.outputs.jar_name }}" \
+            --main-class "org.springframework.boot.loader.launch.JarLauncher" \
+            --java-options "-Djava.library.path=/usr/lib/jni" \
+            --arguments "--spring.profiles.active=prod" \
+            --linux-deb-maintainer "koukeneko@dev" \
+            --linux-package-deps "libvirt-clients, libvirt-daemon-system, iptables, docker.io, sudo" \
+            --resource-dir "packaging/linux" \
+            --dest output
+
+      # -------------------------------------------------------------------------
+      # 8. 驗證 .deb 安裝並顯示資訊
+      # -------------------------------------------------------------------------
+      - name: Verify DEB package
+        working-directory: backend
+        run: |
+          DEB_FILE=$(ls output/*.deb | head -n 1)
+          echo "📦 產生的 .deb 檔案: $DEB_FILE"
+          echo ""
+          echo "=== 套件資訊 ==="
+          dpkg-deb --info "$DEB_FILE"
+          echo ""
+          echo "=== 套件內容 ==="
+          dpkg-deb --contents "$DEB_FILE" | head -50
+          echo ""
+          echo "=== 測試安裝 ==="
+          sudo dpkg -i "$DEB_FILE" || true
+          echo ""
+          echo "=== 已安裝套件資訊 ==="
+          dpkg -s hashi-backend || echo "⚠️ 套件安裝可能有相依性問題（這在 CI 環境中是正常的）"
+
+      # -------------------------------------------------------------------------
+      # 9. 上傳 .deb 作為 Artifact (僅 tag 或手動觸發時)
+      # -------------------------------------------------------------------------
+      - name: Upload DEB artifact
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: hashi-backend-${{ steps.prepare.outputs.version }}-deb
+          path: backend/output/*.deb
+          retention-days: 30

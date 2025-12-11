@@ -46,7 +46,13 @@ echo "   ✅ Sudoers configuration created"
 # 4. Create systemd service
 # -----------------------------------------------------------------------------
 echo "⚙️ Creating systemd service..."
-cat > /etc/systemd/system/hashi.service << 'EOF'
+
+# Determine package name and executable path dynamically
+# DPKG_MAINTSCRIPT_PACKAGE is set by dpkg during installation
+PKG_NAME="${DPKG_MAINTSCRIPT_PACKAGE:-hashi}"
+EXEC_PATH="/opt/${PKG_NAME}/bin/${PKG_NAME}"
+
+cat > /etc/systemd/system/hashi.service << EOF
 [Unit]
 Description=Hashi Server Management Dashboard
 After=network.target
@@ -55,7 +61,7 @@ After=network.target
 Type=simple
 User=hashi
 Group=hashi
-ExecStart=/opt/hashi/bin/hashi
+ExecStart=${EXEC_PATH}
 SuccessExitStatus=143
 Restart=always
 RestartSec=10
@@ -63,7 +69,7 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 EOF
-echo "   ✅ Systemd service created"
+echo "   ✅ Systemd service created (ExecStart: ${EXEC_PATH})"
 
 # -----------------------------------------------------------------------------
 # 5. Enable and start service

@@ -19,17 +19,15 @@ export const UfwSetupGuide: React.FC<UfwSetupGuideProps> = ({ onRetry }) => {
                 <div>
                     <h3 className="text-lg font-bold text-zinc-100">UFW Setup Required</h3>
                     <p className="text-sm text-zinc-400 mt-1">
-                        Failed to get firewall status. Make sure <code className="bg-zinc-800 px-1 rounded">ufw</code> is installed
-                        and the backend has proper permissions.
+                        Failed to get firewall status. Make sure{' '}
+                        <code className="bg-zinc-800 px-1 rounded">ufw</code> is installed and the
+                        backend has proper permissions.
                     </p>
                 </div>
             </div>
 
             {/* Installation Command */}
-            <CommandCard
-                title="Install UFW"
-                command="sudo apt install ufw"
-            />
+            <CommandCard title="Install UFW" command="sudo apt install ufw" />
 
             <Alert variant="info">
                 After installing, restart Hashi backend for changes to take effect.

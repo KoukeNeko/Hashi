@@ -9,8 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Docker 容器管理 Controller
- * 提供容器的列表查詢與狀態控制 (啟動、停止、重啟)
+ * Docker 容器管理 Controller 提供容器的列表查詢與狀態控制 (啟動、停止、重啟)
  */
 @RestController
 @RequestMapping("/api/v1/docker")
@@ -33,7 +32,8 @@ public class DockerController {
     /**
      * 啟動指定容器
      *
-     * @param id 容器 ID
+     * @param id
+     *            容器 ID
      * @return 成功回傳 200 OK
      */
     @PostMapping("/containers/{id}/start")
@@ -45,7 +45,8 @@ public class DockerController {
     /**
      * 停止指定容器
      *
-     * @param id 容器 ID
+     * @param id
+     *            容器 ID
      * @return 成功回傳 200 OK
      */
     @PostMapping("/containers/{id}/stop")
@@ -57,7 +58,8 @@ public class DockerController {
     /**
      * 重啟指定容器
      *
-     * @param id 容器 ID
+     * @param id
+     *            容器 ID
      * @return 成功回傳 200 OK
      */
     @PostMapping("/containers/{id}/restart")

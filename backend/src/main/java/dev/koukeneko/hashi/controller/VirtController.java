@@ -14,8 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * 虛擬化 (VM) 管理 Controller
- * 提供 VM 的生命週期管理 (增刪改查、控制) 以及 ISO 檔案管理
+ * 虛擬化 (VM) 管理 Controller 提供 VM 的生命週期管理 (增刪改查、控制) 以及 ISO 檔案管理
  */
 @RestController
 @RequestMapping("/api/v1/virt")
@@ -26,7 +25,7 @@ public class VirtController {
     private final VirtService virtService;
 
     // ==================== VM 管理 ====================
-    
+
     /**
      * 列出所有 VM
      *
@@ -40,7 +39,8 @@ public class VirtController {
     /**
      * 取得特定 VM 詳細資訊
      *
-     * @param name VM 名稱
+     * @param name
+     *            VM 名稱
      * @return VM 詳細資訊
      */
     @GetMapping("/vms/{name}")
@@ -51,7 +51,8 @@ public class VirtController {
     /**
      * 建立新 VM
      *
-     * @param request VM 建立請求參數
+     * @param request
+     *            VM 建立請求參數
      * @return 建立後的 VM 資訊
      */
     @PostMapping("/vms")
@@ -62,8 +63,10 @@ public class VirtController {
     /**
      * 更新 VM 設定
      *
-     * @param name    VM 名稱
-     * @param request 更新請求參數
+     * @param name
+     *            VM 名稱
+     * @param request
+     *            更新請求參數
      * @return 更新後的 VM 資訊
      */
     @PutMapping("/vms/{name}")
@@ -74,7 +77,8 @@ public class VirtController {
     /**
      * 刪除 VM
      *
-     * @param name VM 名稱
+     * @param name
+     *            VM 名稱
      * @return 成功回傳 200 OK
      */
     @DeleteMapping("/vms/{name}")
@@ -86,8 +90,10 @@ public class VirtController {
     /**
      * 控制 VM 狀態
      *
-     * @param name   VM 名稱
-     * @param action 動作 (start, shutdown, destroy, reboot, suspend, resume)
+     * @param name
+     *            VM 名稱
+     * @param action
+     *            動作 (start, shutdown, destroy, reboot, suspend, resume)
      * @return 成功回傳 200 OK
      */
     @PostMapping("/vms/{name}/{action}")
@@ -99,7 +105,8 @@ public class VirtController {
     /**
      * 取得 VM 的 VNC 連線資訊
      *
-     * @param name VM 名稱
+     * @param name
+     *            VM 名稱
      * @return VNC 資訊
      */
     @GetMapping("/vms/{name}/vnc-info")
@@ -108,7 +115,7 @@ public class VirtController {
     }
 
     // ==================== ISO 管理 ====================
-    
+
     /**
      * 列出所有可用的 ISO 檔案
      *
@@ -122,7 +129,8 @@ public class VirtController {
     /**
      * 上傳 ISO 檔案
      *
-     * @param file 檔案
+     * @param file
+     *            檔案
      * @return 上傳後的 ISO 檔案資訊
      */
     @PostMapping("/iso")
@@ -133,7 +141,8 @@ public class VirtController {
     /**
      * 刪除 ISO 檔案
      *
-     * @param filename 檔案名稱
+     * @param filename
+     *            檔案名稱
      * @return 成功回傳 200 OK
      */
     @DeleteMapping("/iso/{filename}")

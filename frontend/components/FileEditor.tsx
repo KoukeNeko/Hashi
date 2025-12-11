@@ -16,61 +16,61 @@ const getLanguageFromFileName = (fileName: string): string => {
     const ext = fileName.split('.').pop()?.toLowerCase() || '';
     const languageMap: Record<string, string> = {
         // Web
-        'js': 'javascript',
-        'jsx': 'javascript',
-        'ts': 'typescript',
-        'tsx': 'typescript',
-        'html': 'html',
-        'htm': 'html',
-        'css': 'css',
-        'scss': 'scss',
-        'less': 'less',
-        'json': 'json',
-        'xml': 'xml',
-        'svg': 'xml',
+        js: 'javascript',
+        jsx: 'javascript',
+        ts: 'typescript',
+        tsx: 'typescript',
+        html: 'html',
+        htm: 'html',
+        css: 'css',
+        scss: 'scss',
+        less: 'less',
+        json: 'json',
+        xml: 'xml',
+        svg: 'xml',
         // Backend
-        'java': 'java',
-        'py': 'python',
-        'rb': 'ruby',
-        'php': 'php',
-        'go': 'go',
-        'rs': 'rust',
-        'c': 'c',
-        'cpp': 'cpp',
-        'h': 'c',
-        'hpp': 'cpp',
-        'cs': 'csharp',
+        java: 'java',
+        py: 'python',
+        rb: 'ruby',
+        php: 'php',
+        go: 'go',
+        rs: 'rust',
+        c: 'c',
+        cpp: 'cpp',
+        h: 'c',
+        hpp: 'cpp',
+        cs: 'csharp',
         // Config
-        'yml': 'yaml',
-        'yaml': 'yaml',
-        'toml': 'toml',
-        'ini': 'ini',
-        'conf': 'ini',
-        'cfg': 'ini',
-        'properties': 'ini',
+        yml: 'yaml',
+        yaml: 'yaml',
+        toml: 'toml',
+        ini: 'ini',
+        conf: 'ini',
+        cfg: 'ini',
+        properties: 'ini',
         // Shell & Scripts
-        'sh': 'shell',
-        'bash': 'shell',
-        'zsh': 'shell',
-        'fish': 'shell',
-        'ps1': 'powershell',
+        sh: 'shell',
+        bash: 'shell',
+        zsh: 'shell',
+        fish: 'shell',
+        ps1: 'powershell',
         // Database
-        'sql': 'sql',
+        sql: 'sql',
         // Docs
-        'md': 'markdown',
-        'markdown': 'markdown',
-        'txt': 'plaintext',
-        'log': 'plaintext',
+        md: 'markdown',
+        markdown: 'markdown',
+        txt: 'plaintext',
+        log: 'plaintext',
         // Docker & DevOps
-        'dockerfile': 'dockerfile',
-        'docker': 'dockerfile',
-        'nginx': 'nginx',
+        dockerfile: 'dockerfile',
+        docker: 'dockerfile',
+        nginx: 'nginx',
     };
 
     // 特殊檔名判斷
     const specialFiles: Record<string, string> = {
-        'dockerfile': 'dockerfile',
-        'makefile': 'makefile',
+        dockerfile: 'dockerfile',
+        makefile: 'makefile',
         'cmakelists.txt': 'cmake',
         '.gitignore': 'gitignore',
         '.env': 'dotenv',
@@ -92,8 +92,23 @@ const getLanguageFromFileName = (fileName: string): string => {
  */
 const isImageFile = (fileName: string): boolean => {
     const imageExtensions = [
-        'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif',
-        'heic', 'heif', 'avif', 'raw', 'psd', 'ai', 'eps'
+        'png',
+        'jpg',
+        'jpeg',
+        'gif',
+        'bmp',
+        'webp',
+        'svg',
+        'ico',
+        'tiff',
+        'tif',
+        'heic',
+        'heif',
+        'avif',
+        'raw',
+        'psd',
+        'ai',
+        'eps',
     ];
 
     const ext = fileName.split('.').pop()?.toLowerCase() || '';
@@ -224,10 +239,7 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-                onClick={handleClose}
-            />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
 
             {/* Dialog */}
             <div className="relative w-[90vw] h-[85vh] max-w-6xl bg-zinc-900 rounded-lg border border-zinc-700 shadow-2xl flex flex-col overflow-hidden animate-fade-in">
@@ -284,7 +296,10 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
                     {loading ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
-                                <Loader2 size={32} className="animate-spin text-emerald-500 mx-auto mb-3" />
+                                <Loader2
+                                    size={32}
+                                    className="animate-spin text-emerald-500 mx-auto mb-3"
+                                />
                                 <p className="text-zinc-400">Loading file...</p>
                             </div>
                         </div>
@@ -294,7 +309,9 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
                                 <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-4">
                                     <AlertCircle size={32} className="text-rose-500" />
                                 </div>
-                                <p className="text-zinc-300 font-medium mb-1">Failed to Load File</p>
+                                <p className="text-zinc-300 font-medium mb-1">
+                                    Failed to Load File
+                                </p>
                                 <p className="text-zinc-500 text-sm max-w-md">{error}</p>
                                 <button
                                     onClick={loadFileContent}
@@ -308,8 +325,12 @@ const FileEditor: React.FC<FileEditorProps> = ({ file, isOpen, onClose, onSave }
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
                                 <FileText size={48} className="text-zinc-600 mx-auto mb-4" />
-                                <p className="text-zinc-300 font-medium mb-1">Cannot Preview This File</p>
-                                <p className="text-zinc-500 text-sm">This file type is not supported for preview.</p>
+                                <p className="text-zinc-300 font-medium mb-1">
+                                    Cannot Preview This File
+                                </p>
+                                <p className="text-zinc-500 text-sm">
+                                    This file type is not supported for preview.
+                                </p>
                                 <button
                                     onClick={handleDownload}
                                     className="mt-4 flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded text-sm transition-colors mx-auto"

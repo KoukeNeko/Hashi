@@ -8,13 +8,17 @@
 plugins {
     // Java 插件 - 提供 Java 編譯、測試、打包等功能
     id 'java'
-    
+
     // Spring Boot 插件 - 提供 bootRun、bootJar 等任務
     // 文件：https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
     id 'org.springframework.boot' version '4.0.0'
-    
+
     // Spring 依賴管理 - 自動管理 Spring 相關依賴的版本
     id 'io.spring.dependency-management' version '1.1.7'
+
+    // Spotless - 程式碼格式化
+    // 文件：https://github.com/diffplug/spotless
+    id 'com.diffplug.spotless' version '7.0.3'
 }
 
 // =============================================================================
@@ -36,6 +40,22 @@ java {
 }
 
 // =============================================================================
+// Spotless 程式碼格式化設定
+// =============================================================================
+spotless {
+    java {
+        // 使用 Eclipse JDT formatter（不依賴 javac 內部 API，相容 Java 25）
+        eclipse().configFile(file('eclipse-formatter.xml'))
+
+        // 移除行尾空白
+        trimTrailingWhitespace()
+
+        // 檔案結尾加換行
+        endWithNewline()
+    }
+}
+
+// =============================================================================
 // 設定繼承關係
 // =============================================================================
 configurations {
@@ -52,11 +72,11 @@ configurations {
 repositories {
     // Maven Central - 主要的開源依賴來源
     mavenCentral()
-    
+
     // JetBrains 官方倉庫 - PTY4J 終端機模擬器的來源
     // 這個倉庫包含完整的 PTY4J 和相關原生函式庫
     maven { url "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies" }
-    
+
     // JitPack - 用於直接從 GitHub 取得依賴
     // 某些專案可能只在 JitPack 上發布
     maven { url "https://jitpack.io" }
@@ -66,27 +86,27 @@ repositories {
 // 依賴設定
 // =============================================================================
 dependencies {
-    
+
     // -------------------------------------------------------------------------
     // Spring Boot Starters
     // -------------------------------------------------------------------------
-    
+
     // 驗證支援 - 提供 @Valid, @NotNull 等驗證註解
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    
+
     // Web MVC - REST API 核心，提供 @RestController, @GetMapping 等
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-    
+
     // WebSocket - 即時通訊支援，用於終端機和 Log 串流
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
-    
+
     // Actuator - 健康檢查和監控端點 (/actuator/health 等)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // -------------------------------------------------------------------------
     // 系統監控
     // -------------------------------------------------------------------------
-    
+
     // OSHI - 跨平台系統資訊函式庫
     // 用於取得 CPU、記憶體、磁碟、網路等系統狀態
     // 文件：https://github.com/oshi/oshi
@@ -95,7 +115,7 @@ dependencies {
     // -------------------------------------------------------------------------
     // Docker 管理
     // -------------------------------------------------------------------------
-    
+
     // Docker Java Client - 用於管理 Docker 容器
     // 文件：https://github.com/docker-java/docker-java
     implementation 'com.github.docker-java:docker-java-core:3.7.0'
@@ -105,37 +125,37 @@ dependencies {
     // -------------------------------------------------------------------------
     // 終端機模擬 (PTY)
     // -------------------------------------------------------------------------
-    
+
     // PTY4J - Pseudo Terminal (偽終端機) 支援
     // 用於在 WebSocket 上提供完整的終端機體驗
     // 支援 Linux (bash), Windows (cmd/powershell), macOS
     // 文件：https://github.com/JetBrains/pty4j
     implementation 'org.jetbrains.pty4j:pty4j:0.12.13'
-    
+
     // PureJavaComm - PTY4J 的依賴，提供跨平台串列通訊
     implementation 'org.jetbrains.pty4j:purejavacomm:0.0.11.1'
 
     // -------------------------------------------------------------------------
     // 虛擬機器管理 (KVM/QEMU)
     // -------------------------------------------------------------------------
-    
+
     // Libvirt Java 綁定 - 用於管理 KVM/QEMU 虛擬機器
     // 需要系統安裝 libvirt-dev
     // 文件：https://libvirt.org/
     implementation 'org.libvirt:libvirt:0.5.2'
-    
+
     // JNA (Java Native Access) - Libvirt 的依賴，用於呼叫原生函式庫
     implementation 'net.java.dev.jna:jna:5.13.0'
 
     // -------------------------------------------------------------------------
     // 開發工具
     // -------------------------------------------------------------------------
-    
+
     // Lombok - 減少樣板程式碼 (@Data, @Builder, @Slf4j 等)
     // compileOnly: 只在編譯時需要，不會打包進 JAR
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    
+
     // DevTools - 開發時的熱重載支援
     // developmentOnly: 只在開發模式下啟用，正式環境不會包含
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -143,12 +163,12 @@ dependencies {
     // -------------------------------------------------------------------------
     // 測試依賴
     // -------------------------------------------------------------------------
-    
+
     // Spring Boot 測試支援
     testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-websocket-test'
-    
+
     // JUnit 5 平台啟動器
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

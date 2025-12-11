@@ -2,7 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Toast, ActionButton } from '../../../components';
 import { IptablesService } from '../../../services/api';
 import { IptablesRule, AddIptablesRuleRequest, IptablesTable } from '../../../types';
-import { Tabs, TabItem, Alert, DataTable, DataTableColumn, badgeCell } from '../../../components/ui';
+import {
+    Tabs,
+    TabItem,
+    Alert,
+    DataTable,
+    DataTableColumn,
+    badgeCell,
+} from '../../../components/ui';
 import { Terminal, Plus, Trash2, Loader2, RefreshCw, Save } from 'lucide-react';
 import { AddIptablesRuleDialog, DeleteIptablesRuleDialog } from './IptablesDialogs';
 
@@ -11,7 +18,7 @@ import { AddIptablesRuleDialog, DeleteIptablesRuleDialog } from './IptablesDialo
 const TABLE_TABS: TabItem[] = [
     { id: 'filter', label: 'filter' },
     { id: 'nat', label: 'nat' },
-    { id: 'mangle', label: 'mangle' }
+    { id: 'mangle', label: 'mangle' },
 ];
 
 // ==================== Helper: Format Byte Count ====================
@@ -39,20 +46,20 @@ const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) =
             header: '#',
             width: '50px',
             mono: true,
-            render: (rule) => <span className="text-zinc-500">{rule.lineNumber}</span>
+            render: (rule) => <span className="text-zinc-500">{rule.lineNumber}</span>,
         },
         {
             key: 'target',
             header: 'Target',
             width: '180px',
-            render: (rule) => badgeCell(rule.target)
+            render: (rule) => badgeCell(rule.target),
         },
         {
             key: 'protocol',
             header: 'Protocol',
             width: '80px',
             mono: true,
-            accessor: 'protocol'
+            accessor: 'protocol',
         },
         {
             key: 'source',
@@ -63,7 +70,7 @@ const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) =
                     {rule.source}
                     {rule.sourcePort && <span className="text-zinc-500">:{rule.sourcePort}</span>}
                 </span>
-            )
+            ),
         },
         {
             key: 'destination',
@@ -74,21 +81,23 @@ const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) =
                     {rule.destination}
                     {rule.destPort && <span className="text-zinc-500">:{rule.destPort}</span>}
                 </span>
-            )
+            ),
         },
         {
             key: 'packets',
             header: 'Packets',
             width: '100px',
             mono: true,
-            render: (rule) => <span className="text-zinc-400">{rule.packetCount.toLocaleString()}</span>
+            render: (rule) => (
+                <span className="text-zinc-400">{rule.packetCount.toLocaleString()}</span>
+            ),
         },
         {
             key: 'bytes',
             header: 'Bytes',
             width: '100px',
             mono: true,
-            render: (rule) => <span className="text-zinc-400">{formatBytes(rule.byteCount)}</span>
+            render: (rule) => <span className="text-zinc-400">{formatBytes(rule.byteCount)}</span>,
         },
         {
             key: 'actions',
@@ -103,8 +112,8 @@ const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) =
                 >
                     <Trash2 size={16} />
                 </button>
-            )
-        }
+            ),
+        },
     ];
 
     return (
@@ -118,7 +127,6 @@ const ChainSection: React.FC<ChainSectionProps> = ({ chain, rules, onDelete }) =
         />
     );
 };
-
 
 // ==================== Main Panel Component ====================
 
@@ -145,7 +153,9 @@ const IptablesPanel: React.FC = () => {
             console.error('Failed to load iptables rules:', err);
             const e = err as { response?: { data?: string | { message?: string } } };
             const errorMsg = e.response?.data
-                ? (typeof e.response.data === 'string' ? e.response.data : e.response.data.message || 'Failed to load rules')
+                ? typeof e.response.data === 'string'
+                    ? e.response.data
+                    : e.response.data.message || 'Failed to load rules'
                 : 'Failed to load iptables rules';
             setError(errorMsg);
             setRules([]);
@@ -162,7 +172,7 @@ const IptablesPanel: React.FC = () => {
     // Group rules by chain
     const rulesByChain = useMemo(() => {
         const grouped: Record<string, IptablesRule[]> = {};
-        rules.forEach(rule => {
+        rules.forEach((rule) => {
             if (!grouped[rule.chain]) {
                 grouped[rule.chain] = [];
             }
@@ -195,7 +205,9 @@ const IptablesPanel: React.FC = () => {
             console.error('Failed to add rule:', err);
             const e = err as { response?: { data?: string | { message?: string } } };
             const errorMsg = e.response?.data
-                ? (typeof e.response.data === 'string' ? e.response.data : e.response.data.message || 'Failed to add rule')
+                ? typeof e.response.data === 'string'
+                    ? e.response.data
+                    : e.response.data.message || 'Failed to add rule'
                 : 'Failed to add rule';
             throw new Error(errorMsg);
         }
@@ -212,7 +224,11 @@ const IptablesPanel: React.FC = () => {
 
         try {
             setDeleting(true);
-            await IptablesService.deleteRule(ruleToDelete.table, ruleToDelete.chain, ruleToDelete.lineNumber);
+            await IptablesService.deleteRule(
+                ruleToDelete.table,
+                ruleToDelete.chain,
+                ruleToDelete.lineNumber
+            );
             setDeleteDialogOpen(false);
             setRuleToDelete(null);
             setToast({ message: 'Rule deleted successfully', type: 'success' });
@@ -221,7 +237,9 @@ const IptablesPanel: React.FC = () => {
             console.error('Failed to delete rule:', err);
             const e = err as { response?: { data?: string | { message?: string } } };
             const errorMsg = e.response?.data
-                ? (typeof e.response.data === 'string' ? e.response.data : e.response.data.message || 'Failed to delete rule')
+                ? typeof e.response.data === 'string'
+                    ? e.response.data
+                    : e.response.data.message || 'Failed to delete rule'
                 : 'Failed to delete rule';
             setToast({ message: errorMsg, type: 'error' });
         } finally {
@@ -239,7 +257,9 @@ const IptablesPanel: React.FC = () => {
             console.error('Failed to save rules:', err);
             const e = err as { response?: { data?: string | { message?: string } } };
             const errorMsg = e.response?.data
-                ? (typeof e.response.data === 'string' ? e.response.data : e.response.data.message || 'Failed to save rules')
+                ? typeof e.response.data === 'string'
+                    ? e.response.data
+                    : e.response.data.message || 'Failed to save rules'
                 : 'Failed to save rules';
             setToast({ message: errorMsg, type: 'error' });
         } finally {
@@ -280,10 +300,7 @@ const IptablesPanel: React.FC = () => {
                     >
                         <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
                     </button>
-                    <ActionButton
-                        onClick={() => setAddDialogOpen(true)}
-                        icon={<Plus size={16} />}
-                    >
+                    <ActionButton onClick={() => setAddDialogOpen(true)} icon={<Plus size={16} />}>
                         Add Rule
                     </ActionButton>
                 </div>
@@ -311,20 +328,23 @@ const IptablesPanel: React.FC = () => {
             ) : (
                 /* Chain Sections */
                 <div className="space-y-4">
-                    {chainOrder.filter(chain => rulesByChain[chain] || true).map(chain => (
-                        <ChainSection
-                            key={chain}
-                            chain={chain}
-                            rules={rulesByChain[chain] || []}
-                            onDelete={handleDeleteClick}
-                        />
-                    ))}
+                    {chainOrder
+                        .filter((chain) => rulesByChain[chain] || true)
+                        .map((chain) => (
+                            <ChainSection
+                                key={chain}
+                                chain={chain}
+                                rules={rulesByChain[chain] || []}
+                                onDelete={handleDeleteClick}
+                            />
+                        ))}
                 </div>
             )}
 
             {/* Info Note */}
             <Alert variant="info" icon={Terminal} title="Advanced:">
-                iptables rules are low-level firewall rules. Click "Save Rules" to persist changes across reboots.
+                iptables rules are low-level firewall rules. Click "Save Rules" to persist changes
+                across reboots.
             </Alert>
 
             {/* Dialogs */}
@@ -348,11 +368,7 @@ const IptablesPanel: React.FC = () => {
 
             {/* Toast */}
             {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
+                <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
             )}
         </div>
     );

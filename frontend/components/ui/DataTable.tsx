@@ -73,9 +73,7 @@ export function DataTable<T>({
     const tableContent = (
         <div className="overflow-x-auto">
             {data.length === 0 ? (
-                <div className="py-8 text-center text-zinc-500 text-sm">
-                    {emptyMessage}
-                </div>
+                <div className="py-8 text-center text-zinc-500 text-sm">{emptyMessage}</div>
             ) : (
                 <table className="w-full text-left border-collapse table-fixed">
                     <thead>
@@ -139,20 +137,13 @@ export function DataTable<T>({
     }
 
     // Render without group header
-    return (
-        <div className="border border-border rounded-lg overflow-hidden">
-            {tableContent}
-        </div>
-    );
+    return <div className="border border-border rounded-lg overflow-hidden">{tableContent}</div>;
 }
 
 // ==================== Cell Renderers (Utility) ====================
 
 /** Badge cell renderer for status/type columns */
-export const badgeCell = (
-    value: string,
-    colorMap?: Record<string, string>
-): ReactNode => {
+export const badgeCell = (value: string, colorMap?: Record<string, string>): ReactNode => {
     const defaultColors: Record<string, string> = {
         ACCEPT: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
         DROP: 'bg-rose-500/20 text-rose-400 border-rose-500/30',

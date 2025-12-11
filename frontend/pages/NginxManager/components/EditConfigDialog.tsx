@@ -12,7 +12,12 @@ interface EditConfigDialogProps {
     onSuccess: () => void;
 }
 
-const EditConfigDialog: React.FC<EditConfigDialogProps> = ({ isOpen, onClose, hostName, onSuccess }) => {
+const EditConfigDialog: React.FC<EditConfigDialogProps> = ({
+    isOpen,
+    onClose,
+    hostName,
+    onSuccess,
+}) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -53,7 +58,9 @@ const EditConfigDialog: React.FC<EditConfigDialogProps> = ({ isOpen, onClose, ho
             onClose();
         } catch (err: any) {
             console.error('Failed to save config:', err);
-            setError('Failed to save configuration: ' + (err.response?.data?.message || err.message));
+            setError(
+                'Failed to save configuration: ' + (err.response?.data?.message || err.message)
+            );
         } finally {
             setSaving(false);
         }
@@ -75,8 +82,8 @@ const EditConfigDialog: React.FC<EditConfigDialogProps> = ({ isOpen, onClose, ho
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded p-3 mb-4 flex gap-3 text-sm text-amber-200">
                     <AlertTriangle size={18} className="shrink-0 text-amber-500" />
                     <p>
-                        Editing the Nginx configuration manually can break your website.
-                        Ensure the configuration is valid before saving.
+                        Editing the Nginx configuration manually can break your website. Ensure the
+                        configuration is valid before saving.
                     </p>
                 </div>
 

@@ -39,7 +39,7 @@ const FtpStatusPanel: React.FC<FtpStatusPanelProps> = ({ serverType, onToast }) 
             await FtpService.setEnabled(serverType, !status.running);
             onToast({
                 message: `FTP server ${!status.running ? 'started' : 'stopped'} successfully`,
-                type: 'success'
+                type: 'success',
             });
             loadStatus();
         } catch (err) {
@@ -66,7 +66,9 @@ const FtpStatusPanel: React.FC<FtpStatusPanelProps> = ({ serverType, onToast }) 
             <div className="bg-surface border border-border rounded-lg p-6 shadow-lg">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className={`p-4 rounded-full ${status.running ? 'bg-emerald-500/20' : 'bg-zinc-700'}`}>
+                        <div
+                            className={`p-4 rounded-full ${status.running ? 'bg-emerald-500/20' : 'bg-zinc-700'}`}
+                        >
                             {status.running ? (
                                 <CheckCircle size={32} className="text-emerald-400" />
                             ) : (
@@ -75,7 +77,9 @@ const FtpStatusPanel: React.FC<FtpStatusPanelProps> = ({ serverType, onToast }) 
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-zinc-100">{serverType}</h3>
-                            <p className={`text-sm font-medium ${status.running ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                            <p
+                                className={`text-sm font-medium ${status.running ? 'text-emerald-400' : 'text-zinc-500'}`}
+                            >
                                 {status.running ? 'Running' : 'Stopped'}
                             </p>
                         </div>

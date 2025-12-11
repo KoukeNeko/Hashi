@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * FTP Server 管理 REST API
- * 支援 vsftpd, proftpd, pure-ftpd
+ * FTP Server 管理 REST API 支援 vsftpd, proftpd, pure-ftpd
  */
 @RestController
 @RequestMapping("/api/v1/ftp")

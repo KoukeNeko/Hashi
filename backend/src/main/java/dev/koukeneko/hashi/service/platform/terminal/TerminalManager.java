@@ -3,9 +3,7 @@ package dev.koukeneko.hashi.service.platform.terminal;
 import org.springframework.web.socket.WebSocketSession;
 
 /**
- * 終端機管理介面
- * Linux: PTY + bash/zsh
- * Windows: PTY + cmd/powershell
+ * 終端機管理介面 Linux: PTY + bash/zsh Windows: PTY + cmd/powershell
  */
 public interface TerminalManager {
 

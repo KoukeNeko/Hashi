@@ -12,7 +12,12 @@ interface SslRequestDialogProps {
     hosts: NginxHostDTO[];
 }
 
-const SslRequestDialog: React.FC<SslRequestDialogProps> = ({ isOpen, onClose, onSuccess, hosts }) => {
+const SslRequestDialog: React.FC<SslRequestDialogProps> = ({
+    isOpen,
+    onClose,
+    onSuccess,
+    hosts,
+}) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +43,8 @@ const SslRequestDialog: React.FC<SslRequestDialogProps> = ({ isOpen, onClose, on
             onSuccess();
         } catch (err: unknown) {
             console.error('Failed to request SSL:', err);
-            const errorMessage = err instanceof Error ? err.message : 'Failed to request SSL certificate';
+            const errorMessage =
+                err instanceof Error ? err.message : 'Failed to request SSL certificate';
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -64,14 +70,16 @@ const SslRequestDialog: React.FC<SslRequestDialogProps> = ({ isOpen, onClose, on
                     <div className="bg-zinc-800/50 p-4 rounded-lg mb-6 flex items-start gap-3 text-sm text-zinc-400">
                         <Lock size={18} className="shrink-0 text-emerald-500 mt-0.5" />
                         <p>
-                            Get a free HTTPS certificate from Let's Encrypt using Certbot.
-                            The certificate will be automatically installed and renewed.
+                            Get a free HTTPS certificate from Let's Encrypt using Certbot. The
+                            certificate will be automatically installed and renewed.
                         </p>
                     </div>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <label className="block text-xs font-medium text-zinc-400">Domain Name</label>
+                            <label className="block text-xs font-medium text-zinc-400">
+                                Domain Name
+                            </label>
                             <div className="relative">
                                 <Globe size={16} className="absolute left-3 top-3 text-zinc-500" />
                                 <select
@@ -80,8 +88,10 @@ const SslRequestDialog: React.FC<SslRequestDialogProps> = ({ isOpen, onClose, on
                                     className="w-full bg-zinc-900 border border-zinc-700 rounded-md py-2.5 pl-10 pr-4 text-sm text-zinc-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 appearance-none"
                                     required
                                 >
-                                    <option value="" disabled>Select a domain</option>
-                                    {hosts.map(host => (
+                                    <option value="" disabled>
+                                        Select a domain
+                                    </option>
+                                    {hosts.map((host) => (
                                         <option key={host.name} value={host.domain}>
                                             {host.domain}
                                         </option>

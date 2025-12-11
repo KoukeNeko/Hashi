@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { PageHeader, Tabs, ConfirmDialog, Toast, ActionButton, type TabItem } from '../../components';
+import {
+    PageHeader,
+    Tabs,
+    ConfirmDialog,
+    Toast,
+    ActionButton,
+    type TabItem,
+} from '../../components';
 import { UserManagementService } from '../../services/api';
 import { UserInfo, GroupInfo } from '../../types';
 import { Users, UsersRound, Plus, Loader2, Trash2 } from 'lucide-react';
@@ -11,15 +18,14 @@ import {
     ManageMembersDialog,
     EditUserDialog,
     UsersTab,
-    GroupsTab
+    GroupsTab,
 } from './components/UserDialogs';
 
 // ==================== Tab Configuration ====================
 const tabs: TabItem[] = [
     { id: 'users', label: 'Users', icon: Users },
-    { id: 'groups', label: 'Groups', icon: UsersRound }
+    { id: 'groups', label: 'Groups', icon: UsersRound },
 ];
-
 
 // ==================== Main Component ====================
 const UserManager: React.FC = () => {
@@ -75,7 +81,12 @@ const UserManager: React.FC = () => {
     }, []);
 
     // User handlers
-    const handleCreateUser = async (username: string, password: string, shell: string, createHome: boolean) => {
+    const handleCreateUser = async (
+        username: string,
+        password: string,
+        shell: string,
+        createHome: boolean
+    ) => {
         await UserManagementService.createUser({ username, password, shell, createHome });
         setToast({ message: `User "${username}" created successfully`, type: 'success' });
         loadUsers();
@@ -119,7 +130,14 @@ const UserManager: React.FC = () => {
         }
     };
 
-    const handleEditUser = async (updates: { uid?: number; gid?: number; shell?: string; gecos?: string; homeDir?: string; expireDate?: string | null }) => {
+    const handleEditUser = async (updates: {
+        uid?: number;
+        gid?: number;
+        shell?: string;
+        gecos?: string;
+        homeDir?: string;
+        expireDate?: string | null;
+    }) => {
         if (!selectedUser) return;
 
         try {
@@ -136,10 +154,17 @@ const UserManager: React.FC = () => {
                 await UserManagementService.changeGecos(selectedUser.username, updates.gecos);
             }
             if (updates.homeDir) {
-                await UserManagementService.changeHomeDir(selectedUser.username, updates.homeDir, false);
+                await UserManagementService.changeHomeDir(
+                    selectedUser.username,
+                    updates.homeDir,
+                    false
+                );
             }
             if (updates.expireDate !== undefined) {
-                await UserManagementService.setExpireDate(selectedUser.username, updates.expireDate);
+                await UserManagementService.setExpireDate(
+                    selectedUser.username,
+                    updates.expireDate
+                );
             }
 
             setToast({ message: `User "${selectedUser.username}" updated`, type: 'success' });
@@ -188,7 +213,11 @@ const UserManager: React.FC = () => {
                 description="Manage system users, groups, and permissions."
                 actions={
                     <ActionButton
-                        onClick={() => activeTab === 'users' ? setCreateUserDialogOpen(true) : setCreateGroupDialogOpen(true)}
+                        onClick={() =>
+                            activeTab === 'users'
+                                ? setCreateUserDialogOpen(true)
+                                : setCreateGroupDialogOpen(true)
+                        }
                         icon={<Plus size={16} />}
                         className="shadow-lg"
                     >
@@ -288,7 +317,8 @@ const UserManager: React.FC = () => {
                 message={
                     selectedGroup ? (
                         <>
-                            Are you sure you want to delete group <span className="text-white font-bold">{selectedGroup.name}</span>?
+                            Are you sure you want to delete group{' '}
+                            <span className="text-white font-bold">{selectedGroup.name}</span>?
                             <p className="text-xs text-zinc-500 mt-2">
                                 GID: {selectedGroup.gid} | Members: {selectedGroup.members.length}
                             </p>
@@ -301,11 +331,7 @@ const UserManager: React.FC = () => {
 
             {/* Toast */}
             {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
+                <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
             )}
         </div>
     );

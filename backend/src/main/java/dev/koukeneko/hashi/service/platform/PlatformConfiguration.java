@@ -22,8 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 平台特定服務的 Spring 設定
- * 根據目前平台自動註冊對應的實作
+ * 平台特定服務的 Spring 設定 根據目前平台自動註冊對應的實作
  */
 @Configuration
 @Slf4j

@@ -26,7 +26,7 @@ export const FormInput: React.FC<FormInputProps> = ({
     hint,
     error,
     disabled,
-    className = ''
+    className = '',
 }) => (
     <div className={className}>
         <label className="block text-xs font-medium text-zinc-400 mb-1">
@@ -64,7 +64,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
     options,
     required,
     disabled,
-    className = ''
+    className = '',
 }) => (
     <div className={className}>
         <label className="block text-xs font-medium text-zinc-400 mb-1">
@@ -77,8 +77,10 @@ export const FormSelect: React.FC<FormSelectProps> = ({
             disabled={disabled}
             className="w-full bg-zinc-800 border border-border rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 disabled:opacity-50"
         >
-            {options.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {options.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                </option>
             ))}
         </select>
     </div>
@@ -102,12 +104,12 @@ export const FormCheckbox: React.FC<FormCheckboxProps> = ({
     onChange,
     disabled,
     color = 'emerald',
-    className = ''
+    className = '',
 }) => {
     const colorClasses = {
         emerald: 'text-emerald-600 focus:ring-emerald-500',
         rose: 'text-rose-600 focus:ring-rose-500',
-        amber: 'text-amber-600 focus:ring-amber-500'
+        amber: 'text-amber-600 focus:ring-amber-500',
     };
 
     return (
@@ -163,19 +165,19 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
     icon,
     loadingIcon,
     children,
-    className = ''
+    className = '',
 }) => {
     const variantClasses = {
         primary: 'bg-emerald-600 hover:bg-emerald-500 text-white',
         secondary: 'bg-zinc-700 hover:bg-zinc-600 text-white',
         danger: 'bg-rose-600 hover:bg-rose-500 text-white',
         warning: 'bg-amber-600 hover:bg-amber-500 text-white',
-        ghost: 'text-zinc-400 hover:text-white'
+        ghost: 'text-zinc-400 hover:text-white',
     };
 
     const sizeClasses = {
         sm: 'px-3 py-1.5 text-xs',
-        md: 'px-4 py-2 text-sm'
+        md: 'px-4 py-2 text-sm',
     };
 
     return (
@@ -234,7 +236,7 @@ export function FormDialog<T extends object>({
     initialValues,
     validate,
     children,
-    header
+    header,
 }: FormDialogProps<T>) {
     const [values, setValues] = useState<Record<string, string | boolean>>({});
     const [saving, setSaving] = useState(false);
@@ -243,12 +245,13 @@ export function FormDialog<T extends object>({
     useEffect(() => {
         if (isOpen) {
             const vals: Record<string, string | boolean> = {};
-            fields.forEach(field => {
+            fields.forEach((field) => {
                 const initVal = initialValues?.[field.name as keyof T];
                 if (initVal !== undefined) {
                     vals[field.name] = initVal as string | boolean;
                 } else {
-                    vals[field.name] = field.defaultValue ?? (field.type === 'checkbox' ? false : '');
+                    vals[field.name] =
+                        field.defaultValue ?? (field.type === 'checkbox' ? false : '');
                 }
             });
             setValues(vals);
@@ -256,12 +259,15 @@ export function FormDialog<T extends object>({
         }
     }, [isOpen, fields, initialValues]);
 
-    const handleChange = useCallback((name: string, value: string | boolean, transform?: (v: string) => string) => {
-        setValues(prev => ({
-            ...prev,
-            [name]: typeof value === 'string' && transform ? transform(value) : value
-        }));
-    }, []);
+    const handleChange = useCallback(
+        (name: string, value: string | boolean, transform?: (v: string) => string) => {
+            setValues((prev) => ({
+                ...prev,
+                [name]: typeof value === 'string' && transform ? transform(value) : value,
+            }));
+        },
+        []
+    );
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -298,23 +304,18 @@ export function FormDialog<T extends object>({
     };
 
     return (
-        <Dialog
-            isOpen={isOpen}
-            onClose={onClose}
-            title={title}
-            titleIcon={titleIcon}
-        >
+        <Dialog isOpen={isOpen} onClose={onClose} title={title} titleIcon={titleIcon}>
             <form onSubmit={handleSubmit}>
                 <DialogBody>
                     {header}
                     {error && <FormError message={error} />}
-                    {fields.map(field => {
+                    {fields.map((field) => {
                         if (field.type === 'select') {
                             return (
                                 <FormSelect
                                     key={field.name}
                                     label={field.label}
-                                    value={values[field.name] as string || ''}
+                                    value={(values[field.name] as string) || ''}
                                     onChange={(v) => handleChange(field.name, v)}
                                     options={field.options || []}
                                     required={field.required}
@@ -327,7 +328,7 @@ export function FormDialog<T extends object>({
                                     key={field.name}
                                     id={field.name}
                                     label={field.label}
-                                    checked={values[field.name] as boolean || false}
+                                    checked={(values[field.name] as boolean) || false}
                                     onChange={(v) => handleChange(field.name, v)}
                                 />
                             );
@@ -337,7 +338,7 @@ export function FormDialog<T extends object>({
                                 key={field.name}
                                 label={field.label}
                                 type={field.type || 'text'}
-                                value={values[field.name] as string || ''}
+                                value={(values[field.name] as string) || ''}
                                 onChange={(v) => handleChange(field.name, v, field.transform)}
                                 placeholder={field.placeholder}
                                 required={field.required}

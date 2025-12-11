@@ -1,85 +1,100 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hashi Dashboard</title>
-    <!-- Polyfill for crypto.randomUUID (Safari < 15.4) -->
-    <script>
-      (function() {
-        if (typeof window !== 'undefined' && window.crypto && !window.crypto.randomUUID) {
-          window.crypto.randomUUID = function() {
-            // RFC 4122 compliant UUID v4 generator
-            var bytes = window.crypto.getRandomValues(new Uint8Array(16));
-            // Set version to 4 (bits 12-15 of time_hi_and_version)
-            bytes[6] = (bytes[6] & 0x0f) | 0x40;
-            // Set variant to RFC 4122 (bits 6-7 of clock_seq_hi_and_reserved)
-            bytes[8] = (bytes[8] & 0x3f) | 0x80;
-            
-            var hex = [];
-            for (var i = 0; i < 16; i++) {
-              hex.push(bytes[i].toString(16).padStart(2, '0'));
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Hashi Dashboard</title>
+        <!-- Polyfill for crypto.randomUUID (Safari < 15.4) -->
+        <script>
+            (function () {
+                if (typeof window !== 'undefined' && window.crypto && !window.crypto.randomUUID) {
+                    window.crypto.randomUUID = function () {
+                        // RFC 4122 compliant UUID v4 generator
+                        var bytes = window.crypto.getRandomValues(new Uint8Array(16));
+                        // Set version to 4 (bits 12-15 of time_hi_and_version)
+                        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+                        // Set variant to RFC 4122 (bits 6-7 of clock_seq_hi_and_reserved)
+                        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+                        var hex = [];
+                        for (var i = 0; i < 16; i++) {
+                            hex.push(bytes[i].toString(16).padStart(2, '0'));
+                        }
+                        return (
+                            hex.slice(0, 4).join('') +
+                            '-' +
+                            hex.slice(4, 6).join('') +
+                            '-' +
+                            hex.slice(6, 8).join('') +
+                            '-' +
+                            hex.slice(8, 10).join('') +
+                            '-' +
+                            hex.slice(10, 16).join('')
+                        );
+                    };
+                }
+            })();
+        </script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#10b981', // Emerald 500
+                            primaryDark: '#047857', // Emerald 700
+                            surface: '#18181b', // Zinc 900
+                            background: '#09090b', // Zinc 950
+                            border: '#27272a', // Zinc 800
+                        },
+                        fontFamily: {
+                            mono: [
+                                'ui-monospace',
+                                'SFMono-Regular',
+                                'Menlo',
+                                'Monaco',
+                                'Consolas',
+                                'Liberation Mono',
+                                'Courier New',
+                                'monospace',
+                            ],
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            /* Custom scrollbar for a sleeker look */
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
             }
-            return hex.slice(0, 4).join('') + '-' +
-                   hex.slice(4, 6).join('') + '-' +
-                   hex.slice(6, 8).join('') + '-' +
-                   hex.slice(8, 10).join('') + '-' +
-                   hex.slice(10, 16).join('');
-          };
-        }
-      })();
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: '#10b981', // Emerald 500
-              primaryDark: '#047857', // Emerald 700
-              surface: '#18181b', // Zinc 900
-              background: '#09090b', // Zinc 950
-              border: '#27272a', // Zinc 800
-            },
-            fontFamily: {
-              mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
+            ::-webkit-scrollbar-track {
+                background: #09090b;
             }
-          }
-        }
-      }
-    </script>
-    <style>
-      /* Custom scrollbar for a sleeker look */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #09090b; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #27272a; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #3f3f46; 
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.1"
-  }
-}
-</script>
-</head>
-  <body class="bg-background text-zinc-300 antialiased overflow-hidden">
-    <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+            ::-webkit-scrollbar-thumb {
+                background: #27272a;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #3f3f46;
+            }
+        </style>
+        <script type="importmap">
+            {
+                "imports": {
+                    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+                    "react": "https://aistudiocdn.com/react@^19.2.1",
+                    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+                    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+                    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+                    "recharts": "https://aistudiocdn.com/recharts@^3.5.1"
+                }
+            }
+        </script>
+    </head>
+    <body class="bg-background text-zinc-300 antialiased overflow-hidden">
+        <div id="root"></div>
+        <script type="module" src="/index.tsx"></script>
+    </body>
 </html>

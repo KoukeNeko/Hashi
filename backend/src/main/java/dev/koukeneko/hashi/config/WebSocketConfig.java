@@ -7,10 +7,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
 
-
 @Configuration
 @EnableWebSocketMessageBroker // 啟用 STOMP (給 Dashboard 用)
-@EnableWebSocket              // 啟用 Raw WebSocket (給 Terminal 用)
+@EnableWebSocket // 啟用 Raw WebSocket (給 Terminal 用)
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSocketConfigurer {
 
@@ -45,4 +44,3 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSoc
                 .setAllowedOrigins("*");
     }
 }
-

@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * UFW 防火牆管理 Controller
- * 提供防火牆狀態控制與規則管理
+ * UFW 防火牆管理 Controller 提供防火牆狀態控制與規則管理
  */
 @RestController
 @RequestMapping("/api/v1/firewall")
@@ -34,7 +33,8 @@ public class FirewallController {
     /**
      * 設定防火牆啟用狀態
      *
-     * @param enabled 是否啟用
+     * @param enabled
+     *            是否啟用
      * @return 成功回傳 200 OK
      */
     @PostMapping("/status")
@@ -56,8 +56,10 @@ public class FirewallController {
     /**
      * 新增允許連線規則
      *
-     * @param port     通訊埠
-     * @param protocol 協定 (tcp/udp)
+     * @param port
+     *            通訊埠
+     * @param protocol
+     *            協定 (tcp/udp)
      * @return 成功回傳 200 OK
      */
     @PostMapping("/allow")
@@ -70,7 +72,8 @@ public class FirewallController {
     /**
      * 刪除指定防火牆規則
      *
-     * @param index 規則索引
+     * @param index
+     *            規則索引
      * @return 成功回傳 200 OK
      */
     @DeleteMapping("/{index}")

@@ -37,12 +37,16 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
         loadUsers();
     }, [serverType]);
 
-    const handleAddUser = async (values: { username: string; password: string; homeDir: string }) => {
+    const handleAddUser = async (values: {
+        username: string;
+        password: string;
+        homeDir: string;
+    }) => {
         try {
             const request: CreateFtpUserRequest = {
                 username: values.username.trim(),
                 password: values.password,
-                homeDir: values.homeDir?.trim() || undefined
+                homeDir: values.homeDir?.trim() || undefined,
             };
             await FtpService.addUser(serverType, request);
             onToast({ message: `User "${values.username}" created successfully`, type: 'success' });
@@ -58,15 +62,22 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
         setEditDialogOpen(true);
     };
 
-    const handleEditUser = async (values: { password?: string; homeDir: string; moveContent: boolean }) => {
+    const handleEditUser = async (values: {
+        password?: string;
+        homeDir: string;
+        moveContent: boolean;
+    }) => {
         if (!userToEdit) return;
         try {
             await FtpService.updateUser(serverType, userToEdit.username, {
                 password: values.password,
                 homeDir: values.homeDir,
-                moveContent: values.moveContent
+                moveContent: values.moveContent,
             });
-            onToast({ message: `User "${userToEdit.username}" updated successfully`, type: 'success' });
+            onToast({
+                message: `User "${userToEdit.username}" updated successfully`,
+                type: 'success',
+            });
             loadUsers();
             setEditDialogOpen(false);
             setUserToEdit(null);
@@ -140,18 +151,25 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
                             </tr>
                         </thead>
                         <tbody className="text-sm divide-y divide-border">
-                            {users.map(user => (
-                                <tr key={user.username} className="hover:bg-zinc-800/50 transition-colors">
+                            {users.map((user) => (
+                                <tr
+                                    key={user.username}
+                                    className="hover:bg-zinc-800/50 transition-colors"
+                                >
                                     <td className="p-4">
                                         <div className="flex items-center gap-2">
                                             <User size={16} className="text-zinc-500" />
-                                            <span className="font-medium text-zinc-200">{user.username}</span>
+                                            <span className="font-medium text-zinc-200">
+                                                {user.username}
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="p-4">
                                         <div className="flex items-center gap-2 text-zinc-400">
                                             <FolderOpen size={14} />
-                                            <span className="font-mono text-xs">{user.homeDir}</span>
+                                            <span className="font-mono text-xs">
+                                                {user.homeDir}
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="p-4 text-right">
@@ -190,7 +208,12 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
                 fields={[
                     { name: 'username', label: 'Username', required: true, placeholder: 'ftpuser' },
                     { name: 'password', label: 'Password', type: 'password', required: true },
-                    { name: 'homeDir', label: 'Home Directory', placeholder: '/home/ftpuser', hint: 'Leave empty for default' }
+                    {
+                        name: 'homeDir',
+                        label: 'Home Directory',
+                        placeholder: '/home/ftpuser',
+                        hint: 'Leave empty for default',
+                    },
                 ]}
             />
 
@@ -207,12 +230,27 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
                 submitText="Update User"
                 initialValues={{
                     homeDir: userToEdit?.homeDir || '',
-                    moveContent: false
+                    moveContent: false,
                 }}
                 fields={[
-                    { name: 'password', label: 'New Password', type: 'password', placeholder: 'Leave empty to keep current', hint: 'Optional' },
-                    { name: 'homeDir', label: 'Home Directory', required: true, placeholder: '/home/ftpuser' },
-                    { name: 'moveContent', label: 'Move existing content to new home directory', type: 'checkbox' }
+                    {
+                        name: 'password',
+                        label: 'New Password',
+                        type: 'password',
+                        placeholder: 'Leave empty to keep current',
+                        hint: 'Optional',
+                    },
+                    {
+                        name: 'homeDir',
+                        label: 'Home Directory',
+                        required: true,
+                        placeholder: '/home/ftpuser',
+                    },
+                    {
+                        name: 'moveContent',
+                        label: 'Move existing content to new home directory',
+                        type: 'checkbox',
+                    },
                 ]}
             />
 
@@ -226,10 +264,21 @@ const FtpUsersPanel: React.FC<FtpUsersPanelProps> = ({ serverType, onToast }) =>
                     }}
                     onConfirm={handleDeleteConfirm}
                     title="Delete FTP User"
-                    message={<>Are you sure you want to delete user <strong>{userToDelete.username}</strong>?</>}
+                    message={
+                        <>
+                            Are you sure you want to delete user{' '}
+                            <strong>{userToDelete.username}</strong>?
+                        </>
+                    }
                     confirmText="Delete"
                     confirmColor="red"
-                    confirmIcon={deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                    confirmIcon={
+                        deleting ? (
+                            <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                            <Trash2 size={16} />
+                        )
+                    }
                 />
             )}
         </div>

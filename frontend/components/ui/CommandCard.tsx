@@ -67,9 +67,7 @@ export const CommandCard: React.FC<CommandCardProps> = ({ stepNumber, title, com
                 </button>
             </div>
             <div className="p-4">
-                <code className="text-sm font-mono text-emerald-400 break-all">
-                    {command}
-                </code>
+                <code className="text-sm font-mono text-emerald-400 break-all">{command}</code>
             </div>
         </div>
     );

@@ -11,8 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * 平台資訊 API
- * 讓前端知道後端運行在哪個作業系統
+ * 平台資訊 API 讓前端知道後端運行在哪個作業系統
  */
 @RestController
 @RequestMapping("/api/v1/platform")
@@ -22,13 +21,7 @@ public class PlatformController {
     /**
      * 取得目前平台資訊
      * <p>
-     * 回傳範例：
-     * {
-     * "platform": "LINUX",
-     * "osName": "Linux",
-     * "osVersion": "5.15.0-generic",
-     * "osArch": "amd64"
-     * }
+     * 回傳範例： { "platform": "LINUX", "osName": "Linux", "osVersion": "5.15.0-generic", "osArch": "amd64" }
      * </p>
      *
      * @return 平台資訊 Map

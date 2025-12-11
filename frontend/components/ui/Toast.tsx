@@ -16,7 +16,7 @@ export const Toast: React.FC<ToastProps> = ({
     type,
     onClose,
     autoClose = true,
-    position = 'fixed'
+    position = 'fixed',
 }) => {
     useEffect(() => {
         if (autoClose) {
@@ -25,18 +25,19 @@ export const Toast: React.FC<ToastProps> = ({
         }
     }, [onClose, autoClose]);
 
-    const positionClasses = position === 'fixed'
-        ? 'fixed bottom-4 right-4 z-50'
-        : '';
+    const positionClasses = position === 'fixed' ? 'fixed bottom-4 right-4 z-50' : '';
 
-    const typeClasses = type === 'success'
-        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-        : 'bg-rose-500/20 border-rose-500/50 text-rose-300';
+    const typeClasses =
+        type === 'success'
+            ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+            : 'bg-rose-500/20 border-rose-500/50 text-rose-300';
 
     const Icon = type === 'success' ? CheckCircle : AlertCircle;
 
     return (
-        <div className={`${positionClasses} flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border animate-fade-in ${typeClasses}`}>
+        <div
+            className={`${positionClasses} flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border animate-fade-in ${typeClasses}`}
+        >
             <Icon size={18} />
             <span className="text-sm font-medium">{message}</span>
             <button onClick={onClose} className="ml-2 hover:opacity-70">

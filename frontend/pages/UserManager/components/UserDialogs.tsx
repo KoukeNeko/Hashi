@@ -2,13 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { UserInfo, GroupInfo } from '../../../types';
 import { UserManagementService } from '../../../services/api';
 import {
-    Users, UsersRound, Trash2, Key, Terminal, Save,
-    Loader2, Shield, Home, UserPlus, UserMinus, Lock, Unlock, Edit3
+    Users,
+    UsersRound,
+    Trash2,
+    Key,
+    Terminal,
+    Save,
+    Loader2,
+    Shield,
+    Home,
+    UserPlus,
+    UserMinus,
+    Lock,
+    Unlock,
+    Edit3,
 } from 'lucide-react';
 import {
-    Dialog, DialogBody, DialogFooter,
-    ConfirmDialog, FormInput, FormSelect, FormCheckbox,
-    FormError, ActionButton, FormDialog
+    Dialog,
+    DialogBody,
+    DialogFooter,
+    ConfirmDialog,
+    FormInput,
+    FormSelect,
+    FormCheckbox,
+    FormError,
+    ActionButton,
+    FormDialog,
 } from '../../../components/ui';
 
 // ==================== Shell Options ====================
@@ -17,7 +36,7 @@ export const defaultShells = [
     { value: '/bin/sh', label: '/bin/sh' },
     { value: '/bin/zsh', label: '/bin/zsh' },
     { value: '/usr/bin/fish', label: '/usr/bin/fish' },
-    { value: '/sbin/nologin', label: '/sbin/nologin' }
+    { value: '/sbin/nologin', label: '/sbin/nologin' },
 ];
 
 // ==================== Create User Dialog ====================
@@ -32,7 +51,12 @@ interface CreateUserForm {
 export const CreateUserDialog: React.FC<{
     isOpen: boolean;
     onClose: () => void;
-    onSave: (username: string, password: string, shell: string, createHome: boolean) => Promise<void>;
+    onSave: (
+        username: string,
+        password: string,
+        shell: string,
+        createHome: boolean
+    ) => Promise<void>;
 }> = ({ isOpen, onClose, onSave }) => {
     const validate = (values: CreateUserForm): string | null => {
         if (!/^[a-z_][a-z0-9_-]*$/.test(values.username)) {
@@ -60,11 +84,41 @@ export const CreateUserDialog: React.FC<{
             titleIcon={<UserPlus size={20} className="text-emerald-400" />}
             submitText="Create User"
             fields={[
-                { name: 'username', label: 'Username', required: true, placeholder: 'johndoe', hint: 'Lowercase letters, numbers, underscores, hyphens', transform: (v) => v.toLowerCase() },
-                { name: 'password', label: 'Password', type: 'password', required: true, placeholder: '••••••••' },
-                { name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true, placeholder: '••••••••' },
-                { name: 'shell', label: 'Shell', type: 'select', options: defaultShells, defaultValue: '/bin/bash' },
-                { name: 'createHome', label: 'Create home directory', type: 'checkbox', defaultValue: true }
+                {
+                    name: 'username',
+                    label: 'Username',
+                    required: true,
+                    placeholder: 'johndoe',
+                    hint: 'Lowercase letters, numbers, underscores, hyphens',
+                    transform: (v) => v.toLowerCase(),
+                },
+                {
+                    name: 'password',
+                    label: 'Password',
+                    type: 'password',
+                    required: true,
+                    placeholder: '••••••••',
+                },
+                {
+                    name: 'confirmPassword',
+                    label: 'Confirm Password',
+                    type: 'password',
+                    required: true,
+                    placeholder: '••••••••',
+                },
+                {
+                    name: 'shell',
+                    label: 'Shell',
+                    type: 'select',
+                    options: defaultShells,
+                    defaultValue: '/bin/bash',
+                },
+                {
+                    name: 'createHome',
+                    label: 'Create home directory',
+                    type: 'checkbox',
+                    defaultValue: true,
+                },
             ]}
             validate={validate}
         />
@@ -105,12 +159,25 @@ export const ChangePasswordDialog: React.FC<{
             submitIcon={<Key size={16} />}
             header={
                 <p className="text-sm text-zinc-400 mb-2">
-                    Change password for user: <span className="text-white font-medium">{username}</span>
+                    Change password for user:{' '}
+                    <span className="text-white font-medium">{username}</span>
                 </p>
             }
             fields={[
-                { name: 'password', label: 'New Password', type: 'password', required: true, placeholder: '••••••••' },
-                { name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true, placeholder: '••••••••' }
+                {
+                    name: 'password',
+                    label: 'New Password',
+                    type: 'password',
+                    required: true,
+                    placeholder: '••••••••',
+                },
+                {
+                    name: 'confirmPassword',
+                    label: 'Confirm Password',
+                    type: 'password',
+                    required: true,
+                    placeholder: '••••••••',
+                },
             ]}
             validate={validate}
         />
@@ -143,7 +210,14 @@ export const CreateGroupDialog: React.FC<{
             titleIcon={<UsersRound size={20} className="text-emerald-400" />}
             submitText="Create Group"
             fields={[
-                { name: 'name', label: 'Group Name', required: true, placeholder: 'developers', hint: 'Lowercase letters, numbers, underscores, hyphens', transform: (v) => v.toLowerCase() }
+                {
+                    name: 'name',
+                    label: 'Group Name',
+                    required: true,
+                    placeholder: 'developers',
+                    hint: 'Lowercase letters, numbers, underscores, hyphens',
+                    transform: (v) => v.toLowerCase(),
+                },
             ]}
             validate={validate}
         />
@@ -173,7 +247,8 @@ export const DeleteUserDialog: React.FC<{
             title="Delete User"
             message={
                 <>
-                    Are you sure you want to delete user <span className="text-white font-bold">{user.username}</span>?
+                    Are you sure you want to delete user{' '}
+                    <span className="text-white font-bold">{user.username}</span>?
                     <p className="text-xs text-zinc-500 mt-2">
                         UID: {user.uid} | Home: {user.homeDir}
                     </p>
@@ -213,7 +288,7 @@ export const ManageMembersDialog: React.FC<{
 
     if (!group) return null;
 
-    const nonMembers = users.filter(u => !group.members.includes(u.username));
+    const nonMembers = users.filter((u) => !group.members.includes(u.username));
 
     const handleAdd = async () => {
         if (!selectedUser) return;
@@ -253,7 +328,10 @@ export const ManageMembersDialog: React.FC<{
                             onChange={setSelectedUser}
                             options={[
                                 { value: '', label: 'Select a user...' },
-                                ...nonMembers.map(u => ({ value: u.username, label: u.username }))
+                                ...nonMembers.map((u) => ({
+                                    value: u.username,
+                                    label: u.username,
+                                })),
                             ]}
                         />
                     </div>
@@ -278,7 +356,7 @@ export const ManageMembersDialog: React.FC<{
                         <p className="text-sm text-zinc-500 italic">No members in this group</p>
                     ) : (
                         <div className="space-y-1 max-h-48 overflow-y-auto">
-                            {group.members.map(member => (
+                            {group.members.map((member) => (
                                 <div
                                     key={member}
                                     className="flex items-center justify-between p-2 bg-zinc-800/50 rounded border border-border"
@@ -356,9 +434,9 @@ export const EditUserDialog: React.FC<{
     if (!user) return null;
 
     // 建立 GID 選項 (群組列表)
-    const gidOptions = groups.map(g => ({
+    const gidOptions = groups.map((g) => ({
         value: g.gid.toString(),
-        label: `${g.name} (${g.gid})`
+        label: `${g.name} (${g.gid})`,
     }));
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -382,7 +460,14 @@ export const EditUserDialog: React.FC<{
         setSaving(true);
 
         try {
-            const updates: { uid?: number; gid?: number; shell?: string; gecos?: string; homeDir?: string; expireDate?: string | null } = {};
+            const updates: {
+                uid?: number;
+                gid?: number;
+                shell?: string;
+                gecos?: string;
+                homeDir?: string;
+                expireDate?: string | null;
+            } = {};
 
             if (newUid !== user.uid) updates.uid = newUid;
             if (newGid !== user.gid) updates.gid = newGid;
@@ -447,7 +532,7 @@ export const EditUserDialog: React.FC<{
                         label="Shell"
                         value={shell}
                         onChange={setShell}
-                        options={shells.map(s => ({ value: s, label: s }))}
+                        options={shells.map((s) => ({ value: s, label: s }))}
                     />
 
                     <FormInput
@@ -471,7 +556,7 @@ export const EditUserDialog: React.FC<{
                                 Groups
                             </label>
                             <div className="flex flex-wrap gap-1">
-                                {user.groups.map(g => (
+                                {user.groups.map((g) => (
                                     <span key={g} className="text-xs bg-zinc-700 px-2 py-1 rounded">
                                         {g}
                                     </span>
@@ -511,7 +596,7 @@ export const UsersTab: React.FC<{
 }> = ({ users, loading, onChangePassword, onDeleteUser, onLockUser, onUnlockUser, onEditUser }) => {
     // 過濾掉系統使用者 (UID < 1000)，可以選擇顯示
     const [showSystem, setShowSystem] = useState(false);
-    const displayUsers = showSystem ? users : users.filter(u => u.uid >= 1000 || u.uid === 0);
+    const displayUsers = showSystem ? users : users.filter((u) => u.uid >= 1000 || u.uid === 0);
 
     if (loading) {
         return (
@@ -554,21 +639,33 @@ export const UsersTab: React.FC<{
                         </tr>
                     </thead>
                     <tbody className="text-sm divide-y divide-border">
-                        {displayUsers.map(user => (
-                            <tr key={user.username} className="hover:bg-zinc-800/50 transition-colors">
+                        {displayUsers.map((user) => (
+                            <tr
+                                key={user.username}
+                                className="hover:bg-zinc-800/50 transition-colors"
+                            >
                                 <td className="p-4">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${user.uid === 0
-                                                ? 'bg-rose-500/20 text-rose-400'
-                                                : user.uid < 1000
-                                                    ? 'bg-amber-500/20 text-amber-400'
-                                                    : 'bg-emerald-500/20 text-emerald-400'
-                                            }`}>
-                                            {user.uid === 0 ? <Shield size={16} /> : <Users size={16} />}
+                                        <div
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                                user.uid === 0
+                                                    ? 'bg-rose-500/20 text-rose-400'
+                                                    : user.uid < 1000
+                                                      ? 'bg-amber-500/20 text-amber-400'
+                                                      : 'bg-emerald-500/20 text-emerald-400'
+                                            }`}
+                                        >
+                                            {user.uid === 0 ? (
+                                                <Shield size={16} />
+                                            ) : (
+                                                <Users size={16} />
+                                            )}
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-medium text-zinc-100">{user.username}</span>
+                                                <span className="font-medium text-zinc-100">
+                                                    {user.username}
+                                                </span>
                                                 {user.uid === 0 && (
                                                     <span className="text-xs bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">
                                                         root
@@ -586,7 +683,9 @@ export const UsersTab: React.FC<{
                                                 )}
                                             </div>
                                             {user.gecos && (
-                                                <span className="text-xs text-zinc-500">{user.gecos}</span>
+                                                <span className="text-xs text-zinc-500">
+                                                    {user.gecos}
+                                                </span>
                                             )}
                                         </div>
                                     </div>
@@ -609,13 +708,18 @@ export const UsersTab: React.FC<{
                                 <td className="p-4">
                                     {user.groups && user.groups.length > 0 && (
                                         <div className="flex flex-wrap gap-1">
-                                            {user.groups.slice(0, 3).map(g => (
-                                                <span key={g} className="text-xs bg-zinc-700 px-1.5 py-0.5 rounded">
+                                            {user.groups.slice(0, 3).map((g) => (
+                                                <span
+                                                    key={g}
+                                                    className="text-xs bg-zinc-700 px-1.5 py-0.5 rounded"
+                                                >
                                                     {g}
                                                 </span>
                                             ))}
                                             {user.groups.length > 3 && (
-                                                <span className="text-xs text-zinc-500">+{user.groups.length - 3}</span>
+                                                <span className="text-xs text-zinc-500">
+                                                    +{user.groups.length - 3}
+                                                </span>
                                             )}
                                         </div>
                                     )}
@@ -687,7 +791,7 @@ export const GroupsTab: React.FC<{
 }> = ({ groups, loading, onManageMembers, onDeleteGroup }) => {
     // 過濾掉系統群組 (GID < 1000)，可以選擇顯示
     const [showSystem, setShowSystem] = useState(false);
-    const displayGroups = showSystem ? groups : groups.filter(g => g.gid >= 1000);
+    const displayGroups = showSystem ? groups : groups.filter((g) => g.gid >= 1000);
 
     if (loading) {
         return (
@@ -728,18 +832,23 @@ export const GroupsTab: React.FC<{
                         </tr>
                     </thead>
                     <tbody className="text-sm divide-y divide-border">
-                        {displayGroups.map(group => (
+                        {displayGroups.map((group) => (
                             <tr key={group.name} className="hover:bg-zinc-800/50 transition-colors">
                                 <td className="p-4">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${group.gid < 1000
-                                                ? 'bg-amber-500/20 text-amber-400'
-                                                : 'bg-blue-500/20 text-blue-400'
-                                            }`}>
+                                        <div
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                                group.gid < 1000
+                                                    ? 'bg-amber-500/20 text-amber-400'
+                                                    : 'bg-blue-500/20 text-blue-400'
+                                            }`}
+                                        >
                                             <UsersRound size={16} />
                                         </div>
                                         <div>
-                                            <span className="font-medium text-zinc-100">{group.name}</span>
+                                            <span className="font-medium text-zinc-100">
+                                                {group.name}
+                                            </span>
                                             {group.gid < 1000 && (
                                                 <span className="ml-2 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
                                                     system
@@ -748,16 +857,19 @@ export const GroupsTab: React.FC<{
                                         </div>
                                     </div>
                                 </td>
-                                <td className="p-4 font-mono text-zinc-400 text-xs">
-                                    {group.gid}
-                                </td>
+                                <td className="p-4 font-mono text-zinc-400 text-xs">{group.gid}</td>
                                 <td className="p-4">
                                     {group.members.length === 0 ? (
-                                        <span className="text-zinc-500 text-xs italic">No members</span>
+                                        <span className="text-zinc-500 text-xs italic">
+                                            No members
+                                        </span>
                                     ) : (
                                         <div className="flex flex-wrap gap-1">
-                                            {group.members.slice(0, 5).map(m => (
-                                                <span key={m} className="text-xs bg-zinc-800 px-2 py-0.5 rounded text-zinc-300">
+                                            {group.members.slice(0, 5).map((m) => (
+                                                <span
+                                                    key={m}
+                                                    className="text-xs bg-zinc-800 px-2 py-0.5 rounded text-zinc-300"
+                                                >
                                                     {m}
                                                 </span>
                                             ))}

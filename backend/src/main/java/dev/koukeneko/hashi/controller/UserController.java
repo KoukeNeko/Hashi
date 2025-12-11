@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 使用者與群組管理 Controller
- * 提供系統使用者、群組的增刪改查，以及密碼、Shell 等進階管理
+ * 使用者與群組管理 Controller 提供系統使用者、群組的增刪改查，以及密碼、Shell 等進階管理
  */
 @RestController
 @RequestMapping("/api/v1/users")
@@ -37,7 +36,8 @@ public class UserController {
     /**
      * 取得特定使用者詳細資訊
      *
-     * @param username 使用者名稱
+     * @param username
+     *            使用者名稱
      * @return 使用者詳細資訊，若無則回傳 404
      */
     @GetMapping("/{username}")
@@ -52,7 +52,8 @@ public class UserController {
     /**
      * 取得使用者密碼資訊 (如過期時間、最後修改日)
      *
-     * @param username 使用者名稱
+     * @param username
+     *            使用者名稱
      * @return 密碼資訊，若無則回傳 404
      */
     @GetMapping("/{username}/password-info")
@@ -79,7 +80,8 @@ public class UserController {
     /**
      * 建立新使用者
      *
-     * @param request 使用者建立請求參數
+     * @param request
+     *            使用者建立請求參數
      * @return 建立結果與訊息
      */
     @PostMapping
@@ -105,9 +107,12 @@ public class UserController {
     /**
      * 刪除使用者
      *
-     * @param username   使用者名稱
-     * @param removeHome 是否同時刪除 Home 目錄
-     * @param force      是否強制刪除
+     * @param username
+     *            使用者名稱
+     * @param removeHome
+     *            是否同時刪除 Home 目錄
+     * @param force
+     *            是否強制刪除
      * @return 刪除結果與訊息
      */
     @DeleteMapping("/{username}")
@@ -122,8 +127,10 @@ public class UserController {
     /**
      * 重新命名使用者
      *
-     * @param username 使用者名稱
-     * @param request  包含新使用者名稱的請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含新使用者名稱的請求
      * @return 重新命名結果
      */
     @PutMapping("/{username}/rename")
@@ -138,8 +145,10 @@ public class UserController {
     /**
      * 修改使用者 UID
      *
-     * @param username 使用者名稱
-     * @param request  包含新 UID 的請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含新 UID 的請求
      * @return 修改結果
      */
     @PutMapping("/{username}/uid")
@@ -154,8 +163,10 @@ public class UserController {
     /**
      * 修改使用者主要群組
      *
-     * @param username 使用者名稱
-     * @param request  包含新群組資訊 (gid 或 group name) 的請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含新群組資訊 (gid 或 group name) 的請求
      * @return 修改結果
      */
     @PutMapping("/{username}/primary-group")
@@ -177,8 +188,10 @@ public class UserController {
     /**
      * 修改使用者 Home 目錄
      *
-     * @param username 使用者名稱
-     * @param request  包含新目錄路徑與是否移動內容的請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含新目錄路徑與是否移動內容的請求
      * @return 修改結果
      */
     @PutMapping("/{username}/home")
@@ -194,8 +207,10 @@ public class UserController {
     /**
      * 修改使用者 Shell
      *
-     * @param username 使用者名稱
-     * @param request  包含新 Shell 路徑的請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含新 Shell 路徑的請求
      * @return 修改結果
      */
     @PutMapping("/{username}/shell")
@@ -210,8 +225,10 @@ public class UserController {
     /**
      * 修改使用者 GECOS 資訊 (全名、電話等)
      *
-     * @param username 使用者名稱
-     * @param request  包含新 GECOS 字串的請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含新 GECOS 字串的請求
      * @return 修改結果
      */
     @PutMapping("/{username}/gecos")
@@ -228,8 +245,10 @@ public class UserController {
     /**
      * 修改使用者密碼
      *
-     * @param username 使用者名稱
-     * @param request  包含新密碼的請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含新密碼的請求
      * @return 修改結果
      */
     @PutMapping("/{username}/password")
@@ -244,7 +263,8 @@ public class UserController {
     /**
      * 刪除使用者密碼 (使帳號無密碼)
      *
-     * @param username 使用者名稱
+     * @param username
+     *            使用者名稱
      * @return 刪除結果
      */
     @DeleteMapping("/{username}/password")
@@ -256,7 +276,8 @@ public class UserController {
     /**
      * 使使用者密碼立即過期 (下次登入需更換)
      *
-     * @param username 使用者名稱
+     * @param username
+     *            使用者名稱
      * @return 設定結果
      */
     @PostMapping("/{username}/expire-password")
@@ -268,8 +289,10 @@ public class UserController {
     /**
      * 設定使用者密碼策略 (過期天數等)
      *
-     * @param username 使用者名稱
-     * @param request  包含策略設定的請求 (minDays, maxDays, warnDays, inactiveDays)
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含策略設定的請求 (minDays, maxDays, warnDays, inactiveDays)
      * @return 設定結果
      */
     @PutMapping("/{username}/password-policy")
@@ -289,7 +312,8 @@ public class UserController {
     /**
      * 鎖定使用者帳號
      *
-     * @param username 使用者名稱
+     * @param username
+     *            使用者名稱
      * @return 鎖定結果
      */
     @PostMapping("/{username}/lock")
@@ -301,7 +325,8 @@ public class UserController {
     /**
      * 解鎖使用者帳號
      *
-     * @param username 使用者名稱
+     * @param username
+     *            使用者名稱
      * @return 解鎖結果
      */
     @PostMapping("/{username}/unlock")
@@ -313,8 +338,10 @@ public class UserController {
     /**
      * 設定帳號過期日期
      *
-     * @param username 使用者名稱
-     * @param request  包含過期日期 (YYYY-MM-DD) 的請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含過期日期 (YYYY-MM-DD) 的請求
      * @return 設定結果
      */
     @PutMapping("/{username}/expire-date")
@@ -341,7 +368,8 @@ public class UserController {
     /**
      * 取得特定群組詳細資訊
      *
-     * @param groupName 群組名稱
+     * @param groupName
+     *            群組名稱
      * @return 群組詳細資訊，若無則回傳 404
      */
     @GetMapping("/groups/{groupName}")
@@ -356,7 +384,8 @@ public class UserController {
     /**
      * 查詢使用者所屬的群組列表
      *
-     * @param username 使用者名稱
+     * @param username
+     *            使用者名稱
      * @return 群組名稱列表
      */
     @GetMapping("/{username}/groups")
@@ -369,8 +398,10 @@ public class UserController {
     /**
      * 設定使用者所屬的群組 (全量覆蓋)
      *
-     * @param username 使用者名稱
-     * @param request  包含群組名稱列表的請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含群組名稱列表的請求
      * @return 設定結果
      */
     @PutMapping("/{username}/groups")
@@ -385,8 +416,10 @@ public class UserController {
     /**
      * 將使用者加入指定群組 (附加模式)
      *
-     * @param username 使用者名稱
-     * @param request  包含要加入的群組名稱列表請求
+     * @param username
+     *            使用者名稱
+     * @param request
+     *            包含要加入的群組名稱列表請求
      * @return 加入結果
      */
     @PostMapping("/{username}/groups")
@@ -403,7 +436,8 @@ public class UserController {
     /**
      * 建立新群組
      *
-     * @param request 群組建立請求參數
+     * @param request
+     *            群組建立請求參數
      * @return 建立結果
      */
     @PostMapping("/groups")
@@ -424,8 +458,10 @@ public class UserController {
     /**
      * 刪除群組
      *
-     * @param groupName 群組名稱
-     * @param force     是否強制刪除
+     * @param groupName
+     *            群組名稱
+     * @param force
+     *            是否強制刪除
      * @return 刪除結果
      */
     @DeleteMapping("/groups/{groupName}")
@@ -439,8 +475,10 @@ public class UserController {
     /**
      * 重新命名群組
      *
-     * @param groupName 群組名稱
-     * @param request   包含新群組名稱的請求
+     * @param groupName
+     *            群組名稱
+     * @param request
+     *            包含新群組名稱的請求
      * @return 重新命名結果
      */
     @PutMapping("/groups/{groupName}/rename")
@@ -455,8 +493,10 @@ public class UserController {
     /**
      * 修改群組 GID
      *
-     * @param groupName 群組名稱
-     * @param request   包含新 GID 的請求
+     * @param groupName
+     *            群組名稱
+     * @param request
+     *            包含新 GID 的請求
      * @return 修改結果
      */
     @PutMapping("/groups/{groupName}/gid")
@@ -471,8 +511,10 @@ public class UserController {
     /**
      * 設定群組成員列表 (全量覆蓋)
      *
-     * @param groupName 群組名稱
-     * @param request   包含成員使用者名稱列表的請求
+     * @param groupName
+     *            群組名稱
+     * @param request
+     *            包含成員使用者名稱列表的請求
      * @return 設定結果
      */
     @PutMapping("/groups/{groupName}/members")
@@ -487,8 +529,10 @@ public class UserController {
     /**
      * 新增成員至群組
      *
-     * @param groupName 群組名稱
-     * @param request   包含使用者名稱的請求
+     * @param groupName
+     *            群組名稱
+     * @param request
+     *            包含使用者名稱的請求
      * @return 新增結果
      */
     @PostMapping("/groups/{groupName}/members")
@@ -506,8 +550,10 @@ public class UserController {
     /**
      * 從群組移除成員
      *
-     * @param groupName 群組名稱
-     * @param username  使用者名稱
+     * @param groupName
+     *            群組名稱
+     * @param username
+     *            使用者名稱
      * @return 移除結果
      */
     @DeleteMapping("/groups/{groupName}/members/{username}")
@@ -521,8 +567,10 @@ public class UserController {
     /**
      * 設定群組管理員 (僅記錄，未實際賦權)
      *
-     * @param groupName 群組名稱
-     * @param request   包含管理員名稱列表的請求
+     * @param groupName
+     *            群組名稱
+     * @param request
+     *            包含管理員名稱列表的請求
      * @return 設定結果
      */
     @PutMapping("/groups/{groupName}/admins")

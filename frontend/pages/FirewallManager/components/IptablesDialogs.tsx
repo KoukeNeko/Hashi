@@ -8,40 +8,40 @@ import { ConfirmDialog, FormDialog } from '../../../components/ui';
 export const TABLE_OPTIONS = [
     { value: 'filter', label: 'filter' },
     { value: 'nat', label: 'nat' },
-    { value: 'mangle', label: 'mangle' }
+    { value: 'mangle', label: 'mangle' },
 ];
 
 export const TARGET_OPTIONS = [
     { value: 'ACCEPT', label: 'ACCEPT' },
     { value: 'DROP', label: 'DROP' },
-    { value: 'REJECT', label: 'REJECT' }
+    { value: 'REJECT', label: 'REJECT' },
 ];
 
 export const PROTOCOL_OPTIONS = [
     { value: 'all', label: 'all' },
     { value: 'tcp', label: 'tcp' },
     { value: 'udp', label: 'udp' },
-    { value: 'icmp', label: 'icmp' }
+    { value: 'icmp', label: 'icmp' },
 ];
 
 export const CHAIN_OPTIONS_BY_TABLE: Record<string, { value: string; label: string }[]> = {
     filter: [
         { value: 'INPUT', label: 'INPUT' },
         { value: 'OUTPUT', label: 'OUTPUT' },
-        { value: 'FORWARD', label: 'FORWARD' }
+        { value: 'FORWARD', label: 'FORWARD' },
     ],
     nat: [
         { value: 'PREROUTING', label: 'PREROUTING' },
         { value: 'POSTROUTING', label: 'POSTROUTING' },
-        { value: 'OUTPUT', label: 'OUTPUT' }
+        { value: 'OUTPUT', label: 'OUTPUT' },
     ],
     mangle: [
         { value: 'PREROUTING', label: 'PREROUTING' },
         { value: 'OUTPUT', label: 'OUTPUT' },
         { value: 'INPUT', label: 'INPUT' },
         { value: 'FORWARD', label: 'FORWARD' },
-        { value: 'POSTROUTING', label: 'POSTROUTING' }
-    ]
+        { value: 'POSTROUTING', label: 'POSTROUTING' },
+    ],
 };
 
 // ==================== Types ====================
@@ -79,7 +79,7 @@ export const AddIptablesRuleDialog: React.FC<{
             destPort: values.destPort ? parseInt(values.destPort, 10) : undefined,
             inInterface: values.inInterface?.trim() || undefined,
             outInterface: values.outInterface?.trim() || undefined,
-            append: true
+            append: true,
         };
         await onSave(rule);
     };
@@ -93,16 +93,71 @@ export const AddIptablesRuleDialog: React.FC<{
             titleIcon={<Terminal size={20} className="text-cyan-400" />}
             submitText="Add Rule"
             fields={[
-                { name: 'table', label: 'Table', type: 'select', options: TABLE_OPTIONS, defaultValue: defaultTable },
-                { name: 'chain', label: 'Chain', type: 'select', options: CHAIN_OPTIONS_BY_TABLE[defaultTable] || CHAIN_OPTIONS_BY_TABLE.filter, required: true },
-                { name: 'target', label: 'Target', type: 'select', options: TARGET_OPTIONS, required: true, defaultValue: 'ACCEPT' },
-                { name: 'protocol', label: 'Protocol', type: 'select', options: PROTOCOL_OPTIONS, defaultValue: 'all' },
-                { name: 'source', label: 'Source IP/CIDR', placeholder: '0.0.0.0/0', hint: 'Leave empty for any' },
-                { name: 'destination', label: 'Destination IP/CIDR', placeholder: '0.0.0.0/0', hint: 'Leave empty for any' },
-                { name: 'sourcePort', label: 'Source Port', placeholder: 'Any', hint: 'Requires tcp/udp protocol' },
-                { name: 'destPort', label: 'Destination Port', placeholder: 'Any', hint: 'Requires tcp/udp protocol' },
-                { name: 'inInterface', label: 'In Interface', placeholder: 'e.g. eth0', hint: 'Optional' },
-                { name: 'outInterface', label: 'Out Interface', placeholder: 'e.g. eth0', hint: 'Optional' }
+                {
+                    name: 'table',
+                    label: 'Table',
+                    type: 'select',
+                    options: TABLE_OPTIONS,
+                    defaultValue: defaultTable,
+                },
+                {
+                    name: 'chain',
+                    label: 'Chain',
+                    type: 'select',
+                    options: CHAIN_OPTIONS_BY_TABLE[defaultTable] || CHAIN_OPTIONS_BY_TABLE.filter,
+                    required: true,
+                },
+                {
+                    name: 'target',
+                    label: 'Target',
+                    type: 'select',
+                    options: TARGET_OPTIONS,
+                    required: true,
+                    defaultValue: 'ACCEPT',
+                },
+                {
+                    name: 'protocol',
+                    label: 'Protocol',
+                    type: 'select',
+                    options: PROTOCOL_OPTIONS,
+                    defaultValue: 'all',
+                },
+                {
+                    name: 'source',
+                    label: 'Source IP/CIDR',
+                    placeholder: '0.0.0.0/0',
+                    hint: 'Leave empty for any',
+                },
+                {
+                    name: 'destination',
+                    label: 'Destination IP/CIDR',
+                    placeholder: '0.0.0.0/0',
+                    hint: 'Leave empty for any',
+                },
+                {
+                    name: 'sourcePort',
+                    label: 'Source Port',
+                    placeholder: 'Any',
+                    hint: 'Requires tcp/udp protocol',
+                },
+                {
+                    name: 'destPort',
+                    label: 'Destination Port',
+                    placeholder: 'Any',
+                    hint: 'Requires tcp/udp protocol',
+                },
+                {
+                    name: 'inInterface',
+                    label: 'In Interface',
+                    placeholder: 'e.g. eth0',
+                    hint: 'Optional',
+                },
+                {
+                    name: 'outInterface',
+                    label: 'Out Interface',
+                    placeholder: 'e.g. eth0',
+                    hint: 'Optional',
+                },
             ]}
         />
     );
@@ -127,7 +182,9 @@ export const DeleteIptablesRuleDialog: React.FC<{
             title="Delete iptables Rule"
             message="Are you sure you want to delete this rule?"
             confirmText="Delete"
-            confirmIcon={deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+            confirmIcon={
+                deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />
+            }
         >
             <div className="bg-zinc-800/50 rounded p-3 font-mono text-sm space-y-1">
                 <div className="flex items-center gap-2">
@@ -136,10 +193,17 @@ export const DeleteIptablesRuleDialog: React.FC<{
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-zinc-500">Target:</span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.target === 'ACCEPT' ? 'bg-emerald-500/20 text-emerald-400' :
-                            rule.target === 'DROP' ? 'bg-rose-500/20 text-rose-400' :
-                                'bg-amber-500/20 text-amber-400'
-                        }`}>{rule.target}</span>
+                    <span
+                        className={`px-2 py-0.5 rounded text-xs font-bold ${
+                            rule.target === 'ACCEPT'
+                                ? 'bg-emerald-500/20 text-emerald-400'
+                                : rule.target === 'DROP'
+                                  ? 'bg-rose-500/20 text-rose-400'
+                                  : 'bg-amber-500/20 text-amber-400'
+                        }`}
+                    >
+                        {rule.target}
+                    </span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-zinc-500">Protocol:</span>

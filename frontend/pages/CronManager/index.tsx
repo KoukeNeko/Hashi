@@ -37,7 +37,6 @@ const parseCronExpression = (expression: string): string => {
     return expression;
 };
 
-
 const CronManager: React.FC = () => {
     const [jobs, setJobs] = useState<CronJob[]>([]);
     const [loading, setLoading] = useState(true);
@@ -77,9 +76,10 @@ const CronManager: React.FC = () => {
             console.error('Failed to save cron jobs:', err);
             let errorMsg = 'Failed to save cron jobs';
             if (err.response?.data) {
-                errorMsg = typeof err.response.data === 'string'
-                    ? err.response.data
-                    : err.response.data.message || JSON.stringify(err.response.data);
+                errorMsg =
+                    typeof err.response.data === 'string'
+                        ? err.response.data
+                        : err.response.data.message || JSON.stringify(err.response.data);
             }
             setToast({ message: errorMsg, type: 'error' });
             return false;
@@ -106,7 +106,7 @@ const CronManager: React.FC = () => {
 
         if (job.id) {
             // 更新現有
-            newJobs = jobs.map(j => j.id === job.id ? job : j);
+            newJobs = jobs.map((j) => (j.id === job.id ? job : j));
         } else {
             // 新增 (給一個臨時 ID，後端會重新分配)
             const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -116,7 +116,10 @@ const CronManager: React.FC = () => {
         const success = await saveAllJobs(newJobs);
         if (success) {
             setDialogOpen(false);
-            setToast({ message: job.id ? 'Cron job updated' : 'Cron job created', type: 'success' });
+            setToast({
+                message: job.id ? 'Cron job updated' : 'Cron job created',
+                type: 'success',
+            });
             // 重新載入以取得後端分配的 ID
             loadJobs();
         }
@@ -132,7 +135,7 @@ const CronManager: React.FC = () => {
     const handleDeleteConfirm = async () => {
         if (!jobToDelete) return;
 
-        const newJobs = jobs.filter(j => j.id !== jobToDelete.id);
+        const newJobs = jobs.filter((j) => j.id !== jobToDelete.id);
         const success = await saveAllJobs(newJobs);
         if (success) {
             setDeleteDialogOpen(false);
@@ -186,14 +189,23 @@ const CronManager: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="text-sm divide-y divide-border">
-                            {jobs.map(job => (
+                            {jobs.map((job) => (
                                 <tr key={job.id} className="hover:bg-zinc-800/50 transition-colors">
-                                    <td className="p-4 font-mono text-emerald-400 bg-emerald-500/5">{job.expression}</td>
-                                    <td className="p-4 text-zinc-400 text-xs">{parseCronExpression(job.expression)}</td>
-                                    <td className="p-4 font-mono text-zinc-300 text-xs truncate max-w-xs" title={job.command}>
+                                    <td className="p-4 font-mono text-emerald-400 bg-emerald-500/5">
+                                        {job.expression}
+                                    </td>
+                                    <td className="p-4 text-zinc-400 text-xs">
+                                        {parseCronExpression(job.expression)}
+                                    </td>
+                                    <td
+                                        className="p-4 font-mono text-zinc-300 text-xs truncate max-w-xs"
+                                        title={job.command}
+                                    >
                                         {job.command}
                                         {job.comment && (
-                                            <span className="ml-2 text-zinc-500">#{job.comment}</span>
+                                            <span className="ml-2 text-zinc-500">
+                                                #{job.comment}
+                                            </span>
                                         )}
                                     </td>
                                     <td className="p-4 text-right">
@@ -254,11 +266,7 @@ const CronManager: React.FC = () => {
 
             {/* Toast 通知 */}
             {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
+                <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
             )}
         </div>
     );

@@ -1,11 +1,52 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { VM, CreateVmRequest, UpdateVmRequest, IsoFile, VM_DEFAULTS, VM_OPTIONS, Disk } from '../../types';
-import { VirtService } from '../../services/api';
-import { PageHeader, VncConsole, Tabs, Toast, ActionButton, ConfirmDialog, type TabItem } from '../../components';
 import {
-    Monitor, Power, RotateCcw, HardDrive, Cpu, MemoryStick,
-    Loader2, RefreshCw, AlertCircle, Play, Square, Terminal, Copy, CheckCircle,
-    Plus, Trash2, Upload, Disc, X, MonitorPlay, Settings, Network, Tv, Zap, ChevronDown, ChevronUp, Info, Edit
+    VM,
+    CreateVmRequest,
+    UpdateVmRequest,
+    IsoFile,
+    VM_DEFAULTS,
+    VM_OPTIONS,
+    Disk,
+} from '../../types';
+import { VirtService } from '../../services/api';
+import {
+    PageHeader,
+    VncConsole,
+    Tabs,
+    Toast,
+    ActionButton,
+    ConfirmDialog,
+    type TabItem,
+} from '../../components';
+import {
+    Monitor,
+    Power,
+    RotateCcw,
+    HardDrive,
+    Cpu,
+    MemoryStick,
+    Loader2,
+    RefreshCw,
+    AlertCircle,
+    Play,
+    Square,
+    Terminal,
+    Copy,
+    CheckCircle,
+    Plus,
+    Trash2,
+    Upload,
+    Disc,
+    X,
+    MonitorPlay,
+    Settings,
+    Network,
+    Tv,
+    Zap,
+    ChevronDown,
+    ChevronUp,
+    Info,
+    Edit,
 } from 'lucide-react';
 import { LibvirtSetupGuide } from './components/LibvirtSetupGuide';
 
@@ -32,7 +73,11 @@ const getVmStatusInfo = (state: string) => {
         case 'VIR_DOMAIN_PMSUSPENDED':
             return { label: 'Suspended', color: 'bg-blue-500', textColor: 'text-blue-400' };
         default:
-            return { label: state.replace('VIR_DOMAIN_', ''), color: 'bg-zinc-500', textColor: 'text-zinc-400' };
+            return {
+                label: state.replace('VIR_DOMAIN_', ''),
+                color: 'bg-zinc-500',
+                textColor: 'text-zinc-400',
+            };
     }
 };
 
@@ -74,14 +119,18 @@ const KvmManager: React.FC = () => {
     });
     const [createVmLoading, setCreateVmLoading] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
-    const [createVmTab, setCreateVmTab] = useState<'basic' | 'hardware' | 'network' | 'display' | 'advanced'>('basic');
+    const [createVmTab, setCreateVmTab] = useState<
+        'basic' | 'hardware' | 'network' | 'display' | 'advanced'
+    >('basic');
 
     // Edit VM Dialog
     const [editVmDialogOpen, setEditVmDialogOpen] = useState(false);
     const [editVmName, setEditVmName] = useState<string | null>(null);
     const [editVmForm, setEditVmForm] = useState<UpdateVmRequest>({});
     const [editVmLoading, setEditVmLoading] = useState(false);
-    const [editVmTab, setEditVmTab] = useState<'basic' | 'hardware' | 'network' | 'display' | 'advanced'>('basic');
+    const [editVmTab, setEditVmTab] = useState<
+        'basic' | 'hardware' | 'network' | 'display' | 'advanced'
+    >('basic');
     const [editVmOriginal, setEditVmOriginal] = useState<VM | null>(null);
 
     // ISO Upload
@@ -92,13 +141,16 @@ const KvmManager: React.FC = () => {
     const [consoleVm, setConsoleVm] = useState<string | null>(null);
 
     // VM Tab Items (shared between Create and Edit dialogs)
-    const vmTabItems: TabItem[] = useMemo(() => [
-        { id: 'basic', label: 'Basic', icon: Settings },
-        { id: 'hardware', label: 'Hardware', icon: Cpu },
-        { id: 'network', label: 'Network', icon: Network },
-        { id: 'display', label: 'Display', icon: Tv },
-        { id: 'advanced', label: 'Advanced', icon: Zap },
-    ], []);
+    const vmTabItems: TabItem[] = useMemo(
+        () => [
+            { id: 'basic', label: 'Basic', icon: Settings },
+            { id: 'hardware', label: 'Hardware', icon: Cpu },
+            { id: 'network', label: 'Network', icon: Network },
+            { id: 'display', label: 'Display', icon: Tv },
+            { id: 'advanced', label: 'Advanced', icon: Zap },
+        ],
+        []
+    );
 
     const loadVms = async () => {
         try {
@@ -133,9 +185,17 @@ const KvmManager: React.FC = () => {
         loadIsoFiles();
     }, []);
 
-    const handleVmAction = async (vmName: string, action: 'start' | 'stop' | 'force-stop' | 'reboot' | 'delete') => {
+    const handleVmAction = async (
+        vmName: string,
+        action: 'start' | 'stop' | 'force-stop' | 'reboot' | 'delete'
+    ) => {
         // 危險操作需要確認
-        if (action === 'stop' || action === 'force-stop' || action === 'reboot' || action === 'delete') {
+        if (
+            action === 'stop' ||
+            action === 'force-stop' ||
+            action === 'reboot' ||
+            action === 'delete'
+        ) {
             setConfirmDialog({ isOpen: true, vmName, action });
             return;
         }
@@ -143,7 +203,10 @@ const KvmManager: React.FC = () => {
         await executeVmAction(vmName, action);
     };
 
-    const executeVmAction = async (vmName: string, action: 'start' | 'stop' | 'force-stop' | 'reboot' | 'delete') => {
+    const executeVmAction = async (
+        vmName: string,
+        action: 'start' | 'stop' | 'force-stop' | 'reboot' | 'delete'
+    ) => {
         try {
             setActionLoading(vmName);
 
@@ -155,12 +218,15 @@ const KvmManager: React.FC = () => {
                 await VirtService.controlVm(vmName, action);
 
                 const actionLabels = {
-                    'start': 'started',
-                    'stop': 'stopped',
+                    start: 'started',
+                    stop: 'stopped',
                     'force-stop': 'force stopped',
-                    'reboot': 'rebooted'
+                    reboot: 'rebooted',
                 };
-                setToast({ message: `VM "${vmName}" ${actionLabels[action]} successfully`, type: 'success' });
+                setToast({
+                    message: `VM "${vmName}" ${actionLabels[action]} successfully`,
+                    type: 'success',
+                });
 
                 // 延遲重新載入，讓 libvirt 有時間更新狀態
                 setTimeout(loadVms, 1000);
@@ -183,10 +249,18 @@ const KvmManager: React.FC = () => {
         try {
             setCreateVmLoading(true);
             await VirtService.createVm(createVmForm);
-            setToast({ message: `VM "${createVmForm.name}" created successfully`, type: 'success' });
+            setToast({
+                message: `VM "${createVmForm.name}" created successfully`,
+                type: 'success',
+            });
             setCreateVmDialogOpen(false);
             setCreateVmForm({
-                name: '', vcpu: 2, memoryMB: 2048, diskGB: 20, osType: 'linux', isoPath: '',
+                name: '',
+                vcpu: 2,
+                memoryMB: 2048,
+                diskGB: 20,
+                osType: 'linux',
+                isoPath: '',
                 ...VM_DEFAULTS,
             });
             setCreateVmTab('basic');
@@ -221,7 +295,9 @@ const KvmManager: React.FC = () => {
                 cpuCores: vmDetails.cpuCores,
                 cpuThreads: vmDetails.cpuThreads,
                 memoryMB: vmDetails.memory ? Math.round(vmDetails.memory / 1024 / 1024) : undefined,
-                maxMemoryMB: vmDetails.maxMemory ? Math.round(vmDetails.maxMemory / 1024 / 1024) : undefined,
+                maxMemoryMB: vmDetails.maxMemory
+                    ? Math.round(vmDetails.maxMemory / 1024 / 1024)
+                    : undefined,
                 hugepages: vmDetails.hugepages,
                 networkType: vmDetails.networkType,
                 networkSource: vmDetails.networkSource,
@@ -324,13 +400,18 @@ const KvmManager: React.FC = () => {
                         <ActionButton
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploadProgress !== null}
-                            icon={uploadProgress !== null
-                                ? <Loader2 size={16} className="animate-spin" />
-                                : <Upload size={16} />
+                            icon={
+                                uploadProgress !== null ? (
+                                    <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                    <Upload size={16} />
+                                )
                             }
                             variant="secondary"
                         >
-                            {uploadProgress !== null ? `Uploading ${uploadProgress}%` : 'Upload ISO'}
+                            {uploadProgress !== null
+                                ? `Uploading ${uploadProgress}%`
+                                : 'Upload ISO'}
                         </ActionButton>
                         <ActionButton
                             onClick={() => setCreateVmDialogOpen(true)}
@@ -339,9 +420,18 @@ const KvmManager: React.FC = () => {
                             Create VM
                         </ActionButton>
                         <ActionButton
-                            onClick={() => { loadVms(); loadIsoFiles(); }}
+                            onClick={() => {
+                                loadVms();
+                                loadIsoFiles();
+                            }}
                             disabled={loading}
-                            icon={loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                            icon={
+                                loading ? (
+                                    <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                    <RefreshCw size={16} />
+                                )
+                            }
                             variant="secondary"
                         >
                             Refresh
@@ -360,7 +450,9 @@ const KvmManager: React.FC = () => {
                 <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
                     <Monitor size={48} className="mb-4 opacity-50" />
                     <p className="text-sm">No virtual machines found</p>
-                    <p className="text-xs text-zinc-600 mt-1">Make sure libvirt is running and configured</p>
+                    <p className="text-xs text-zinc-600 mt-1">
+                        Make sure libvirt is running and configured
+                    </p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -375,14 +467,22 @@ const KvmManager: React.FC = () => {
                                 className="bg-surface border border-border rounded-lg p-5 hover:border-zinc-600 transition-colors relative overflow-hidden group shadow-lg"
                             >
                                 {/* Status Strip */}
-                                <div className={`absolute top-0 left-0 w-1 h-full ${statusInfo.color}`}></div>
+                                <div
+                                    className={`absolute top-0 left-0 w-1 h-full ${statusInfo.color}`}
+                                ></div>
 
                                 <div className="flex justify-between items-start mb-4 pl-3">
                                     <div>
-                                        <h3 className="font-bold text-lg text-zinc-100">{vm.name}</h3>
+                                        <h3 className="font-bold text-lg text-zinc-100">
+                                            {vm.name}
+                                        </h3>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <span className={`w-2 h-2 rounded-full ${statusInfo.color}`}></span>
-                                            <span className={`text-xs uppercase tracking-wide font-mono ${statusInfo.textColor}`}>
+                                            <span
+                                                className={`w-2 h-2 rounded-full ${statusInfo.color}`}
+                                            ></span>
+                                            <span
+                                                className={`text-xs uppercase tracking-wide font-mono ${statusInfo.textColor}`}
+                                            >
                                                 {statusInfo.label}
                                             </span>
                                         </div>
@@ -397,20 +497,27 @@ const KvmManager: React.FC = () => {
                                         <div className="flex items-center gap-2 text-zinc-400">
                                             <Cpu size={14} /> <span>vCPU</span>
                                         </div>
-                                        <span className="text-zinc-200 font-mono">{vm.vcpu} Core{vm.vcpu > 1 ? 's' : ''}</span>
+                                        <span className="text-zinc-200 font-mono">
+                                            {vm.vcpu} Core{vm.vcpu > 1 ? 's' : ''}
+                                        </span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
                                         <div className="flex items-center gap-2 text-zinc-400">
                                             <MemoryStick size={14} /> <span>Memory</span>
                                         </div>
-                                        <span className="text-zinc-200 font-mono">{formatMemory(vm.memory)}</span>
+                                        <span className="text-zinc-200 font-mono">
+                                            {formatMemory(vm.memory)}
+                                        </span>
                                     </div>
                                     {vm.uuid && (
                                         <div className="flex items-center justify-between text-sm">
                                             <div className="flex items-center gap-2 text-zinc-400">
                                                 <HardDrive size={14} /> <span>UUID</span>
                                             </div>
-                                            <span className="text-zinc-400 font-mono text-xs truncate max-w-[150px]" title={vm.uuid}>
+                                            <span
+                                                className="text-zinc-400 font-mono text-xs truncate max-w-[150px]"
+                                                title={vm.uuid}
+                                            >
                                                 {vm.uuid.substring(0, 8)}...
                                             </span>
                                         </div>
@@ -436,21 +543,27 @@ const KvmManager: React.FC = () => {
                                             {vmRunning && (
                                                 <>
                                                     <button
-                                                        onClick={() => handleVmAction(vm.name, 'reboot')}
+                                                        onClick={() =>
+                                                            handleVmAction(vm.name, 'reboot')
+                                                        }
                                                         className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors"
                                                         title="Reboot"
                                                     >
                                                         <RotateCcw size={16} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleVmAction(vm.name, 'stop')}
+                                                        onClick={() =>
+                                                            handleVmAction(vm.name, 'stop')
+                                                        }
                                                         className="p-2 bg-amber-600 hover:bg-amber-500 text-white rounded transition-colors"
                                                         title="Graceful Shutdown"
                                                     >
                                                         <Power size={16} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleVmAction(vm.name, 'force-stop')}
+                                                        onClick={() =>
+                                                            handleVmAction(vm.name, 'force-stop')
+                                                        }
                                                         className="p-2 bg-rose-600 hover:bg-rose-500 text-white rounded transition-colors"
                                                         title="Force Stop"
                                                     >
@@ -468,14 +581,18 @@ const KvmManager: React.FC = () => {
                                             {!vmRunning && (
                                                 <>
                                                     <button
-                                                        onClick={() => handleVmAction(vm.name, 'start')}
+                                                        onClick={() =>
+                                                            handleVmAction(vm.name, 'start')
+                                                        }
                                                         className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
                                                         title="Start VM"
                                                     >
                                                         <Play size={16} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleVmAction(vm.name, 'delete')}
+                                                        onClick={() =>
+                                                            handleVmAction(vm.name, 'delete')
+                                                        }
                                                         className="p-2 bg-rose-600 hover:bg-rose-500 text-white rounded transition-colors"
                                                         title="Delete VM"
                                                     >
@@ -499,14 +616,21 @@ const KvmManager: React.FC = () => {
                     onClose={() => setConfirmDialog(null)}
                     onConfirm={() => executeVmAction(confirmDialog.vmName, confirmDialog.action)}
                     title={
-                        confirmDialog.action === 'delete' ? 'Delete VM' :
-                            confirmDialog.action === 'force-stop' ? 'Force Stop VM' :
-                                confirmDialog.action === 'stop' ? 'Shutdown VM' : 'Reboot VM'
+                        confirmDialog.action === 'delete'
+                            ? 'Delete VM'
+                            : confirmDialog.action === 'force-stop'
+                              ? 'Force Stop VM'
+                              : confirmDialog.action === 'stop'
+                                ? 'Shutdown VM'
+                                : 'Reboot VM'
                     }
                     message={
                         <>
-                            Are you sure you want to {confirmDialog.action === 'force-stop' ? 'force stop' : confirmDialog.action}
-                            {' '}<span className="text-white font-bold">{confirmDialog.vmName}</span>?
+                            Are you sure you want to{' '}
+                            {confirmDialog.action === 'force-stop'
+                                ? 'force stop'
+                                : confirmDialog.action}{' '}
+                            <span className="text-white font-bold">{confirmDialog.vmName}</span>?
                             {confirmDialog.action === 'force-stop' && (
                                 <p className="text-xs text-rose-400 mt-2">
                                     <AlertCircle size={12} className="inline mr-1" />
@@ -516,21 +640,36 @@ const KvmManager: React.FC = () => {
                             {confirmDialog.action === 'delete' && (
                                 <p className="text-xs text-rose-400 mt-2">
                                     <AlertCircle size={12} className="inline mr-1" />
-                                    This will permanently delete the VM and its disk. This action cannot be undone.
+                                    This will permanently delete the VM and its disk. This action
+                                    cannot be undone.
                                 </p>
                             )}
                         </>
                     }
                     confirmText={
-                        confirmDialog.action === 'delete' ? 'Delete' :
-                            confirmDialog.action === 'force-stop' ? 'Force Stop' :
-                                confirmDialog.action === 'stop' ? 'Shutdown' : 'Reboot'
+                        confirmDialog.action === 'delete'
+                            ? 'Delete'
+                            : confirmDialog.action === 'force-stop'
+                              ? 'Force Stop'
+                              : confirmDialog.action === 'stop'
+                                ? 'Shutdown'
+                                : 'Reboot'
                     }
-                    confirmColor={confirmDialog.action === 'delete' || confirmDialog.action === 'force-stop' ? 'red' : 'amber'}
+                    confirmColor={
+                        confirmDialog.action === 'delete' || confirmDialog.action === 'force-stop'
+                            ? 'red'
+                            : 'amber'
+                    }
                     confirmIcon={
-                        confirmDialog.action === 'delete' ? <Trash2 size={16} /> :
-                            confirmDialog.action === 'reboot' ? <RotateCcw size={16} /> :
-                                confirmDialog.action === 'force-stop' ? <Square size={16} /> : <Power size={16} />
+                        confirmDialog.action === 'delete' ? (
+                            <Trash2 size={16} />
+                        ) : confirmDialog.action === 'reboot' ? (
+                            <RotateCcw size={16} />
+                        ) : confirmDialog.action === 'force-stop' ? (
+                            <Square size={16} />
+                        ) : (
+                            <Power size={16} />
+                        )
                     }
                 />
             )}
@@ -541,7 +680,9 @@ const KvmManager: React.FC = () => {
                     <div className="bg-surface border border-border rounded-lg w-full max-w-3xl shadow-xl max-h-[90vh] flex flex-col">
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-                            <h2 className="text-lg font-bold text-zinc-100">Create Virtual Machine</h2>
+                            <h2 className="text-lg font-bold text-zinc-100">
+                                Create Virtual Machine
+                            </h2>
                             <button
                                 onClick={() => setCreateVmDialogOpen(false)}
                                 className="p-1 hover:bg-zinc-700 rounded transition-colors"
@@ -572,7 +713,12 @@ const KvmManager: React.FC = () => {
                                         <input
                                             type="text"
                                             value={createVmForm.name}
-                                            onChange={(e) => setCreateVmForm({ ...createVmForm, name: e.target.value })}
+                                            onChange={(e) =>
+                                                setCreateVmForm({
+                                                    ...createVmForm,
+                                                    name: e.target.value,
+                                                })
+                                            }
                                             placeholder="my-ubuntu-server"
                                             className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
@@ -580,11 +726,18 @@ const KvmManager: React.FC = () => {
 
                                     {/* Description */}
                                     <div>
-                                        <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                            Description
+                                        </label>
                                         <input
                                             type="text"
                                             value={createVmForm.description || ''}
-                                            onChange={(e) => setCreateVmForm({ ...createVmForm, description: e.target.value })}
+                                            onChange={(e) =>
+                                                setCreateVmForm({
+                                                    ...createVmForm,
+                                                    description: e.target.value,
+                                                })
+                                            }
                                             placeholder="Web server for production"
                                             className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
@@ -592,7 +745,9 @@ const KvmManager: React.FC = () => {
 
                                     {/* OS Type */}
                                     <div>
-                                        <label className="block text-sm font-medium text-zinc-300 mb-1">OS Type</label>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                            OS Type
+                                        </label>
                                         <select
                                             value={createVmForm.osType}
                                             onChange={(e) => {
@@ -600,14 +755,20 @@ const KvmManager: React.FC = () => {
                                                 setCreateVmForm({
                                                     ...createVmForm,
                                                     osType,
-                                                    clockOffset: osType === 'windows' ? 'localtime' : 'utc',
-                                                    machine: osType === 'windows' ? 'q35' : createVmForm.machine,
+                                                    clockOffset:
+                                                        osType === 'windows' ? 'localtime' : 'utc',
+                                                    machine:
+                                                        osType === 'windows'
+                                                            ? 'q35'
+                                                            : createVmForm.machine,
                                                 });
                                             }}
                                             className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
-                                            {VM_OPTIONS.osTypes.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            {VM_OPTIONS.osTypes.map((opt) => (
+                                                <option key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </option>
                                             ))}
                                         </select>
                                     </div>
@@ -620,7 +781,12 @@ const KvmManager: React.FC = () => {
                                         </label>
                                         <select
                                             value={createVmForm.isoPath || ''}
-                                            onChange={(e) => setCreateVmForm({ ...createVmForm, isoPath: e.target.value })}
+                                            onChange={(e) =>
+                                                setCreateVmForm({
+                                                    ...createVmForm,
+                                                    isoPath: e.target.value,
+                                                })
+                                            }
                                             className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             <option value="">No ISO (empty disk)</option>
@@ -639,24 +805,47 @@ const KvmManager: React.FC = () => {
 
                                     {/* Boot Order */}
                                     <div>
-                                        <label className="block text-sm font-medium text-zinc-300 mb-1">Boot Order</label>
+                                        <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                            Boot Order
+                                        </label>
                                         <div className="flex flex-wrap gap-2">
-                                            {VM_OPTIONS.bootDevices.map(device => (
-                                                <label key={device.value} className="flex items-center gap-2 bg-zinc-800 px-3 py-2 rounded border border-zinc-700">
+                                            {VM_OPTIONS.bootDevices.map((device) => (
+                                                <label
+                                                    key={device.value}
+                                                    className="flex items-center gap-2 bg-zinc-800 px-3 py-2 rounded border border-zinc-700"
+                                                >
                                                     <input
                                                         type="checkbox"
-                                                        checked={createVmForm.bootOrder?.includes(device.value) ?? false}
+                                                        checked={
+                                                            createVmForm.bootOrder?.includes(
+                                                                device.value
+                                                            ) ?? false
+                                                        }
                                                         onChange={(e) => {
-                                                            const current = createVmForm.bootOrder || [];
+                                                            const current =
+                                                                createVmForm.bootOrder || [];
                                                             if (e.target.checked) {
-                                                                setCreateVmForm({ ...createVmForm, bootOrder: [...current, device.value] });
+                                                                setCreateVmForm({
+                                                                    ...createVmForm,
+                                                                    bootOrder: [
+                                                                        ...current,
+                                                                        device.value,
+                                                                    ],
+                                                                });
                                                             } else {
-                                                                setCreateVmForm({ ...createVmForm, bootOrder: current.filter(d => d !== device.value) });
+                                                                setCreateVmForm({
+                                                                    ...createVmForm,
+                                                                    bootOrder: current.filter(
+                                                                        (d) => d !== device.value
+                                                                    ),
+                                                                });
                                                             }
                                                         }}
                                                         className="rounded border-zinc-600"
                                                     />
-                                                    <span className="text-sm text-zinc-300">{device.label}</span>
+                                                    <span className="text-sm text-zinc-300">
+                                                        {device.label}
+                                                    </span>
                                                 </label>
                                             ))}
                                         </div>
@@ -679,19 +868,33 @@ const KvmManager: React.FC = () => {
                                                 min={1}
                                                 max={64}
                                                 value={createVmForm.vcpu}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, vcpu: parseInt(e.target.value) || 1 })}
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        vcpu: parseInt(e.target.value) || 1,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">CPU Mode</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                CPU Mode
+                                            </label>
                                             <select
                                                 value={createVmForm.cpuMode || VM_DEFAULTS.cpuMode}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, cpuMode: e.target.value })}
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        cpuMode: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.cpuModes.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.cpuModes.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
@@ -710,19 +913,35 @@ const KvmManager: React.FC = () => {
                                                 max={262144}
                                                 step={512}
                                                 value={createVmForm.memoryMB}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, memoryMB: parseInt(e.target.value) || 512 })}
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        memoryMB: parseInt(e.target.value) || 512,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Max Memory (MB)</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Max Memory (MB)
+                                            </label>
                                             <input
                                                 type="number"
                                                 min={512}
                                                 max={262144}
                                                 step={512}
-                                                value={createVmForm.maxMemoryMB || createVmForm.memoryMB}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, maxMemoryMB: parseInt(e.target.value) || undefined })}
+                                                value={
+                                                    createVmForm.maxMemoryMB ||
+                                                    createVmForm.memoryMB
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        maxMemoryMB:
+                                                            parseInt(e.target.value) || undefined,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
                                         </div>
@@ -744,57 +963,108 @@ const KvmManager: React.FC = () => {
                                                     min={1}
                                                     max={2048}
                                                     value={createVmForm.diskGB ?? 20}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskGB: parseInt(e.target.value) || 1 })}
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            diskGB: parseInt(e.target.value) || 1,
+                                                        })
+                                                    }
                                                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-zinc-300 mb-1">Format</label>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                    Format
+                                                </label>
                                                 <select
-                                                    value={createVmForm.diskFormat || VM_DEFAULTS.diskFormat}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskFormat: e.target.value })}
+                                                    value={
+                                                        createVmForm.diskFormat ||
+                                                        VM_DEFAULTS.diskFormat
+                                                    }
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            diskFormat: e.target.value,
+                                                        })
+                                                    }
                                                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 >
-                                                    {VM_OPTIONS.diskFormats.map(opt => (
-                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    {VM_OPTIONS.diskFormats.map((opt) => (
+                                                        <option key={opt.value} value={opt.value}>
+                                                            {opt.label}
+                                                        </option>
                                                     ))}
                                                 </select>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-3 gap-4 mt-3">
                                             <div>
-                                                <label className="block text-sm font-medium text-zinc-300 mb-1">Bus</label>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                    Bus
+                                                </label>
                                                 <select
-                                                    value={createVmForm.diskBus || VM_DEFAULTS.diskBus}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskBus: e.target.value })}
+                                                    value={
+                                                        createVmForm.diskBus || VM_DEFAULTS.diskBus
+                                                    }
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            diskBus: e.target.value,
+                                                        })
+                                                    }
                                                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 >
-                                                    {VM_OPTIONS.diskBuses.map(opt => (
-                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    {VM_OPTIONS.diskBuses.map((opt) => (
+                                                        <option key={opt.value} value={opt.value}>
+                                                            {opt.label}
+                                                        </option>
                                                     ))}
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-zinc-300 mb-1">Cache</label>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                    Cache
+                                                </label>
                                                 <select
-                                                    value={createVmForm.diskCache || VM_DEFAULTS.diskCache}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskCache: e.target.value })}
+                                                    value={
+                                                        createVmForm.diskCache ||
+                                                        VM_DEFAULTS.diskCache
+                                                    }
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            diskCache: e.target.value,
+                                                        })
+                                                    }
                                                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 >
-                                                    {VM_OPTIONS.diskCaches.map(opt => (
-                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    {VM_OPTIONS.diskCaches.map((opt) => (
+                                                        <option key={opt.value} value={opt.value}>
+                                                            {opt.label}
+                                                        </option>
                                                     ))}
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-zinc-300 mb-1">I/O</label>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                    I/O
+                                                </label>
                                                 <select
-                                                    value={createVmForm.diskIo || VM_DEFAULTS.diskIo}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, diskIo: e.target.value })}
+                                                    value={
+                                                        createVmForm.diskIo || VM_DEFAULTS.diskIo
+                                                    }
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            diskIo: e.target.value,
+                                                        })
+                                                    }
                                                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 >
-                                                    {VM_OPTIONS.diskIos.map(opt => (
-                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    {VM_OPTIONS.diskIos.map((opt) => (
+                                                        <option key={opt.value} value={opt.value}>
+                                                            {opt.label}
+                                                        </option>
                                                     ))}
                                                 </select>
                                             </div>
@@ -821,7 +1091,10 @@ const KvmManager: React.FC = () => {
                                                     };
                                                     setCreateVmForm({
                                                         ...createVmForm,
-                                                        disks: [...(createVmForm.disks || []), newDisk],
+                                                        disks: [
+                                                            ...(createVmForm.disks || []),
+                                                            newDisk,
+                                                        ],
                                                     });
                                                 }}
                                                 className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors"
@@ -831,20 +1104,29 @@ const KvmManager: React.FC = () => {
                                             </button>
                                         </div>
 
-                                        {(!createVmForm.disks || createVmForm.disks.length === 0) ? (
+                                        {!createVmForm.disks || createVmForm.disks.length === 0 ? (
                                             <p className="text-sm text-zinc-500 text-center py-4">
-                                                No additional disks. Click "Add Disk" to add more storage.
+                                                No additional disks. Click "Add Disk" to add more
+                                                storage.
                                             </p>
                                         ) : (
                                             <div className="space-y-3">
                                                 {createVmForm.disks.map((disk, idx) => (
-                                                    <div key={idx} className="bg-zinc-800 rounded p-3 relative">
+                                                    <div
+                                                        key={idx}
+                                                        className="bg-zinc-800 rounded p-3 relative"
+                                                    >
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                const newDisks = [...createVmForm.disks!];
+                                                                const newDisks = [
+                                                                    ...createVmForm.disks!,
+                                                                ];
                                                                 newDisks.splice(idx, 1);
-                                                                setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                                setCreateVmForm({
+                                                                    ...createVmForm,
+                                                                    disks: newDisks,
+                                                                });
                                                             }}
                                                             className="absolute top-2 right-2 p-1 text-zinc-400 hover:text-rose-400 transition-colors"
                                                         >
@@ -852,64 +1134,121 @@ const KvmManager: React.FC = () => {
                                                         </button>
                                                         <div className="grid grid-cols-4 gap-3">
                                                             <div>
-                                                                <label className="block text-xs text-zinc-400 mb-1">Name</label>
+                                                                <label className="block text-xs text-zinc-400 mb-1">
+                                                                    Name
+                                                                </label>
                                                                 <input
                                                                     type="text"
                                                                     value={disk.name || ''}
                                                                     onChange={(e) => {
-                                                                        const newDisks = [...createVmForm.disks!];
-                                                                        newDisks[idx] = { ...disk, name: e.target.value };
-                                                                        setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                                        const newDisks = [
+                                                                            ...createVmForm.disks!,
+                                                                        ];
+                                                                        newDisks[idx] = {
+                                                                            ...disk,
+                                                                            name: e.target.value,
+                                                                        };
+                                                                        setCreateVmForm({
+                                                                            ...createVmForm,
+                                                                            disks: newDisks,
+                                                                        });
                                                                     }}
                                                                     placeholder="data1"
                                                                     className="w-full px-2 py-1 text-sm bg-zinc-900 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                                 />
                                                             </div>
                                                             <div>
-                                                                <label className="block text-xs text-zinc-400 mb-1">Size (GB)</label>
+                                                                <label className="block text-xs text-zinc-400 mb-1">
+                                                                    Size (GB)
+                                                                </label>
                                                                 <input
                                                                     type="number"
                                                                     min={1}
                                                                     max={2048}
                                                                     value={disk.sizeGB || 20}
                                                                     onChange={(e) => {
-                                                                        const newDisks = [...createVmForm.disks!];
-                                                                        newDisks[idx] = { ...disk, sizeGB: parseInt(e.target.value) || 1 };
-                                                                        setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                                        const newDisks = [
+                                                                            ...createVmForm.disks!,
+                                                                        ];
+                                                                        newDisks[idx] = {
+                                                                            ...disk,
+                                                                            sizeGB:
+                                                                                parseInt(
+                                                                                    e.target.value
+                                                                                ) || 1,
+                                                                        };
+                                                                        setCreateVmForm({
+                                                                            ...createVmForm,
+                                                                            disks: newDisks,
+                                                                        });
                                                                     }}
                                                                     className="w-full px-2 py-1 text-sm bg-zinc-900 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                                 />
                                                             </div>
                                                             <div>
-                                                                <label className="block text-xs text-zinc-400 mb-1">Format</label>
+                                                                <label className="block text-xs text-zinc-400 mb-1">
+                                                                    Format
+                                                                </label>
                                                                 <select
                                                                     value={disk.format || 'qcow2'}
                                                                     onChange={(e) => {
-                                                                        const newDisks = [...createVmForm.disks!];
-                                                                        newDisks[idx] = { ...disk, format: e.target.value };
-                                                                        setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                                        const newDisks = [
+                                                                            ...createVmForm.disks!,
+                                                                        ];
+                                                                        newDisks[idx] = {
+                                                                            ...disk,
+                                                                            format: e.target.value,
+                                                                        };
+                                                                        setCreateVmForm({
+                                                                            ...createVmForm,
+                                                                            disks: newDisks,
+                                                                        });
                                                                     }}
                                                                     className="w-full px-2 py-1 text-sm bg-zinc-900 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                                 >
-                                                                    {VM_OPTIONS.diskFormats.map(opt => (
-                                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                                    ))}
+                                                                    {VM_OPTIONS.diskFormats.map(
+                                                                        (opt) => (
+                                                                            <option
+                                                                                key={opt.value}
+                                                                                value={opt.value}
+                                                                            >
+                                                                                {opt.label}
+                                                                            </option>
+                                                                        )
+                                                                    )}
                                                                 </select>
                                                             </div>
                                                             <div>
-                                                                <label className="block text-xs text-zinc-400 mb-1">Bus</label>
+                                                                <label className="block text-xs text-zinc-400 mb-1">
+                                                                    Bus
+                                                                </label>
                                                                 <select
                                                                     value={disk.bus || 'virtio'}
                                                                     onChange={(e) => {
-                                                                        const newDisks = [...createVmForm.disks!];
-                                                                        newDisks[idx] = { ...disk, bus: e.target.value };
-                                                                        setCreateVmForm({ ...createVmForm, disks: newDisks });
+                                                                        const newDisks = [
+                                                                            ...createVmForm.disks!,
+                                                                        ];
+                                                                        newDisks[idx] = {
+                                                                            ...disk,
+                                                                            bus: e.target.value,
+                                                                        };
+                                                                        setCreateVmForm({
+                                                                            ...createVmForm,
+                                                                            disks: newDisks,
+                                                                        });
                                                                     }}
                                                                     className="w-full px-2 py-1 text-sm bg-zinc-900 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                                 >
-                                                                    {VM_OPTIONS.diskBuses.map(opt => (
-                                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                                    ))}
+                                                                    {VM_OPTIONS.diskBuses.map(
+                                                                        (opt) => (
+                                                                            <option
+                                                                                key={opt.value}
+                                                                                value={opt.value}
+                                                                            >
+                                                                                {opt.label}
+                                                                            </option>
+                                                                        )
+                                                                    )}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -925,10 +1264,17 @@ const KvmManager: React.FC = () => {
                                             <input
                                                 type="checkbox"
                                                 checked={createVmForm.hugepages ?? false}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, hugepages: e.target.checked })}
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        hugepages: e.target.checked,
+                                                    })
+                                                }
                                                 className="rounded border-zinc-600"
                                             />
-                                            <span className="text-sm text-zinc-300">Enable Hugepages</span>
+                                            <span className="text-sm text-zinc-300">
+                                                Enable Hugepages
+                                            </span>
                                         </label>
                                     </div>
                                 </div>
@@ -939,26 +1285,52 @@ const KvmManager: React.FC = () => {
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Network Type</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Network Type
+                                            </label>
                                             <select
-                                                value={createVmForm.networkType || VM_DEFAULTS.networkType}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, networkType: e.target.value })}
+                                                value={
+                                                    createVmForm.networkType ||
+                                                    VM_DEFAULTS.networkType
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        networkType: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.networkTypes.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.networkTypes.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                                {createVmForm.networkType === 'bridge' ? 'Bridge Interface' : 'Network Name'}
+                                                {createVmForm.networkType === 'bridge'
+                                                    ? 'Bridge Interface'
+                                                    : 'Network Name'}
                                             </label>
                                             <input
                                                 type="text"
-                                                value={createVmForm.networkSource || VM_DEFAULTS.networkSource}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, networkSource: e.target.value })}
-                                                placeholder={createVmForm.networkType === 'bridge' ? 'br0' : 'default'}
+                                                value={
+                                                    createVmForm.networkSource ||
+                                                    VM_DEFAULTS.networkSource
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        networkSource: e.target.value,
+                                                    })
+                                                }
+                                                placeholder={
+                                                    createVmForm.networkType === 'bridge'
+                                                        ? 'br0'
+                                                        : 'default'
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
                                         </div>
@@ -966,23 +1338,42 @@ const KvmManager: React.FC = () => {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Network Model</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Network Model
+                                            </label>
                                             <select
-                                                value={createVmForm.networkModel || VM_DEFAULTS.networkModel}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, networkModel: e.target.value })}
+                                                value={
+                                                    createVmForm.networkModel ||
+                                                    VM_DEFAULTS.networkModel
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        networkModel: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.networkModels.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.networkModels.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">MAC Address (optional)</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                MAC Address (optional)
+                                            </label>
                                             <input
                                                 type="text"
                                                 value={createVmForm.macAddress || ''}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, macAddress: e.target.value })}
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        macAddress: e.target.value,
+                                                    })
+                                                }
                                                 placeholder="52:54:00:xx:xx:xx (auto-generate if empty)"
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
@@ -996,23 +1387,45 @@ const KvmManager: React.FC = () => {
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Graphics Type</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Graphics Type
+                                            </label>
                                             <select
-                                                value={createVmForm.graphicsType || VM_DEFAULTS.graphicsType}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, graphicsType: e.target.value })}
+                                                value={
+                                                    createVmForm.graphicsType ||
+                                                    VM_DEFAULTS.graphicsType
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        graphicsType: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.graphicsTypes.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.graphicsTypes.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Listen Address</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Listen Address
+                                            </label>
                                             <input
                                                 type="text"
-                                                value={createVmForm.graphicsListen || VM_DEFAULTS.graphicsListen}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, graphicsListen: e.target.value })}
+                                                value={
+                                                    createVmForm.graphicsListen ||
+                                                    VM_DEFAULTS.graphicsListen
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        graphicsListen: e.target.value,
+                                                    })
+                                                }
                                                 placeholder="0.0.0.0"
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
@@ -1021,21 +1434,35 @@ const KvmManager: React.FC = () => {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">VNC/SPICE Password (optional)</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                VNC/SPICE Password (optional)
+                                            </label>
                                             <input
                                                 type="password"
                                                 value={createVmForm.graphicsPassword || ''}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, graphicsPassword: e.target.value })}
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        graphicsPassword: e.target.value,
+                                                    })
+                                                }
                                                 placeholder="Leave empty for no password"
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Port (-1 = auto)</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Port (-1 = auto)
+                                            </label>
                                             <input
                                                 type="number"
                                                 value={createVmForm.graphicsPort ?? -1}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, graphicsPort: parseInt(e.target.value) })}
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        graphicsPort: parseInt(e.target.value),
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
                                         </div>
@@ -1043,26 +1470,47 @@ const KvmManager: React.FC = () => {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Video Model</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Video Model
+                                            </label>
                                             <select
-                                                value={createVmForm.videoModel || VM_DEFAULTS.videoModel}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, videoModel: e.target.value })}
+                                                value={
+                                                    createVmForm.videoModel ||
+                                                    VM_DEFAULTS.videoModel
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        videoModel: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.videoModels.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.videoModels.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Video RAM (KB)</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Video RAM (KB)
+                                            </label>
                                             <input
                                                 type="number"
                                                 min={1024}
                                                 max={262144}
                                                 step={1024}
-                                                value={createVmForm.videoVram || VM_DEFAULTS.videoVram}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, videoVram: parseInt(e.target.value) })}
+                                                value={
+                                                    createVmForm.videoVram || VM_DEFAULTS.videoVram
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        videoVram: parseInt(e.target.value),
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
                                         </div>
@@ -1076,26 +1524,47 @@ const KvmManager: React.FC = () => {
                                     {/* Machine & Architecture */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Machine Type</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Machine Type
+                                            </label>
                                             <select
                                                 value={createVmForm.machine || VM_DEFAULTS.machine}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, machine: e.target.value })}
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        machine: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.machines.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.machines.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">Clock Offset</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                Clock Offset
+                                            </label>
                                             <select
-                                                value={createVmForm.clockOffset || VM_DEFAULTS.clockOffset}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, clockOffset: e.target.value })}
+                                                value={
+                                                    createVmForm.clockOffset ||
+                                                    VM_DEFAULTS.clockOffset
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        clockOffset: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.clockOffsets.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.clockOffsets.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
@@ -1104,38 +1573,70 @@ const KvmManager: React.FC = () => {
                                     {/* Power Actions */}
                                     <div className="grid grid-cols-3 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">On Poweroff</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                On Poweroff
+                                            </label>
                                             <select
-                                                value={createVmForm.onPoweroff || VM_DEFAULTS.onPoweroff}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, onPoweroff: e.target.value })}
+                                                value={
+                                                    createVmForm.onPoweroff ||
+                                                    VM_DEFAULTS.onPoweroff
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        onPoweroff: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.powerActions.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.powerActions.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">On Reboot</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                On Reboot
+                                            </label>
                                             <select
-                                                value={createVmForm.onReboot || VM_DEFAULTS.onReboot}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, onReboot: e.target.value })}
+                                                value={
+                                                    createVmForm.onReboot || VM_DEFAULTS.onReboot
+                                                }
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        onReboot: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.powerActions.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.powerActions.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-1">On Crash</label>
+                                            <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                On Crash
+                                            </label>
                                             <select
                                                 value={createVmForm.onCrash || VM_DEFAULTS.onCrash}
-                                                onChange={(e) => setCreateVmForm({ ...createVmForm, onCrash: e.target.value })}
+                                                onChange={(e) =>
+                                                    setCreateVmForm({
+                                                        ...createVmForm,
+                                                        onCrash: e.target.value,
+                                                    })
+                                                }
                                                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
-                                                {VM_OPTIONS.powerActions.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                {VM_OPTIONS.powerActions.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>
@@ -1144,12 +1645,19 @@ const KvmManager: React.FC = () => {
                                     {/* Feature Toggles */}
                                     <div className="grid grid-cols-2 gap-4 pt-2">
                                         <div className="space-y-3">
-                                            <h4 className="text-sm font-medium text-zinc-400">System Features</h4>
+                                            <h4 className="text-sm font-medium text-zinc-400">
+                                                System Features
+                                            </h4>
                                             <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     checked={createVmForm.acpi ?? VM_DEFAULTS.acpi}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, acpi: e.target.checked })}
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            acpi: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                 />
                                                 <span className="text-sm text-zinc-300">ACPI</span>
@@ -1158,7 +1666,12 @@ const KvmManager: React.FC = () => {
                                                 <input
                                                     type="checkbox"
                                                     checked={createVmForm.apic ?? VM_DEFAULTS.apic}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, apic: e.target.checked })}
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            apic: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                 />
                                                 <span className="text-sm text-zinc-300">APIC</span>
@@ -1167,78 +1680,144 @@ const KvmManager: React.FC = () => {
                                                 <input
                                                     type="checkbox"
                                                     checked={createVmForm.uefi ?? false}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, uefi: e.target.checked })}
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            uefi: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                 />
-                                                <span className="text-sm text-zinc-300">UEFI Boot</span>
+                                                <span className="text-sm text-zinc-300">
+                                                    UEFI Boot
+                                                </span>
                                             </label>
                                             <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     checked={createVmForm.secureBoot ?? false}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, secureBoot: e.target.checked })}
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            secureBoot: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                     disabled={!createVmForm.uefi}
                                                 />
-                                                <span className={`text-sm ${!createVmForm.uefi ? 'text-zinc-500' : 'text-zinc-300'}`}>Secure Boot (requires UEFI)</span>
+                                                <span
+                                                    className={`text-sm ${!createVmForm.uefi ? 'text-zinc-500' : 'text-zinc-300'}`}
+                                                >
+                                                    Secure Boot (requires UEFI)
+                                                </span>
                                             </label>
                                             <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     checked={createVmForm.bootMenu ?? false}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, bootMenu: e.target.checked })}
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            bootMenu: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                 />
-                                                <span className="text-sm text-zinc-300">Boot Menu</span>
+                                                <span className="text-sm text-zinc-300">
+                                                    Boot Menu
+                                                </span>
                                             </label>
                                         </div>
                                         <div className="space-y-3">
-                                            <h4 className="text-sm font-medium text-zinc-400">Devices</h4>
+                                            <h4 className="text-sm font-medium text-zinc-400">
+                                                Devices
+                                            </h4>
                                             <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     checked={createVmForm.usb ?? VM_DEFAULTS.usb}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, usb: e.target.checked })}
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            usb: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                 />
-                                                <span className="text-sm text-zinc-300">USB Controller</span>
+                                                <span className="text-sm text-zinc-300">
+                                                    USB Controller
+                                                </span>
                                             </label>
                                             <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
-                                                    checked={createVmForm.tablet ?? VM_DEFAULTS.tablet}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, tablet: e.target.checked })}
+                                                    checked={
+                                                        createVmForm.tablet ?? VM_DEFAULTS.tablet
+                                                    }
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            tablet: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                     disabled={!createVmForm.usb}
                                                 />
-                                                <span className={`text-sm ${!createVmForm.usb ? 'text-zinc-500' : 'text-zinc-300'}`}>USB Tablet (better mouse)</span>
+                                                <span
+                                                    className={`text-sm ${!createVmForm.usb ? 'text-zinc-500' : 'text-zinc-300'}`}
+                                                >
+                                                    USB Tablet (better mouse)
+                                                </span>
                                             </label>
                                             <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
-                                                    checked={createVmForm.serial ?? VM_DEFAULTS.serial}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, serial: e.target.checked })}
+                                                    checked={
+                                                        createVmForm.serial ?? VM_DEFAULTS.serial
+                                                    }
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            serial: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                 />
-                                                <span className="text-sm text-zinc-300">Serial Console</span>
+                                                <span className="text-sm text-zinc-300">
+                                                    Serial Console
+                                                </span>
                                             </label>
                                             <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     checked={createVmForm.tpm ?? false}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, tpm: e.target.checked })}
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            tpm: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                 />
-                                                <span className="text-sm text-zinc-300">TPM 2.0 (Windows 11)</span>
+                                                <span className="text-sm text-zinc-300">
+                                                    TPM 2.0 (Windows 11)
+                                                </span>
                                             </label>
                                             <label className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     checked={createVmForm.autostart ?? false}
-                                                    onChange={(e) => setCreateVmForm({ ...createVmForm, autostart: e.target.checked })}
+                                                    onChange={(e) =>
+                                                        setCreateVmForm({
+                                                            ...createVmForm,
+                                                            autostart: e.target.checked,
+                                                        })
+                                                    }
                                                     className="rounded border-zinc-600"
                                                 />
-                                                <span className="text-sm text-zinc-300">Autostart with host</span>
+                                                <span className="text-sm text-zinc-300">
+                                                    Autostart with host
+                                                </span>
                                             </label>
                                         </div>
                                     </div>
@@ -1273,7 +1852,9 @@ const KvmManager: React.FC = () => {
                     <div className="bg-surface border border-border rounded-lg w-full max-w-3xl shadow-xl max-h-[90vh] flex flex-col">
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-                            <h2 className="text-lg font-bold text-zinc-100">Edit VM: {editVmName}</h2>
+                            <h2 className="text-lg font-bold text-zinc-100">
+                                Edit VM: {editVmName}
+                            </h2>
                             <button
                                 onClick={() => {
                                     setEditVmDialogOpen(false);
@@ -1289,11 +1870,7 @@ const KvmManager: React.FC = () => {
 
                         {/* Tabs */}
                         <div className="px-5 pt-3 shrink-0">
-                            <Tabs
-                                items={vmTabItems}
-                                activeId={editVmTab}
-                                onChange={setEditVmTab}
-                            />
+                            <Tabs items={vmTabItems} activeId={editVmTab} onChange={setEditVmTab} />
                         </div>
 
                         {/* Body */}
@@ -1309,11 +1886,18 @@ const KvmManager: React.FC = () => {
                                         <div className="space-y-4">
                                             {/* Description */}
                                             <div>
-                                                <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
+                                                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                    Description
+                                                </label>
                                                 <input
                                                     type="text"
                                                     value={editVmForm.description || ''}
-                                                    onChange={(e) => setEditVmForm({ ...editVmForm, description: e.target.value })}
+                                                    onChange={(e) =>
+                                                        setEditVmForm({
+                                                            ...editVmForm,
+                                                            description: e.target.value,
+                                                        })
+                                                    }
                                                     placeholder="Web server for production"
                                                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 />
@@ -1326,21 +1910,41 @@ const KvmManager: React.FC = () => {
                                                     CD-ROM ISO
                                                 </label>
                                                 <select
-                                                    value={editVmForm.isoPath === '' ? '__eject__' : (editVmForm.isoPath || editVmOriginal?.isoPath || '')}
+                                                    value={
+                                                        editVmForm.isoPath === ''
+                                                            ? '__eject__'
+                                                            : editVmForm.isoPath ||
+                                                              editVmOriginal?.isoPath ||
+                                                              ''
+                                                    }
                                                     onChange={(e) => {
                                                         if (e.target.value === '__eject__') {
-                                                            setEditVmForm({ ...editVmForm, isoPath: '' });
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                isoPath: '',
+                                                            });
                                                         } else if (e.target.value === '') {
                                                             // 不變
                                                             const { isoPath, ...rest } = editVmForm;
                                                             setEditVmForm(rest);
                                                         } else {
-                                                            setEditVmForm({ ...editVmForm, isoPath: e.target.value });
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                isoPath: e.target.value,
+                                                            });
                                                         }
                                                     }}
                                                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 >
-                                                    <option value="">No change (Current: {editVmOriginal?.isoPath ? editVmOriginal.isoPath.split('/').pop() : 'None'})</option>
+                                                    <option value="">
+                                                        No change (Current:{' '}
+                                                        {editVmOriginal?.isoPath
+                                                            ? editVmOriginal.isoPath
+                                                                  .split('/')
+                                                                  .pop()
+                                                            : 'None'}
+                                                        )
+                                                    </option>
                                                     <option value="__eject__">Eject CD-ROM</option>
                                                     {isoFiles.map((iso) => (
                                                         <option key={iso.path} value={iso.path}>
@@ -1354,27 +1958,56 @@ const KvmManager: React.FC = () => {
                                             <div>
                                                 <label className="block text-sm font-medium text-zinc-300 mb-1">
                                                     Boot Order
-                                                    {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
-                                                        <span className="text-xs text-amber-400 ml-2">(requires restart)</span>
+                                                    {editVmOriginal?.state ===
+                                                        'VIR_DOMAIN_RUNNING' && (
+                                                        <span className="text-xs text-amber-400 ml-2">
+                                                            (requires restart)
+                                                        </span>
                                                     )}
                                                 </label>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {VM_OPTIONS.bootDevices.map(device => (
-                                                        <label key={device.value} className="flex items-center gap-2 bg-zinc-800 px-3 py-2 rounded border border-zinc-700">
+                                                    {VM_OPTIONS.bootDevices.map((device) => (
+                                                        <label
+                                                            key={device.value}
+                                                            className="flex items-center gap-2 bg-zinc-800 px-3 py-2 rounded border border-zinc-700"
+                                                        >
                                                             <input
                                                                 type="checkbox"
-                                                                checked={(editVmForm.bootOrder || editVmOriginal?.bootOrder || []).includes(device.value)}
+                                                                checked={(
+                                                                    editVmForm.bootOrder ||
+                                                                    editVmOriginal?.bootOrder ||
+                                                                    []
+                                                                ).includes(device.value)}
                                                                 onChange={(e) => {
-                                                                    const current = editVmForm.bootOrder || editVmOriginal?.bootOrder || [];
+                                                                    const current =
+                                                                        editVmForm.bootOrder ||
+                                                                        editVmOriginal?.bootOrder ||
+                                                                        [];
                                                                     if (e.target.checked) {
-                                                                        setEditVmForm({ ...editVmForm, bootOrder: [...current, device.value] });
+                                                                        setEditVmForm({
+                                                                            ...editVmForm,
+                                                                            bootOrder: [
+                                                                                ...current,
+                                                                                device.value,
+                                                                            ],
+                                                                        });
                                                                     } else {
-                                                                        setEditVmForm({ ...editVmForm, bootOrder: current.filter(d => d !== device.value) });
+                                                                        setEditVmForm({
+                                                                            ...editVmForm,
+                                                                            bootOrder:
+                                                                                current.filter(
+                                                                                    (d) =>
+                                                                                        d !==
+                                                                                        device.value
+                                                                                ),
+                                                                        });
                                                                     }
                                                                 }}
                                                                 className="rounded border-zinc-600"
                                                             />
-                                                            <span className="text-sm text-zinc-300">{device.label}</span>
+                                                            <span className="text-sm text-zinc-300">
+                                                                {device.label}
+                                                            </span>
                                                         </label>
                                                     ))}
                                                 </div>
@@ -1385,29 +2018,58 @@ const KvmManager: React.FC = () => {
                                                 <label className="flex items-center gap-2">
                                                     <input
                                                         type="checkbox"
-                                                        checked={editVmForm.autostart ?? editVmOriginal?.autostart ?? false}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, autostart: e.target.checked })}
+                                                        checked={
+                                                            editVmForm.autostart ??
+                                                            editVmOriginal?.autostart ??
+                                                            false
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                autostart: e.target.checked,
+                                                            })
+                                                        }
                                                         className="rounded border-zinc-600"
                                                     />
-                                                    <span className="text-sm text-zinc-300">Autostart with host</span>
+                                                    <span className="text-sm text-zinc-300">
+                                                        Autostart with host
+                                                    </span>
                                                 </label>
                                             </div>
 
                                             {/* VM Info (Read Only) */}
                                             {editVmOriginal && (
                                                 <div className="mt-4 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
-                                                    <h4 className="text-sm font-medium text-zinc-400 mb-2">VM Information</h4>
+                                                    <h4 className="text-sm font-medium text-zinc-400 mb-2">
+                                                        VM Information
+                                                    </h4>
                                                     <div className="grid grid-cols-2 gap-2 text-sm">
                                                         <div className="text-zinc-500">UUID:</div>
-                                                        <div className="text-zinc-300 font-mono text-xs">{editVmOriginal.uuid}</div>
-                                                        <div className="text-zinc-500">OS Type:</div>
-                                                        <div className="text-zinc-300">{editVmOriginal.osType || 'Unknown'}</div>
-                                                        <div className="text-zinc-500">Machine:</div>
-                                                        <div className="text-zinc-300">{editVmOriginal.machine || 'Unknown'}</div>
+                                                        <div className="text-zinc-300 font-mono text-xs">
+                                                            {editVmOriginal.uuid}
+                                                        </div>
+                                                        <div className="text-zinc-500">
+                                                            OS Type:
+                                                        </div>
+                                                        <div className="text-zinc-300">
+                                                            {editVmOriginal.osType || 'Unknown'}
+                                                        </div>
+                                                        <div className="text-zinc-500">
+                                                            Machine:
+                                                        </div>
+                                                        <div className="text-zinc-300">
+                                                            {editVmOriginal.machine || 'Unknown'}
+                                                        </div>
                                                         <div className="text-zinc-500">Disk:</div>
-                                                        <div className="text-zinc-300 text-xs font-mono truncate" title={editVmOriginal.diskPath || ''}>
-                                                            {editVmOriginal.diskPath?.split('/').pop() || 'Unknown'}
-                                                            {editVmOriginal.diskSizeBytes && ` (${formatFileSize(editVmOriginal.diskSizeBytes)})`}
+                                                        <div
+                                                            className="text-zinc-300 text-xs font-mono truncate"
+                                                            title={editVmOriginal.diskPath || ''}
+                                                        >
+                                                            {editVmOriginal.diskPath
+                                                                ?.split('/')
+                                                                .pop() || 'Unknown'}
+                                                            {editVmOriginal.diskSizeBytes &&
+                                                                ` (${formatFileSize(editVmOriginal.diskSizeBytes)})`}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1424,33 +2086,62 @@ const KvmManager: React.FC = () => {
                                                     <label className="block text-sm font-medium text-zinc-300 mb-1">
                                                         <Cpu size={14} className="inline mr-1" />
                                                         vCPU Cores
-                                                        {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
-                                                            <span className="text-xs text-amber-400 ml-2">(requires restart)</span>
+                                                        {editVmOriginal?.state ===
+                                                            'VIR_DOMAIN_RUNNING' && (
+                                                            <span className="text-xs text-amber-400 ml-2">
+                                                                (requires restart)
+                                                            </span>
                                                         )}
                                                     </label>
                                                     <input
                                                         type="number"
                                                         min={1}
                                                         max={64}
-                                                        value={editVmForm.vcpu ?? editVmOriginal?.vcpu ?? 1}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, vcpu: parseInt(e.target.value) || 1 })}
+                                                        value={
+                                                            editVmForm.vcpu ??
+                                                            editVmOriginal?.vcpu ??
+                                                            1
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                vcpu: parseInt(e.target.value) || 1,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
                                                 </div>
                                                 <div>
                                                     <label className="block text-sm font-medium text-zinc-300 mb-1">
                                                         CPU Mode
-                                                        {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
-                                                            <span className="text-xs text-amber-400 ml-2">(requires restart)</span>
+                                                        {editVmOriginal?.state ===
+                                                            'VIR_DOMAIN_RUNNING' && (
+                                                            <span className="text-xs text-amber-400 ml-2">
+                                                                (requires restart)
+                                                            </span>
                                                         )}
                                                     </label>
                                                     <select
-                                                        value={editVmForm.cpuMode ?? editVmOriginal?.cpuMode ?? 'host-passthrough'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, cpuMode: e.target.value })}
+                                                        value={
+                                                            editVmForm.cpuMode ??
+                                                            editVmOriginal?.cpuMode ??
+                                                            'host-passthrough'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                cpuMode: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     >
-                                                        {VM_OPTIONS.cpuModes.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        {VM_OPTIONS.cpuModes.map((opt) => (
+                                                            <option
+                                                                key={opt.value}
+                                                                value={opt.value}
+                                                            >
+                                                                {opt.label}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
@@ -1460,7 +2151,10 @@ const KvmManager: React.FC = () => {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
                                                     <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                                        <MemoryStick size={14} className="inline mr-1" />
+                                                        <MemoryStick
+                                                            size={14}
+                                                            className="inline mr-1"
+                                                        />
                                                         Memory (MB)
                                                     </label>
                                                     <input
@@ -1468,20 +2162,53 @@ const KvmManager: React.FC = () => {
                                                         min={512}
                                                         max={262144}
                                                         step={512}
-                                                        value={editVmForm.memoryMB ?? (editVmOriginal?.memory ? Math.round(editVmOriginal.memory / 1024 / 1024) : 2048)}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, memoryMB: parseInt(e.target.value) || 512 })}
+                                                        value={
+                                                            editVmForm.memoryMB ??
+                                                            (editVmOriginal?.memory
+                                                                ? Math.round(
+                                                                      editVmOriginal.memory /
+                                                                          1024 /
+                                                                          1024
+                                                                  )
+                                                                : 2048)
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                memoryMB:
+                                                                    parseInt(e.target.value) || 512,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Max Memory (MB)</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        Max Memory (MB)
+                                                    </label>
                                                     <input
                                                         type="number"
                                                         min={512}
                                                         max={262144}
                                                         step={512}
-                                                        value={editVmForm.maxMemoryMB ?? (editVmOriginal?.maxMemory ? Math.round(editVmOriginal.maxMemory / 1024 / 1024) : undefined)}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, maxMemoryMB: parseInt(e.target.value) || undefined })}
+                                                        value={
+                                                            editVmForm.maxMemoryMB ??
+                                                            (editVmOriginal?.maxMemory
+                                                                ? Math.round(
+                                                                      editVmOriginal.maxMemory /
+                                                                          1024 /
+                                                                          1024
+                                                                  )
+                                                                : undefined)
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                maxMemoryMB:
+                                                                    parseInt(e.target.value) ||
+                                                                    undefined,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
                                                 </div>
@@ -1492,11 +2219,22 @@ const KvmManager: React.FC = () => {
                                                 <label className="flex items-center gap-2">
                                                     <input
                                                         type="checkbox"
-                                                        checked={editVmForm.hugepages ?? editVmOriginal?.hugepages ?? false}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, hugepages: e.target.checked })}
+                                                        checked={
+                                                            editVmForm.hugepages ??
+                                                            editVmOriginal?.hugepages ??
+                                                            false
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                hugepages: e.target.checked,
+                                                            })
+                                                        }
                                                         className="rounded border-zinc-600"
                                                     />
-                                                    <span className="text-sm text-zinc-300">Enable Hugepages</span>
+                                                    <span className="text-sm text-zinc-300">
+                                                        Enable Hugepages
+                                                    </span>
                                                 </label>
                                             </div>
                                         </div>
@@ -1508,32 +2246,65 @@ const KvmManager: React.FC = () => {
                                             {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
                                                 <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                                                     <p className="text-sm text-amber-400">
-                                                        <AlertCircle size={14} className="inline mr-1" />
-                                                        Network changes require VM restart to take effect
+                                                        <AlertCircle
+                                                            size={14}
+                                                            className="inline mr-1"
+                                                        />
+                                                        Network changes require VM restart to take
+                                                        effect
                                                     </p>
                                                 </div>
                                             )}
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Network Type</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        Network Type
+                                                    </label>
                                                     <select
-                                                        value={editVmForm.networkType ?? editVmOriginal?.networkType ?? 'network'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, networkType: e.target.value })}
+                                                        value={
+                                                            editVmForm.networkType ??
+                                                            editVmOriginal?.networkType ??
+                                                            'network'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                networkType: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     >
-                                                        {VM_OPTIONS.networkTypes.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        {VM_OPTIONS.networkTypes.map((opt) => (
+                                                            <option
+                                                                key={opt.value}
+                                                                value={opt.value}
+                                                            >
+                                                                {opt.label}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label className="block text-sm font-medium text-zinc-300 mb-1">
-                                                        {(editVmForm.networkType ?? editVmOriginal?.networkType) === 'bridge' ? 'Bridge Interface' : 'Network Name'}
+                                                        {(editVmForm.networkType ??
+                                                            editVmOriginal?.networkType) ===
+                                                        'bridge'
+                                                            ? 'Bridge Interface'
+                                                            : 'Network Name'}
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={editVmForm.networkSource ?? editVmOriginal?.networkSource ?? 'default'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, networkSource: e.target.value })}
+                                                        value={
+                                                            editVmForm.networkSource ??
+                                                            editVmOriginal?.networkSource ??
+                                                            'default'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                networkSource: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
                                                 </div>
@@ -1541,23 +2312,50 @@ const KvmManager: React.FC = () => {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Network Model</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        Network Model
+                                                    </label>
                                                     <select
-                                                        value={editVmForm.networkModel ?? editVmOriginal?.networkModel ?? 'virtio'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, networkModel: e.target.value })}
+                                                        value={
+                                                            editVmForm.networkModel ??
+                                                            editVmOriginal?.networkModel ??
+                                                            'virtio'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                networkModel: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     >
-                                                        {VM_OPTIONS.networkModels.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        {VM_OPTIONS.networkModels.map((opt) => (
+                                                            <option
+                                                                key={opt.value}
+                                                                value={opt.value}
+                                                            >
+                                                                {opt.label}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">MAC Address</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        MAC Address
+                                                    </label>
                                                     <input
                                                         type="text"
-                                                        value={editVmForm.macAddress ?? editVmOriginal?.macAddress ?? ''}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, macAddress: e.target.value })}
+                                                        value={
+                                                            editVmForm.macAddress ??
+                                                            editVmOriginal?.macAddress ??
+                                                            ''
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                macAddress: e.target.value,
+                                                            })
+                                                        }
                                                         placeholder="52:54:00:xx:xx:xx"
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
@@ -1571,23 +2369,50 @@ const KvmManager: React.FC = () => {
                                         <div className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Graphics Type</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        Graphics Type
+                                                    </label>
                                                     <select
-                                                        value={editVmForm.graphicsType ?? editVmOriginal?.graphicsType ?? 'vnc'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, graphicsType: e.target.value })}
+                                                        value={
+                                                            editVmForm.graphicsType ??
+                                                            editVmOriginal?.graphicsType ??
+                                                            'vnc'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                graphicsType: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     >
-                                                        {VM_OPTIONS.graphicsTypes.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        {VM_OPTIONS.graphicsTypes.map((opt) => (
+                                                            <option
+                                                                key={opt.value}
+                                                                value={opt.value}
+                                                            >
+                                                                {opt.label}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Listen Address</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        Listen Address
+                                                    </label>
                                                     <input
                                                         type="text"
-                                                        value={editVmForm.graphicsListen ?? editVmOriginal?.graphicsListen ?? '0.0.0.0'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, graphicsListen: e.target.value })}
+                                                        value={
+                                                            editVmForm.graphicsListen ??
+                                                            editVmOriginal?.graphicsListen ??
+                                                            '0.0.0.0'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                graphicsListen: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
                                                 </div>
@@ -1595,21 +2420,41 @@ const KvmManager: React.FC = () => {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">VNC/SPICE Password</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        VNC/SPICE Password
+                                                    </label>
                                                     <input
                                                         type="password"
                                                         value={editVmForm.graphicsPassword ?? ''}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, graphicsPassword: e.target.value })}
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                graphicsPassword: e.target.value,
+                                                            })
+                                                        }
                                                         placeholder="Leave empty to keep current"
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Port</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        Port
+                                                    </label>
                                                     <input
                                                         type="number"
-                                                        value={editVmForm.graphicsPort ?? editVmOriginal?.graphicsPort ?? -1}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, graphicsPort: parseInt(e.target.value) })}
+                                                        value={
+                                                            editVmForm.graphicsPort ??
+                                                            editVmOriginal?.graphicsPort ??
+                                                            -1
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                graphicsPort: parseInt(
+                                                                    e.target.value
+                                                                ),
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
                                                 </div>
@@ -1617,26 +2462,53 @@ const KvmManager: React.FC = () => {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Video Model</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        Video Model
+                                                    </label>
                                                     <select
-                                                        value={editVmForm.videoModel ?? editVmOriginal?.videoModel ?? 'qxl'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, videoModel: e.target.value })}
+                                                        value={
+                                                            editVmForm.videoModel ??
+                                                            editVmOriginal?.videoModel ??
+                                                            'qxl'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                videoModel: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     >
-                                                        {VM_OPTIONS.videoModels.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        {VM_OPTIONS.videoModels.map((opt) => (
+                                                            <option
+                                                                key={opt.value}
+                                                                value={opt.value}
+                                                            >
+                                                                {opt.label}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">Video RAM (KB)</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        Video RAM (KB)
+                                                    </label>
                                                     <input
                                                         type="number"
                                                         min={1024}
                                                         max={262144}
                                                         step={1024}
-                                                        value={editVmForm.videoVram ?? editVmOriginal?.videoVram ?? 65536}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, videoVram: parseInt(e.target.value) })}
+                                                        value={
+                                                            editVmForm.videoVram ??
+                                                            editVmOriginal?.videoVram ??
+                                                            65536
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                videoVram: parseInt(e.target.value),
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
                                                 </div>
@@ -1652,17 +2524,34 @@ const KvmManager: React.FC = () => {
                                                 <div>
                                                     <label className="block text-sm font-medium text-zinc-300 mb-1">
                                                         Clock Offset
-                                                        {editVmOriginal?.state === 'VIR_DOMAIN_RUNNING' && (
-                                                            <span className="text-xs text-amber-400 ml-2">(requires restart)</span>
+                                                        {editVmOriginal?.state ===
+                                                            'VIR_DOMAIN_RUNNING' && (
+                                                            <span className="text-xs text-amber-400 ml-2">
+                                                                (requires restart)
+                                                            </span>
                                                         )}
                                                     </label>
                                                     <select
-                                                        value={editVmForm.clockOffset ?? editVmOriginal?.clockOffset ?? 'utc'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, clockOffset: e.target.value })}
+                                                        value={
+                                                            editVmForm.clockOffset ??
+                                                            editVmOriginal?.clockOffset ??
+                                                            'utc'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                clockOffset: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     >
-                                                        {VM_OPTIONS.clockOffsets.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        {VM_OPTIONS.clockOffsets.map((opt) => (
+                                                            <option
+                                                                key={opt.value}
+                                                                value={opt.value}
+                                                            >
+                                                                {opt.label}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
@@ -1671,38 +2560,86 @@ const KvmManager: React.FC = () => {
                                             {/* Power Actions */}
                                             <div className="grid grid-cols-3 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">On Poweroff</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        On Poweroff
+                                                    </label>
                                                     <select
-                                                        value={editVmForm.onPoweroff ?? editVmOriginal?.onPoweroff ?? 'destroy'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, onPoweroff: e.target.value })}
+                                                        value={
+                                                            editVmForm.onPoweroff ??
+                                                            editVmOriginal?.onPoweroff ??
+                                                            'destroy'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                onPoweroff: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     >
-                                                        {VM_OPTIONS.powerActions.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        {VM_OPTIONS.powerActions.map((opt) => (
+                                                            <option
+                                                                key={opt.value}
+                                                                value={opt.value}
+                                                            >
+                                                                {opt.label}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">On Reboot</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        On Reboot
+                                                    </label>
                                                     <select
-                                                        value={editVmForm.onReboot ?? editVmOriginal?.onReboot ?? 'restart'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, onReboot: e.target.value })}
+                                                        value={
+                                                            editVmForm.onReboot ??
+                                                            editVmOriginal?.onReboot ??
+                                                            'restart'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                onReboot: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     >
-                                                        {VM_OPTIONS.powerActions.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        {VM_OPTIONS.powerActions.map((opt) => (
+                                                            <option
+                                                                key={opt.value}
+                                                                value={opt.value}
+                                                            >
+                                                                {opt.label}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">On Crash</label>
+                                                    <label className="block text-sm font-medium text-zinc-300 mb-1">
+                                                        On Crash
+                                                    </label>
                                                     <select
-                                                        value={editVmForm.onCrash ?? editVmOriginal?.onCrash ?? 'destroy'}
-                                                        onChange={(e) => setEditVmForm({ ...editVmForm, onCrash: e.target.value })}
+                                                        value={
+                                                            editVmForm.onCrash ??
+                                                            editVmOriginal?.onCrash ??
+                                                            'destroy'
+                                                        }
+                                                        onChange={(e) =>
+                                                            setEditVmForm({
+                                                                ...editVmForm,
+                                                                onCrash: e.target.value,
+                                                            })
+                                                        }
                                                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     >
-                                                        {VM_OPTIONS.powerActions.map(opt => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        {VM_OPTIONS.powerActions.map((opt) => (
+                                                            <option
+                                                                key={opt.value}
+                                                                value={opt.value}
+                                                            >
+                                                                {opt.label}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
@@ -1711,72 +2648,153 @@ const KvmManager: React.FC = () => {
                                             {/* Feature Toggles */}
                                             <div className="grid grid-cols-2 gap-4 pt-2">
                                                 <div className="space-y-3">
-                                                    <h4 className="text-sm font-medium text-zinc-400">System Features</h4>
+                                                    <h4 className="text-sm font-medium text-zinc-400">
+                                                        System Features
+                                                    </h4>
                                                     <label className="flex items-center gap-2">
                                                         <input
                                                             type="checkbox"
-                                                            checked={editVmForm.acpi ?? editVmOriginal?.acpi ?? true}
-                                                            onChange={(e) => setEditVmForm({ ...editVmForm, acpi: e.target.checked })}
+                                                            checked={
+                                                                editVmForm.acpi ??
+                                                                editVmOriginal?.acpi ??
+                                                                true
+                                                            }
+                                                            onChange={(e) =>
+                                                                setEditVmForm({
+                                                                    ...editVmForm,
+                                                                    acpi: e.target.checked,
+                                                                })
+                                                            }
                                                             className="rounded border-zinc-600"
                                                         />
-                                                        <span className="text-sm text-zinc-300">ACPI</span>
+                                                        <span className="text-sm text-zinc-300">
+                                                            ACPI
+                                                        </span>
                                                     </label>
                                                     <label className="flex items-center gap-2">
                                                         <input
                                                             type="checkbox"
-                                                            checked={editVmForm.apic ?? editVmOriginal?.apic ?? true}
-                                                            onChange={(e) => setEditVmForm({ ...editVmForm, apic: e.target.checked })}
+                                                            checked={
+                                                                editVmForm.apic ??
+                                                                editVmOriginal?.apic ??
+                                                                true
+                                                            }
+                                                            onChange={(e) =>
+                                                                setEditVmForm({
+                                                                    ...editVmForm,
+                                                                    apic: e.target.checked,
+                                                                })
+                                                            }
                                                             className="rounded border-zinc-600"
                                                         />
-                                                        <span className="text-sm text-zinc-300">APIC</span>
+                                                        <span className="text-sm text-zinc-300">
+                                                            APIC
+                                                        </span>
                                                     </label>
                                                     <label className="flex items-center gap-2">
                                                         <input
                                                             type="checkbox"
-                                                            checked={editVmForm.bootMenu ?? editVmOriginal?.bootMenu ?? false}
-                                                            onChange={(e) => setEditVmForm({ ...editVmForm, bootMenu: e.target.checked })}
+                                                            checked={
+                                                                editVmForm.bootMenu ??
+                                                                editVmOriginal?.bootMenu ??
+                                                                false
+                                                            }
+                                                            onChange={(e) =>
+                                                                setEditVmForm({
+                                                                    ...editVmForm,
+                                                                    bootMenu: e.target.checked,
+                                                                })
+                                                            }
                                                             className="rounded border-zinc-600"
                                                         />
-                                                        <span className="text-sm text-zinc-300">Boot Menu</span>
+                                                        <span className="text-sm text-zinc-300">
+                                                            Boot Menu
+                                                        </span>
                                                     </label>
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <h4 className="text-sm font-medium text-zinc-400">Devices</h4>
+                                                    <h4 className="text-sm font-medium text-zinc-400">
+                                                        Devices
+                                                    </h4>
                                                     <label className="flex items-center gap-2">
                                                         <input
                                                             type="checkbox"
-                                                            checked={editVmForm.usb ?? editVmOriginal?.usb ?? true}
-                                                            onChange={(e) => setEditVmForm({ ...editVmForm, usb: e.target.checked })}
+                                                            checked={
+                                                                editVmForm.usb ??
+                                                                editVmOriginal?.usb ??
+                                                                true
+                                                            }
+                                                            onChange={(e) =>
+                                                                setEditVmForm({
+                                                                    ...editVmForm,
+                                                                    usb: e.target.checked,
+                                                                })
+                                                            }
                                                             className="rounded border-zinc-600"
                                                         />
-                                                        <span className="text-sm text-zinc-300">USB Controller</span>
+                                                        <span className="text-sm text-zinc-300">
+                                                            USB Controller
+                                                        </span>
                                                     </label>
                                                     <label className="flex items-center gap-2">
                                                         <input
                                                             type="checkbox"
-                                                            checked={editVmForm.tablet ?? editVmOriginal?.tablet ?? true}
-                                                            onChange={(e) => setEditVmForm({ ...editVmForm, tablet: e.target.checked })}
+                                                            checked={
+                                                                editVmForm.tablet ??
+                                                                editVmOriginal?.tablet ??
+                                                                true
+                                                            }
+                                                            onChange={(e) =>
+                                                                setEditVmForm({
+                                                                    ...editVmForm,
+                                                                    tablet: e.target.checked,
+                                                                })
+                                                            }
                                                             className="rounded border-zinc-600"
                                                         />
-                                                        <span className="text-sm text-zinc-300">USB Tablet (better mouse)</span>
+                                                        <span className="text-sm text-zinc-300">
+                                                            USB Tablet (better mouse)
+                                                        </span>
                                                     </label>
                                                     <label className="flex items-center gap-2">
                                                         <input
                                                             type="checkbox"
-                                                            checked={editVmForm.serial ?? editVmOriginal?.serial ?? true}
-                                                            onChange={(e) => setEditVmForm({ ...editVmForm, serial: e.target.checked })}
+                                                            checked={
+                                                                editVmForm.serial ??
+                                                                editVmOriginal?.serial ??
+                                                                true
+                                                            }
+                                                            onChange={(e) =>
+                                                                setEditVmForm({
+                                                                    ...editVmForm,
+                                                                    serial: e.target.checked,
+                                                                })
+                                                            }
                                                             className="rounded border-zinc-600"
                                                         />
-                                                        <span className="text-sm text-zinc-300">Serial Console</span>
+                                                        <span className="text-sm text-zinc-300">
+                                                            Serial Console
+                                                        </span>
                                                     </label>
                                                     <label className="flex items-center gap-2">
                                                         <input
                                                             type="checkbox"
-                                                            checked={editVmForm.tpm ?? editVmOriginal?.tpm ?? false}
-                                                            onChange={(e) => setEditVmForm({ ...editVmForm, tpm: e.target.checked })}
+                                                            checked={
+                                                                editVmForm.tpm ??
+                                                                editVmOriginal?.tpm ??
+                                                                false
+                                                            }
+                                                            onChange={(e) =>
+                                                                setEditVmForm({
+                                                                    ...editVmForm,
+                                                                    tpm: e.target.checked,
+                                                                })
+                                                            }
                                                             className="rounded border-zinc-600"
                                                         />
-                                                        <span className="text-sm text-zinc-300">TPM 2.0 (Windows 11)</span>
+                                                        <span className="text-sm text-zinc-300">
+                                                            TPM 2.0 (Windows 11)
+                                                        </span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -1793,7 +2811,9 @@ const KvmManager: React.FC = () => {
                                     <AlertCircle size={12} className="inline mr-1" />
                                     Some settings require VM restart to take effect
                                 </p>
-                            ) : <div />}
+                            ) : (
+                                <div />
+                            )}
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => {
@@ -1811,7 +2831,9 @@ const KvmManager: React.FC = () => {
                                     disabled={editVmLoading}
                                     className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white rounded transition-colors flex items-center gap-2"
                                 >
-                                    {editVmLoading && <Loader2 size={16} className="animate-spin" />}
+                                    {editVmLoading && (
+                                        <Loader2 size={16} className="animate-spin" />
+                                    )}
                                     Save Changes
                                 </button>
                             </div>
@@ -1821,17 +2843,11 @@ const KvmManager: React.FC = () => {
             )}
 
             {/* VNC Console */}
-            {consoleVm && (
-                <VncConsole vmName={consoleVm} onClose={() => setConsoleVm(null)} />
-            )}
+            {consoleVm && <VncConsole vmName={consoleVm} onClose={() => setConsoleVm(null)} />}
 
             {/* Toast */}
             {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
+                <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
             )}
         </div>
     );

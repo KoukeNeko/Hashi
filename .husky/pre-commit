@@ -1,0 +1,5 @@
+# Frontend: prettier
+cd frontend && npx lint-staged
+
+# Backend: spotless
+cd ../backend && ./gradlew spotlessCheck --daemon

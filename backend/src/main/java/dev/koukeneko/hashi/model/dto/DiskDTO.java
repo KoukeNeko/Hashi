@@ -3,8 +3,7 @@ package dev.koukeneko.hashi.model.dto;
 import lombok.Builder;
 
 /**
- * 磁碟設定 DTO
- * 用於建立和管理 VM 磁碟
+ * 磁碟設定 DTO 用於建立和管理 VM 磁碟
  */
 @Builder
 public record DiskDTO(

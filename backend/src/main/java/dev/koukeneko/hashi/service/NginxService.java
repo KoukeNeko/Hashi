@@ -5,8 +5,7 @@ import dev.koukeneko.hashi.model.dto.*;
 import java.util.List;
 
 /**
- * Nginx 管理服務介面
- * 提供 Virtual Host、SSL 憑證管理與服務控制
+ * Nginx 管理服務介面 提供 Virtual Host、SSL 憑證管理與服務控制
  */
 public interface NginxService {
 
@@ -45,7 +44,8 @@ public interface NginxService {
     /**
      * 取得單一 Host 設定
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return Host 設定，若不存在回傳 null
      */
     NginxHostDTO getHost(String name);
@@ -53,7 +53,8 @@ public interface NginxService {
     /**
      * 取得 Host 設定檔內容
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return 設定檔純文字內容
      */
     String getHostConfig(String name);
@@ -61,7 +62,8 @@ public interface NginxService {
     /**
      * 建立新的 Virtual Host
      *
-     * @param request 建立請求
+     * @param request
+     *            建立請求
      * @return 建立後的 Host 資訊
      */
     NginxHostDTO createHost(CreateNginxHostRequest request);
@@ -69,8 +71,10 @@ public interface NginxService {
     /**
      * 更新 Host 設定檔內容
      *
-     * @param name    設定檔名稱
-     * @param content 新的設定檔內容
+     * @param name
+     *            設定檔名稱
+     * @param content
+     *            新的設定檔內容
      * @return 是否成功
      */
     boolean updateHostConfig(String name, String content);
@@ -78,7 +82,8 @@ public interface NginxService {
     /**
      * 刪除 Virtual Host
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return 是否成功
      */
     boolean deleteHost(String name);
@@ -86,7 +91,8 @@ public interface NginxService {
     /**
      * 啟用 Virtual Host (建立 symlink 到 sites-enabled)
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return 是否成功
      */
     boolean enableHost(String name);
@@ -94,7 +100,8 @@ public interface NginxService {
     /**
      * 停用 Virtual Host (移除 sites-enabled 中的 symlink)
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return 是否成功
      */
     boolean disableHost(String name);
@@ -111,8 +118,10 @@ public interface NginxService {
     /**
      * 使用 Certbot 申請 SSL 憑證
      *
-     * @param domain 網域名稱
-     * @param email  管理員 Email
+     * @param domain
+     *            網域名稱
+     * @param email
+     *            管理員 Email
      * @return 是否成功
      */
     boolean requestCertbotCert(String domain, String email);
@@ -120,8 +129,10 @@ public interface NginxService {
     /**
      * 使用 acme.sh 申請 SSL 憑證
      *
-     * @param domain 網域名稱
-     * @param email  管理員 Email
+     * @param domain
+     *            網域名稱
+     * @param email
+     *            管理員 Email
      * @return 是否成功
      */
     boolean requestAcmeCert(String domain, String email);

@@ -41,7 +41,10 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         // 2. [Wait] 等待取樣時間 (300ms)
-        try { TimeUnit.MILLISECONDS.sleep(300); } catch (InterruptedException e) {}
+        try {
+            TimeUnit.MILLISECONDS.sleep(300);
+        } catch (InterruptedException e) {
+        }
 
         // 3. [Snapshot 2] 記錄結束狀態並計算差值
         double cpuUsage = processor.getSystemCpuLoadBetweenTicks(prevTicks) * 100;

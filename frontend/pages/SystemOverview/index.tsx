@@ -1,12 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { INITIAL_CPU_DATA, MOCK_NGINX_HOSTS, MOCK_CONTAINERS, MOCK_FIREWALL_RULES } from '../../constants';
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    Tooltip,
+    ResponsiveContainer,
+    CartesianGrid,
+} from 'recharts';
+import {
+    INITIAL_CPU_DATA,
+    MOCK_NGINX_HOSTS,
+    MOCK_CONTAINERS,
+    MOCK_FIREWALL_RULES,
+} from '../../constants';
 import { Server, Database, Terminal, Power, Globe, Shield, Activity } from 'lucide-react';
 import { connectWebSocket } from '../../services/api';
 import { SystemStatus } from '../../types';
 import { PageHeader } from '../../components';
 import { CircularGauge, QuickStat, SoftwareCard, OsIcon } from './components/SystemWidgets';
-
 
 const SystemOverview: React.FC = () => {
     const [cpuData, setCpuData] = useState(INITIAL_CPU_DATA);
@@ -54,7 +66,7 @@ const SystemOverview: React.FC = () => {
     // Update network chart when systemStatus changes
     useEffect(() => {
         if (systemStatus?.network) {
-            setCpuData(prev => {
+            setCpuData((prev) => {
                 const newDown = systemStatus.network.downloadRate / 1024; // Convert to KB
                 const newUp = systemStatus.network.uploadRate / 1024; // Convert to KB
                 return [...prev.slice(1), { name: '', uv: 0, down: newDown, up: newUp }];
@@ -122,12 +134,12 @@ const SystemOverview: React.FC = () => {
         return Math.min(100, (systemStatus.systemLoad / systemStatus.coreCount) * 100);
     };
 
-    const dbCount = MOCK_CONTAINERS.filter(c => c.name.includes('db') || c.name.includes('redis') || c.name.includes('sql')).length;
+    const dbCount = MOCK_CONTAINERS.filter(
+        (c) => c.name.includes('db') || c.name.includes('redis') || c.name.includes('sql')
+    ).length;
 
     // Wrapper for OsIcon to be compatible with PageHeader's icon prop
-    const DashboardIcon = (props: any) => (
-        <OsIcon osName={displayOsName || undefined} {...props} />
-    );
+    const DashboardIcon = (props: any) => <OsIcon osName={displayOsName || undefined} {...props} />;
 
     return (
         <div className="space-y-6 animate-fade-in pb-8">
@@ -138,7 +150,7 @@ const SystemOverview: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1.5">
                             <Activity size={14} className="text-emerald-500" />
-                            {(!displayOsName && loading) ? 'Loading...' : (displayOsName || 'Unknown')}
+                            {!displayOsName && loading ? 'Loading...' : displayOsName || 'Unknown'}
                         </span>
                         <span className="text-zinc-700">|</span>
                         <span>{systemStatus?.coreCount || '--'} Core(s)</span>
@@ -147,8 +159,12 @@ const SystemOverview: React.FC = () => {
                 actions={
                     <>
                         <div className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium border border-zinc-700 shadow-sm">
-                            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`}></span>
-                            <span className="hidden sm:inline">{connected ? 'Live' : 'Connecting...'}</span>
+                            <span
+                                className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`}
+                            ></span>
+                            <span className="hidden sm:inline">
+                                {connected ? 'Live' : 'Connecting...'}
+                            </span>
                         </div>
                         <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-all border border-zinc-700 hover:border-zinc-600 shadow-sm">
                             <Terminal size={16} /> <span className="hidden sm:inline">Fix</span>
@@ -171,21 +187,51 @@ const SystemOverview: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-zinc-800/50 mt-4">
                         <CircularGauge
                             value={getLoadPercentage()}
-                            label={systemStatus ? (getLoadPercentage() < 50 ? 'Smooth operation' : getLoadPercentage() < 80 ? 'Moderate load' : 'High load') : '--'}
+                            label={
+                                systemStatus
+                                    ? getLoadPercentage() < 50
+                                        ? 'Smooth operation'
+                                        : getLoadPercentage() < 80
+                                          ? 'Moderate load'
+                                          : 'High load'
+                                    : '--'
+                            }
                             subLabel="Load Status"
-                            color={getLoadPercentage() < 50 ? '#10b981' : getLoadPercentage() < 80 ? '#f59e0b' : '#ef4444'}
+                            color={
+                                getLoadPercentage() < 50
+                                    ? '#10b981'
+                                    : getLoadPercentage() < 80
+                                      ? '#f59e0b'
+                                      : '#ef4444'
+                            }
                         />
                         <CircularGauge
                             value={systemStatus?.cpuUsage || 0}
                             label={`${systemStatus?.coreCount || '--'} Core(s)`}
                             subLabel="CPU Usage"
-                            color={systemStatus && systemStatus.cpuUsage > 80 ? '#ef4444' : systemStatus && systemStatus.cpuUsage > 50 ? '#f59e0b' : '#10b981'}
+                            color={
+                                systemStatus && systemStatus.cpuUsage > 80
+                                    ? '#ef4444'
+                                    : systemStatus && systemStatus.cpuUsage > 50
+                                      ? '#f59e0b'
+                                      : '#10b981'
+                            }
                         />
                         <CircularGauge
                             value={systemStatus?.memoryUsage || 0}
-                            label={systemStatus ? `${formatBytes(systemStatus.usedMemory)} / ${formatBytes(systemStatus.totalMemory)}` : '-- / --'}
+                            label={
+                                systemStatus
+                                    ? `${formatBytes(systemStatus.usedMemory)} / ${formatBytes(systemStatus.totalMemory)}`
+                                    : '-- / --'
+                            }
                             subLabel="RAM Usage"
-                            color={systemStatus && systemStatus.memoryUsage > 80 ? '#ef4444' : systemStatus && systemStatus.memoryUsage > 50 ? '#f59e0b' : '#10b981'}
+                            color={
+                                systemStatus && systemStatus.memoryUsage > 80
+                                    ? '#ef4444'
+                                    : systemStatus && systemStatus.memoryUsage > 50
+                                      ? '#f59e0b'
+                                      : '#10b981'
+                            }
                         />
                     </div>
                 </div>
@@ -200,10 +246,20 @@ const SystemOverview: React.FC = () => {
                             return (
                                 <div key={disk.mount}>
                                     <div className="flex justify-between mb-2 items-end">
-                                        <span className="text-xs font-mono font-bold bg-zinc-800 px-2 py-1 rounded text-zinc-400">{disk.mount}</span>
+                                        <span className="text-xs font-mono font-bold bg-zinc-800 px-2 py-1 rounded text-zinc-400">
+                                            {disk.mount}
+                                        </span>
                                         <div className="text-right">
-                                            <span className="text-sm font-bold mr-1.5" style={{ color }}>{percent}%</span>
-                                            <span className="text-[10px] text-zinc-500">{formatDiskSize(disk.usedSpace)} / {formatDiskSize(disk.totalSpace)}</span>
+                                            <span
+                                                className="text-sm font-bold mr-1.5"
+                                                style={{ color }}
+                                            >
+                                                {percent}%
+                                            </span>
+                                            <span className="text-[10px] text-zinc-500">
+                                                {formatDiskSize(disk.usedSpace)} /{' '}
+                                                {formatDiskSize(disk.totalSpace)}
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="w-full bg-zinc-900 rounded-full h-2.5 overflow-hidden border border-zinc-800/50">
@@ -216,9 +272,7 @@ const SystemOverview: React.FC = () => {
                                     </div>
                                 </div>
                             );
-                        }) || (
-                                <div className="text-zinc-500 text-sm">Loading disk info...</div>
-                            )}
+                        }) || <div className="text-zinc-500 text-sm">Loading disk info...</div>}
                     </div>
                     {/* Decorative background element */}
                     <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-zinc-800/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -227,25 +281,80 @@ const SystemOverview: React.FC = () => {
 
             {/* Middle Section: Quick Counts */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <QuickStat label="Websites" value={MOCK_NGINX_HOSTS.length} icon={Globe} colorClass="bg-blue-500 text-blue-400" />
-                <QuickStat label="Databases" value={dbCount} icon={Database} colorClass="bg-purple-500 text-purple-400" />
-                <QuickStat label="FTP" value={1} icon={Server} colorClass="bg-amber-500 text-amber-400" />
-                <QuickStat label="Security" value={MOCK_FIREWALL_RULES.length} icon={Shield} colorClass="bg-rose-500 text-rose-400" />
+                <QuickStat
+                    label="Websites"
+                    value={MOCK_NGINX_HOSTS.length}
+                    icon={Globe}
+                    colorClass="bg-blue-500 text-blue-400"
+                />
+                <QuickStat
+                    label="Databases"
+                    value={dbCount}
+                    icon={Database}
+                    colorClass="bg-purple-500 text-purple-400"
+                />
+                <QuickStat
+                    label="FTP"
+                    value={1}
+                    icon={Server}
+                    colorClass="bg-amber-500 text-amber-400"
+                />
+                <QuickStat
+                    label="Security"
+                    value={MOCK_FIREWALL_RULES.length}
+                    icon={Shield}
+                    colorClass="bg-rose-500 text-rose-400"
+                />
             </div>
 
             {/* Bottom Section: Software Grid & Traffic Chart */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
                 {/* Software Grid */}
                 <div className="bg-surface border border-border rounded-xl p-6 shadow-lg">
                     <h3 className="text-lg font-bold text-white mb-6">Software</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <SoftwareCard name="Nginx" version="1.22.1" status={true} icon={Globe} colorClass="text-emerald-500 bg-emerald-500" />
-                        <SoftwareCard name="MySQL" version="5.7.43" status={true} icon={Database} colorClass="text-blue-500 bg-blue-500" />
-                        <SoftwareCard name="PHP" version="8.2.0" status={true} icon={Terminal} colorClass="text-purple-500 bg-purple-500" />
-                        <SoftwareCard name="Docker" version="24.0.6" status={true} icon={Server} colorClass="text-sky-500 bg-sky-500" />
-                        <SoftwareCard name="UFW" version="0.36.1" status={false} icon={Shield} colorClass="text-orange-500 bg-orange-500" />
-                        <SoftwareCard name="Redis" version="7.0.12" status={true} icon={Database} colorClass="text-red-500 bg-red-500" />
+                        <SoftwareCard
+                            name="Nginx"
+                            version="1.22.1"
+                            status={true}
+                            icon={Globe}
+                            colorClass="text-emerald-500 bg-emerald-500"
+                        />
+                        <SoftwareCard
+                            name="MySQL"
+                            version="5.7.43"
+                            status={true}
+                            icon={Database}
+                            colorClass="text-blue-500 bg-blue-500"
+                        />
+                        <SoftwareCard
+                            name="PHP"
+                            version="8.2.0"
+                            status={true}
+                            icon={Terminal}
+                            colorClass="text-purple-500 bg-purple-500"
+                        />
+                        <SoftwareCard
+                            name="Docker"
+                            version="24.0.6"
+                            status={true}
+                            icon={Server}
+                            colorClass="text-sky-500 bg-sky-500"
+                        />
+                        <SoftwareCard
+                            name="UFW"
+                            version="0.36.1"
+                            status={false}
+                            icon={Shield}
+                            colorClass="text-orange-500 bg-orange-500"
+                        />
+                        <SoftwareCard
+                            name="Redis"
+                            version="7.0.12"
+                            status={true}
+                            icon={Database}
+                            colorClass="text-red-500 bg-red-500"
+                        />
                     </div>
                 </div>
 
@@ -255,20 +364,46 @@ const SystemOverview: React.FC = () => {
                         <h3 className="text-lg font-bold text-white">Network Traffic</h3>
                         <div className="flex flex-wrap gap-4 sm:gap-6 text-sm">
                             <div className="flex flex-col min-w-[80px]">
-                                <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide flex items-center gap-1.5 mb-1"><span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span> Upload</span>
-                                <span className="font-mono text-zinc-200 font-bold text-lg">{systemStatus?.network ? formatNetworkRate(systemStatus.network.uploadRate) : '--'}</span>
+                                <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide flex items-center gap-1.5 mb-1">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>{' '}
+                                    Upload
+                                </span>
+                                <span className="font-mono text-zinc-200 font-bold text-lg">
+                                    {systemStatus?.network
+                                        ? formatNetworkRate(systemStatus.network.uploadRate)
+                                        : '--'}
+                                </span>
                             </div>
                             <div className="flex flex-col min-w-[80px]">
-                                <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide flex items-center gap-1.5 mb-1"><span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]"></span> Download</span>
-                                <span className="font-mono text-zinc-200 font-bold text-lg">{systemStatus?.network ? formatNetworkRate(systemStatus.network.downloadRate) : '--'}</span>
+                                <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide flex items-center gap-1.5 mb-1">
+                                    <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]"></span>{' '}
+                                    Download
+                                </span>
+                                <span className="font-mono text-zinc-200 font-bold text-lg">
+                                    {systemStatus?.network
+                                        ? formatNetworkRate(systemStatus.network.downloadRate)
+                                        : '--'}
+                                </span>
                             </div>
                             <div className="flex flex-col min-w-[80px] border-l border-zinc-800 pl-4">
-                                <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide mb-1">Total Sent</span>
-                                <span className="font-mono text-zinc-200 font-bold">{systemStatus?.network ? formatNetworkTotal(systemStatus.network.totalSent) : '--'}</span>
+                                <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide mb-1">
+                                    Total Sent
+                                </span>
+                                <span className="font-mono text-zinc-200 font-bold">
+                                    {systemStatus?.network
+                                        ? formatNetworkTotal(systemStatus.network.totalSent)
+                                        : '--'}
+                                </span>
                             </div>
                             <div className="flex flex-col min-w-[80px]">
-                                <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide mb-1">Total Recv</span>
-                                <span className="font-mono text-zinc-200 font-bold">{systemStatus?.network ? formatNetworkTotal(systemStatus.network.totalRecv) : '--'}</span>
+                                <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-wide mb-1">
+                                    Total Recv
+                                </span>
+                                <span className="font-mono text-zinc-200 font-bold">
+                                    {systemStatus?.network
+                                        ? formatNetworkTotal(systemStatus.network.totalRecv)
+                                        : '--'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -286,7 +421,11 @@ const SystemOverview: React.FC = () => {
                                         <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    stroke="#27272a"
+                                    vertical={false}
+                                />
                                 <XAxis dataKey="name" hide />
                                 <YAxis
                                     stroke="#52525b"
@@ -297,10 +436,19 @@ const SystemOverview: React.FC = () => {
                                     width={40}
                                 />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)' }}
+                                    contentStyle={{
+                                        backgroundColor: '#18181b',
+                                        border: '1px solid #27272a',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
+                                    }}
                                     itemStyle={{ fontSize: '12px', fontWeight: 500 }}
                                     labelStyle={{ display: 'none' }}
-                                    cursor={{ stroke: '#3f3f46', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                    cursor={{
+                                        stroke: '#3f3f46',
+                                        strokeWidth: 1,
+                                        strokeDasharray: '4 4',
+                                    }}
                                 />
                                 <Area
                                     type="monotone"

@@ -9,10 +9,10 @@ import java.util.List;
  */
 @Builder
 public record GroupInfoDTO(
-                /** 群組名稱 (e.g. "developers") */
-                String name,
-                /** 群組 ID (e.g. 1001) */
-                int gid,
-                /** 成員列表 */
-                List<String> members) {
+        /** 群組名稱 (e.g. "developers") */
+        String name,
+        /** 群組 ID (e.g. 1001) */
+        int gid,
+        /** 成員列表 */
+        List<String> members) {
 }

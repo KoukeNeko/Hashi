@@ -23,7 +23,8 @@ public class IptablesController {
     /**
      * 取得指定表格的 iptables 規則列表
      *
-     * @param table 表格名稱，例如: filter, nat, mangle (預設為 filter)
+     * @param table
+     *            表格名稱，例如: filter, nat, mangle (預設為 filter)
      * @return 規則列表
      */
     @GetMapping
@@ -35,7 +36,8 @@ public class IptablesController {
     /**
      * 新增 iptables 規則
      *
-     * @param request 新增規則請求參數
+     * @param request
+     *            新增規則請求參數
      * @return 成功回傳 200 OK
      */
     @PostMapping
@@ -47,9 +49,12 @@ public class IptablesController {
     /**
      * 刪除 iptables 規則
      *
-     * @param table      表格名稱
-     * @param chain      鏈名稱
-     * @param lineNumber 規則行號
+     * @param table
+     *            表格名稱
+     * @param chain
+     *            鏈名稱
+     * @param lineNumber
+     *            規則行號
      * @return 成功回傳 200 OK
      */
     @DeleteMapping("/{table}/{chain}/{lineNumber}")

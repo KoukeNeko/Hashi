@@ -11,8 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * FTP Server 管理服務
- * 支援 vsftpd, proftpd, pure-ftpd
+ * FTP Server 管理服務 支援 vsftpd, proftpd, pure-ftpd
  */
 @Service
 public class FtpService {
@@ -202,8 +201,7 @@ public class FtpService {
     // ==================== User Management ====================
 
     /**
-     * 列出 FTP 使用者
-     * 注意：不同 FTP server 的使用者管理方式不同
+     * 列出 FTP 使用者 注意：不同 FTP server 的使用者管理方式不同
      */
     public List<FtpUserDTO> listUsers(String type) {
         // vsftpd 使用系統使用者或 userlist

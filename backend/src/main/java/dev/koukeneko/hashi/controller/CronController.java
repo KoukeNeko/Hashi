@@ -35,7 +35,8 @@ public class CronController {
      * 此操作會覆蓋現有的 crontab 內容。若要刪除任務，請從列表中移除該任務後再儲存。
      * </p>
      *
-     * @param jobs 新的排程任務列表
+     * @param jobs
+     *            新的排程任務列表
      * @return 成功回傳 200 OK
      */
     @PostMapping

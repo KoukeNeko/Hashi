@@ -3,7 +3,17 @@ import { Toast, ActionButton } from '../../../components';
 import { FirewallService } from '../../../services/api';
 import { FirewallRule } from '../../../types';
 import { Alert } from '../../../components/ui';
-import { Shield, ShieldOff, ShieldAlert, Plus, Trash2, Loader2, RefreshCw, Power, AlertCircle } from 'lucide-react';
+import {
+    Shield,
+    ShieldOff,
+    ShieldAlert,
+    Plus,
+    Trash2,
+    Loader2,
+    RefreshCw,
+    Power,
+    AlertCircle,
+} from 'lucide-react';
 import { AddRuleDialog, DeleteRuleDialog } from './FirewallDialogs';
 import { UfwSetupGuide } from './UfwSetupGuide';
 
@@ -57,16 +67,17 @@ const UfwPanel: React.FC = () => {
             setEnabled(!enabled);
             setToast({
                 message: `Firewall ${!enabled ? 'enabled' : 'disabled'} successfully`,
-                type: 'success'
+                type: 'success',
             });
         } catch (err: unknown) {
             console.error('Failed to toggle firewall:', err);
             const e = err as { response?: { data?: string | { message?: string } } };
             let errorMsg = 'Failed to change firewall status';
             if (e.response?.data) {
-                errorMsg = typeof e.response.data === 'string'
-                    ? e.response.data
-                    : e.response.data.message || JSON.stringify(e.response.data);
+                errorMsg =
+                    typeof e.response.data === 'string'
+                        ? e.response.data
+                        : e.response.data.message || JSON.stringify(e.response.data);
             }
             setToast({ message: errorMsg, type: 'error' });
         } finally {
@@ -89,9 +100,10 @@ const UfwPanel: React.FC = () => {
             const e = err as { response?: { data?: string | { message?: string } } };
             let errorMsg = 'Failed to add rule';
             if (e.response?.data) {
-                errorMsg = typeof e.response.data === 'string'
-                    ? e.response.data
-                    : e.response.data.message || JSON.stringify(e.response.data);
+                errorMsg =
+                    typeof e.response.data === 'string'
+                        ? e.response.data
+                        : e.response.data.message || JSON.stringify(e.response.data);
             }
             throw new Error(errorMsg);
         }
@@ -117,9 +129,10 @@ const UfwPanel: React.FC = () => {
             const e = err as { response?: { data?: string | { message?: string } } };
             let errorMsg = 'Failed to delete rule';
             if (e.response?.data) {
-                errorMsg = typeof e.response.data === 'string'
-                    ? e.response.data
-                    : e.response.data.message || JSON.stringify(e.response.data);
+                errorMsg =
+                    typeof e.response.data === 'string'
+                        ? e.response.data
+                        : e.response.data.message || JSON.stringify(e.response.data);
             }
             setToast({ message: errorMsg, type: 'error' });
         } finally {
@@ -127,8 +140,8 @@ const UfwPanel: React.FC = () => {
         }
     };
 
-    const ipv4Rules = rules.filter(r => !r.ipv6);
-    const ipv6Rules = rules.filter(r => r.ipv6);
+    const ipv4Rules = rules.filter((r) => !r.ipv6);
+    const ipv6Rules = rules.filter((r) => r.ipv6);
 
     return (
         <div className="space-y-6">
@@ -155,7 +168,10 @@ const UfwPanel: React.FC = () => {
                                 <span className="text-rose-400 font-bold">INACTIVE</span>
                             )}
                             <span className="text-zinc-600 mx-2">|</span>
-                            <span className="text-zinc-400">{rules.length} rules ({ipv4Rules.length} IPv4, {ipv6Rules.length} IPv6)</span>
+                            <span className="text-zinc-400">
+                                {rules.length} rules ({ipv4Rules.length} IPv4, {ipv6Rules.length}{' '}
+                                IPv6)
+                            </span>
                         </p>
                     </div>
                 </div>
@@ -171,7 +187,10 @@ const UfwPanel: React.FC = () => {
                         {enabled ? 'Disable' : 'Enable'}
                     </ActionButton>
                     <button
-                        onClick={() => { loadStatus(); loadRules(); }}
+                        onClick={() => {
+                            loadStatus();
+                            loadRules();
+                        }}
                         disabled={loading}
                         className="p-2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
                         title="Refresh"
@@ -214,17 +233,25 @@ const UfwPanel: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="text-sm divide-y divide-border">
-                            {ipv4Rules.map(rule => (
-                                <tr key={rule.index} className="hover:bg-zinc-800/50 transition-colors">
-                                    <td className="p-4 text-zinc-500 font-mono text-xs">{rule.index}</td>
+                            {ipv4Rules.map((rule) => (
+                                <tr
+                                    key={rule.index}
+                                    className="hover:bg-zinc-800/50 transition-colors"
+                                >
+                                    <td className="p-4 text-zinc-500 font-mono text-xs">
+                                        {rule.index}
+                                    </td>
                                     <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
-                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                            : rule.action.includes('DENY')
-                                                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                            }`}>
+                                        <span
+                                            className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                                rule.action.includes('ALLOW')
+                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                    : rule.action.includes('DENY')
+                                                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                            }`}
+                                        >
                                             {rule.action}
                                         </span>
                                     </td>
@@ -262,21 +289,31 @@ const UfwPanel: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="text-sm divide-y divide-border">
-                            {ipv6Rules.map(rule => (
-                                <tr key={rule.index} className="hover:bg-zinc-800/50 transition-colors">
-                                    <td className="p-4 text-zinc-500 font-mono text-xs">{rule.index}</td>
+                            {ipv6Rules.map((rule) => (
+                                <tr
+                                    key={rule.index}
+                                    className="hover:bg-zinc-800/50 transition-colors"
+                                >
+                                    <td className="p-4 text-zinc-500 font-mono text-xs">
+                                        {rule.index}
+                                    </td>
                                     <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
-                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                            : rule.action.includes('DENY')
-                                                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                            }`}>
+                                        <span
+                                            className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                                rule.action.includes('ALLOW')
+                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                    : rule.action.includes('DENY')
+                                                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                            }`}
+                                        >
                                             {rule.action}
                                         </span>
                                     </td>
-                                    <td className="p-4 font-mono text-zinc-300">{rule.from.replace(' (v6)', '')}</td>
+                                    <td className="p-4 font-mono text-zinc-300">
+                                        {rule.from.replace(' (v6)', '')}
+                                    </td>
                                     <td className="p-4 text-right">
                                         <button
                                             onClick={() => handleDeleteClick(rule)}
@@ -295,21 +332,26 @@ const UfwPanel: React.FC = () => {
 
             {/* UFW Not Installed Guide */}
             {statusError && (
-                <UfwSetupGuide onRetry={() => { loadStatus(); loadRules(); }} />
+                <UfwSetupGuide
+                    onRetry={() => {
+                        loadStatus();
+                        loadRules();
+                    }}
+                />
             )}
 
             {/* Disabled Warning */}
             {enabled === false && !statusError && (
                 <Alert variant="warning" icon={ShieldAlert} title="Warning:">
-                    Firewall is currently <strong>inactive</strong>. All incoming traffic is allowed.
-                    Click "Enable" to activate the firewall.
+                    Firewall is currently <strong>inactive</strong>. All incoming traffic is
+                    allowed. Click "Enable" to activate the firewall.
                 </Alert>
             )}
 
             {/* Info Note */}
             <Alert variant="info" icon={ShieldAlert}>
-                Note: Rules are managed via <code className="bg-blue-500/20 px-1 rounded">ufw</code>.
-                Changes take effect immediately.
+                Note: Rules are managed via <code className="bg-blue-500/20 px-1 rounded">ufw</code>
+                . Changes take effect immediately.
             </Alert>
 
             {/* Dialogs */}
@@ -332,11 +374,7 @@ const UfwPanel: React.FC = () => {
 
             {/* Toast */}
             {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
+                <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
             )}
         </div>
     );

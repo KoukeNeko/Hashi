@@ -6,16 +6,15 @@ import dev.koukeneko.hashi.model.dto.IptablesRuleDTO;
 import java.util.List;
 
 /**
- * iptables 風格防火牆管理介面
- * Linux: iptables
- * Windows: 不適用 (可使用 Windows Firewall with Advanced Security)
+ * iptables 風格防火牆管理介面 Linux: iptables Windows: 不適用 (可使用 Windows Firewall with Advanced Security)
  */
 public interface IptablesManager {
 
     /**
      * 取得指定 table 的所有規則
-     * 
-     * @param table filter / nat / mangle
+     *
+     * @param table
+     *            filter / nat / mangle
      */
     List<IptablesRuleDTO> getRules(String table);
 
@@ -26,10 +25,13 @@ public interface IptablesManager {
 
     /**
      * 刪除規則
-     * 
-     * @param table      table 名稱
-     * @param chain      chain 名稱
-     * @param lineNumber 規則行號
+     *
+     * @param table
+     *            table 名稱
+     * @param chain
+     *            chain 名稱
+     * @param lineNumber
+     *            規則行號
      */
     void deleteRule(String table, String chain, int lineNumber);
 

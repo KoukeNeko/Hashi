@@ -2,7 +2,22 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PageHeader, FileEditor, ConfirmDialog } from '../../components';
 import { FileItem } from '../../types';
 import { FileService } from '../../services/api';
-import { FileText, Folder, MoreVertical, Search, Upload, Download, Trash2, Home, RefreshCw, ChevronRight, AlertCircle, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import {
+    FileText,
+    Folder,
+    MoreVertical,
+    Search,
+    Upload,
+    Download,
+    Trash2,
+    Home,
+    RefreshCw,
+    ChevronRight,
+    AlertCircle,
+    Lock,
+    ArrowLeft,
+    Loader2,
+} from 'lucide-react';
 
 // 格式化檔案大小
 const formatFileSize = (bytes: number): string => {
@@ -146,7 +161,7 @@ const FileManager: React.FC = () => {
     const breadcrumbs = currentPath.split('/').filter(Boolean);
 
     // 篩選檔案
-    const filteredFiles = files.filter(file =>
+    const filteredFiles = files.filter((file) =>
         file.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -159,7 +174,10 @@ const FileManager: React.FC = () => {
                 actions={
                     <div className="flex gap-3">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                            <Search
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                                size={16}
+                            />
                             <input
                                 type="text"
                                 placeholder="Search files..."
@@ -209,7 +227,8 @@ const FileManager: React.FC = () => {
                         })}
                     </div>
                     <div className="text-xs text-zinc-500">
-                        {filteredFiles.length} items | {formatFileSize(calculateTotalSize(filteredFiles))}
+                        {filteredFiles.length} items |{' '}
+                        {formatFileSize(calculateTotalSize(filteredFiles))}
                     </div>
                 </div>
 
@@ -256,7 +275,10 @@ const FileManager: React.FC = () => {
                             {loading && (
                                 <tr>
                                     <td colSpan={6} className="p-8 text-center text-zinc-500">
-                                        <RefreshCw size={24} className="animate-spin mx-auto mb-2" />
+                                        <RefreshCw
+                                            size={24}
+                                            className="animate-spin mx-auto mb-2"
+                                        />
                                         Loading files...
                                     </td>
                                 </tr>
@@ -271,8 +293,13 @@ const FileManager: React.FC = () => {
                                                 <Lock size={32} className="text-amber-500" />
                                             </div>
                                             <div>
-                                                <p className="text-zinc-300 font-medium mb-1">Permission Denied</p>
-                                                <p className="text-zinc-500 text-sm">You don't have permission to access this directory.</p>
+                                                <p className="text-zinc-300 font-medium mb-1">
+                                                    Permission Denied
+                                                </p>
+                                                <p className="text-zinc-500 text-sm">
+                                                    You don't have permission to access this
+                                                    directory.
+                                                </p>
                                             </div>
                                             <button
                                                 onClick={goBack}
@@ -290,67 +317,73 @@ const FileManager: React.FC = () => {
                             {!loading && !accessDenied && filteredFiles.length === 0 && (
                                 <tr>
                                     <td colSpan={6} className="p-8 text-center text-zinc-500">
-                                        {searchTerm ? 'No files match your search.' : 'This directory is empty.'}
+                                        {searchTerm
+                                            ? 'No files match your search.'
+                                            : 'This directory is empty.'}
                                     </td>
                                 </tr>
                             )}
 
                             {/* File List */}
-                            {!loading && filteredFiles.map((file) => (
-                                <tr
-                                    key={file.path}
-                                    className="hover:bg-zinc-800/50 transition-colors group cursor-pointer"
-                                    onClick={() => handleItemClick(file)}
-                                >
-                                    <td className="p-4 text-center">
-                                        {file.isDirectory ? (
-                                            <Folder size={20} className="text-amber-400 fill-amber-400/20" />
-                                        ) : (
-                                            <FileText size={20} className="text-zinc-400" />
-                                        )}
-                                    </td>
-                                    <td className="p-4 font-medium text-zinc-200">
-                                        {file.name}
-                                    </td>
-                                    <td className="p-4 text-zinc-400 font-mono text-xs">
-                                        {file.isDirectory ? '-' : formatFileSize(file.size)}
-                                    </td>
-                                    <td className="p-4 text-zinc-500 font-mono text-xs">
-                                        {file.permissions}
-                                    </td>
-                                    <td className="p-4 text-zinc-500 text-xs">
-                                        {file.lastModified}
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <div
-                                            className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            {!file.isDirectory && (
+                            {!loading &&
+                                filteredFiles.map((file) => (
+                                    <tr
+                                        key={file.path}
+                                        className="hover:bg-zinc-800/50 transition-colors group cursor-pointer"
+                                        onClick={() => handleItemClick(file)}
+                                    >
+                                        <td className="p-4 text-center">
+                                            {file.isDirectory ? (
+                                                <Folder
+                                                    size={20}
+                                                    className="text-amber-400 fill-amber-400/20"
+                                                />
+                                            ) : (
+                                                <FileText size={20} className="text-zinc-400" />
+                                            )}
+                                        </td>
+                                        <td className="p-4 font-medium text-zinc-200">
+                                            {file.name}
+                                        </td>
+                                        <td className="p-4 text-zinc-400 font-mono text-xs">
+                                            {file.isDirectory ? '-' : formatFileSize(file.size)}
+                                        </td>
+                                        <td className="p-4 text-zinc-500 font-mono text-xs">
+                                            {file.permissions}
+                                        </td>
+                                        <td className="p-4 text-zinc-500 text-xs">
+                                            {file.lastModified}
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div
+                                                className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {!file.isDirectory && (
+                                                    <button
+                                                        className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white"
+                                                        title="Download"
+                                                    >
+                                                        <Download size={16} />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleDeleteClick(file)}
+                                                    className="p-1.5 hover:bg-rose-500/20 rounded text-zinc-400 hover:text-rose-400"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
                                                 <button
                                                     className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white"
-                                                    title="Download"
+                                                    title="More"
                                                 >
-                                                    <Download size={16} />
+                                                    <MoreVertical size={16} />
                                                 </button>
-                                            )}
-                                            <button
-                                                onClick={() => handleDeleteClick(file)}
-                                                className="p-1.5 hover:bg-rose-500/20 rounded text-zinc-400 hover:text-rose-400"
-                                                title="Delete"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                            <button
-                                                className="p-1.5 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white"
-                                                title="More"
-                                            >
-                                                <MoreVertical size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>
@@ -386,8 +419,10 @@ const FileManager: React.FC = () => {
                         </>
                     ) : null
                 }
-                confirmText={deleting ? "Deleting..." : "Delete"}
-                confirmIcon={deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                confirmText={deleting ? 'Deleting...' : 'Delete'}
+                confirmIcon={
+                    deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />
+                }
             />
         </div>
     );

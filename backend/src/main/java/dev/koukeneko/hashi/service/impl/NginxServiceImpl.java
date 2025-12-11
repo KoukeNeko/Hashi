@@ -11,8 +11,7 @@ import java.util.*;
 import java.util.regex.*;
 
 /**
- * Nginx 管理服務實作
- * 管理 /etc/nginx/sites-available 和 sites-enabled
+ * Nginx 管理服務實作 管理 /etc/nginx/sites-available 和 sites-enabled
  */
 @Service
 @Slf4j

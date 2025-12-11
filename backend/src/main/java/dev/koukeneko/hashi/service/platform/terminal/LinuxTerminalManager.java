@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 public class LinuxTerminalManager implements TerminalManager {
 
-    private static final String[] SHELL_COMMAND = { "/bin/bash" };
+    private static final String[] SHELL_COMMAND = {"/bin/bash"};
 
     private final Map<String, PtyProcess> processMap = new ConcurrentHashMap<>();
     private final ExecutorService executorService = Executors.newCachedThreadPool();

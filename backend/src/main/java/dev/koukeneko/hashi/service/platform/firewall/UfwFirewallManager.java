@@ -5,9 +5,7 @@ import dev.koukeneko.hashi.model.dto.FirewallRuleDTO;
 import java.util.List;
 
 /**
- * UFW 風格防火牆管理介面
- * Linux: ufw
- * Windows: Windows Firewall (netsh advfirewall)
+ * UFW 風格防火牆管理介面 Linux: ufw Windows: Windows Firewall (netsh advfirewall)
  */
 public interface UfwFirewallManager {
 

@@ -5,9 +5,7 @@ import dev.koukeneko.hashi.model.dto.CronJobDTO;
 import java.util.List;
 
 /**
- * 排程管理介面
- * Linux: crontab
- * Windows: Task Scheduler
+ * 排程管理介面 Linux: crontab Windows: Task Scheduler
  */
 public interface SchedulerManager {
 

@@ -20,47 +20,46 @@ export interface AlertProps {
 
 // ==================== Variant Styles ====================
 
-const VARIANT_STYLES: Record<AlertVariant, { bg: string; border: string; text: string; icon: LucideIcon }> = {
+const VARIANT_STYLES: Record<
+    AlertVariant,
+    { bg: string; border: string; text: string; icon: LucideIcon }
+> = {
     error: {
         bg: 'bg-rose-500/10',
         border: 'border-rose-500/20',
         text: 'text-rose-200',
-        icon: AlertCircle
+        icon: AlertCircle,
     },
     warning: {
         bg: 'bg-amber-500/10',
         border: 'border-amber-500/20',
         text: 'text-amber-200',
-        icon: AlertTriangle
+        icon: AlertTriangle,
     },
     info: {
         bg: 'bg-blue-500/10',
         border: 'border-blue-500/20',
         text: 'text-blue-200',
-        icon: Info
+        icon: Info,
     },
     success: {
         bg: 'bg-emerald-500/10',
         border: 'border-emerald-500/20',
         text: 'text-emerald-200',
-        icon: CheckCircle
-    }
+        icon: CheckCircle,
+    },
 };
 
 // ==================== Alert Component ====================
 
-export const Alert: React.FC<AlertProps> = ({
-    variant,
-    icon,
-    title,
-    children,
-    className = ''
-}) => {
+export const Alert: React.FC<AlertProps> = ({ variant, icon, title, children, className = '' }) => {
     const styles = VARIANT_STYLES[variant];
     const IconComponent = icon || styles.icon;
 
     return (
-        <div className={`flex items-start gap-3 p-4 ${styles.bg} border ${styles.border} rounded-lg ${styles.text} ${className}`}>
+        <div
+            className={`flex items-start gap-3 p-4 ${styles.bg} border ${styles.border} rounded-lg ${styles.text} ${className}`}
+        >
             <IconComponent size={20} className="shrink-0 mt-0.5" />
             <div className="text-sm">
                 {title && <strong>{title}</strong>}

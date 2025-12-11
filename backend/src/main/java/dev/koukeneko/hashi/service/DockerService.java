@@ -18,21 +18,24 @@ public interface DockerService {
     /**
      * 啟動指定容器
      *
-     * @param containerId 容器 ID
+     * @param containerId
+     *            容器 ID
      */
     void startContainer(String containerId);
 
     /**
      * 停止指定容器
      *
-     * @param containerId 容器 ID
+     * @param containerId
+     *            容器 ID
      */
     void stopContainer(String containerId);
 
     /**
      * 重啟指定容器
      *
-     * @param containerId 容器 ID
+     * @param containerId
+     *            容器 ID
      */
     void restartContainer(String containerId);
 }

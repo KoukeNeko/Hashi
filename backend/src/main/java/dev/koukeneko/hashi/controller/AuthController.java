@@ -8,8 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 認證相關 Controller
- * 處理登入、登出及 Session 驗證
+ * 認證相關 Controller 處理登入、登出及 Session 驗證
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -21,7 +20,8 @@ public class AuthController {
     /**
      * 使用者登入
      *
-     * @param request 包含使用者名稱與密碼的請求物件
+     * @param request
+     *            包含使用者名稱與密碼的請求物件
      * @return 登入成功回傳使用者資訊與 Token (目前無 Token)，失敗回傳 401
      */
     @PostMapping("/login")
@@ -48,7 +48,8 @@ public class AuthController {
     /**
      * 驗證 Session 有效性
      *
-     * @param username 使用者名稱
+     * @param username
+     *            使用者名稱
      * @return 驗證成功回傳使用者資訊，失敗回傳 401
      */
     @GetMapping("/validate")

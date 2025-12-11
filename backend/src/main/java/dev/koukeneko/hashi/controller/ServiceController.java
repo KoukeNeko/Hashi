@@ -32,8 +32,10 @@ public class ServiceController {
     /**
      * 控制系統服務狀態
      *
-     * @param name   服務名稱 (如 nginx.service)
-     * @param action 動作 (start, stop, restart, enable, disable)
+     * @param name
+     *            服務名稱 (如 nginx.service)
+     * @param action
+     *            動作 (start, stop, restart, enable, disable)
      * @return 成功或失敗訊息
      */
     @PostMapping("/{name}/{action}")

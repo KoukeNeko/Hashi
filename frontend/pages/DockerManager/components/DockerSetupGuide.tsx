@@ -11,28 +11,31 @@ interface DockerSetupGuideProps {
 const DOCKER_COMMANDS: CommandStep[] = [
     {
         title: 'Install prerequisites',
-        command: 'sudo apt update && sudo apt install -y ca-certificates curl gnupg'
+        command: 'sudo apt update && sudo apt install -y ca-certificates curl gnupg',
     },
     {
         title: 'Add Docker GPG key',
-        command: 'sudo install -m 0755 -d /etc/apt/keyrings && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg && sudo chmod a+r /etc/apt/keyrings/docker.gpg'
+        command:
+            'sudo install -m 0755 -d /etc/apt/keyrings && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg && sudo chmod a+r /etc/apt/keyrings/docker.gpg',
     },
     {
         title: 'Add Docker repository',
-        command: 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null'
+        command:
+            'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null',
     },
     {
         title: 'Install Docker Engine',
-        command: 'sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin'
+        command:
+            'sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin',
     },
     {
         title: 'Add user to docker group',
-        command: 'sudo usermod -aG docker $USER'
+        command: 'sudo usermod -aG docker $USER',
     },
     {
         title: 'Start & enable Docker',
-        command: 'sudo systemctl enable --now docker'
-    }
+        command: 'sudo systemctl enable --now docker',
+    },
 ];
 
 export const DockerSetupGuide: React.FC<DockerSetupGuideProps> = ({ onRetry }) => {
@@ -46,7 +49,8 @@ export const DockerSetupGuide: React.FC<DockerSetupGuideProps> = ({ onRetry }) =
                 <div>
                     <h3 className="text-lg font-bold text-zinc-100">Docker Setup Required</h3>
                     <p className="text-sm text-zinc-400 mt-1">
-                        Docker is not installed or not running on this server. Please run the following commands to set it up:
+                        Docker is not installed or not running on this server. Please run the
+                        following commands to set it up:
                     </p>
                 </div>
             </div>

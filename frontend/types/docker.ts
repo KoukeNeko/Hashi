@@ -7,7 +7,7 @@ export enum ContainerStatus {
     RUNNING = 'running',
     STOPPED = 'exited',
     PAUSED = 'paused',
-    RESTARTING = 'restarting'
+    RESTARTING = 'restarting',
 }
 
 /** Container data from Docker API */

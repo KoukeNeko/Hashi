@@ -273,7 +273,7 @@ export enum VmStatus {
     RUNNING = 'running',
     SHUTOFF = 'shutoff',
     PAUSED = 'paused',
-    PROVISIONING = 'provisioning'
+    PROVISIONING = 'provisioning',
 }
 
 /** Legacy VM interface */

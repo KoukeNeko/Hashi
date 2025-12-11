@@ -7,8 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * WebSocket 推播服務
- * 定時推送系統狀態給訂閱的前端客戶端
+ * WebSocket 推播服務 定時推送系統狀態給訂閱的前端客戶端
  */
 @Service
 @RequiredArgsConstructor

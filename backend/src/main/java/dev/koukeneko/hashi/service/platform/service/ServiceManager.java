@@ -5,9 +5,7 @@ import dev.koukeneko.hashi.model.dto.ServiceItemDTO;
 import java.util.List;
 
 /**
- * 系統服務管理介面
- * Linux: systemd/systemctl
- * Windows: Windows Services (sc.exe / PowerShell)
+ * 系統服務管理介面 Linux: systemd/systemctl Windows: Windows Services (sc.exe / PowerShell)
  */
 public interface ServiceManager {
 
@@ -18,9 +16,11 @@ public interface ServiceManager {
 
     /**
      * 控制服務（啟動/停止/重啟）
-     * 
-     * @param serviceName 服務名稱
-     * @param action      操作類型 (start/stop/restart)
+     *
+     * @param serviceName
+     *            服務名稱
+     * @param action
+     *            操作類型 (start/stop/restart)
      */
     void controlService(String serviceName, String action);
 }

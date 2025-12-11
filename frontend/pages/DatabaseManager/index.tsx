@@ -18,25 +18,38 @@ const DatabaseManager: React.FC = () => {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {MOCK_DATABASES.map(db => (
-                    <div key={db.id} className="bg-surface border border-border rounded-lg p-6 shadow-lg hover:border-zinc-600 transition-colors group">
+                {MOCK_DATABASES.map((db) => (
+                    <div
+                        key={db.id}
+                        className="bg-surface border border-border rounded-lg p-6 shadow-lg hover:border-zinc-600 transition-colors group"
+                    >
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-3">
-                                <div className={`p-3 rounded-lg ${db.type === 'MySQL' ? 'bg-blue-500/10 text-blue-400' :
-                                    db.type === 'PostgreSQL' ? 'bg-indigo-500/10 text-indigo-400' :
-                                        'bg-rose-500/10 text-rose-400'
-                                    }`}>
+                                <div
+                                    className={`p-3 rounded-lg ${
+                                        db.type === 'MySQL'
+                                            ? 'bg-blue-500/10 text-blue-400'
+                                            : db.type === 'PostgreSQL'
+                                              ? 'bg-indigo-500/10 text-indigo-400'
+                                              : 'bg-rose-500/10 text-rose-400'
+                                    }`}
+                                >
                                     <Database size={24} />
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-zinc-100">{db.name}</h3>
-                                    <span className="text-xs text-zinc-500 font-mono">{db.type}</span>
+                                    <span className="text-xs text-zinc-500 font-mono">
+                                        {db.type}
+                                    </span>
                                 </div>
                             </div>
-                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${db.status === 'online'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-rose-500/10 text-rose-400'
-                                }`}>
+                            <span
+                                className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${
+                                    db.status === 'online'
+                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                        : 'bg-rose-500/10 text-rose-400'
+                                }`}
+                            >
                                 {db.status}
                             </span>
                         </div>

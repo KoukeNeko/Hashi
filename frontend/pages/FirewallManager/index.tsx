@@ -11,7 +11,7 @@ type FirewallTabId = 'ufw' | 'iptables';
 
 const FIREWALL_TABS: TabItem[] = [
     { id: 'ufw', label: 'UFW', icon: Shield },
-    { id: 'iptables', label: 'iptables', icon: Terminal }
+    { id: 'iptables', label: 'iptables', icon: Terminal },
 ];
 
 // ==================== Main Component ====================

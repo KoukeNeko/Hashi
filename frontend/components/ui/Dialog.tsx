@@ -19,7 +19,7 @@ export const Dialog: React.FC<DialogProps> = ({
     titleIcon,
     titleColor = 'text-zinc-100',
     children,
-    maxWidth = 'max-w-md'
+    maxWidth = 'max-w-md',
 }) => {
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -35,7 +35,9 @@ export const Dialog: React.FC<DialogProps> = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className={`bg-surface border border-border rounded-lg shadow-2xl w-full ${maxWidth} mx-4`}>
+            <div
+                className={`bg-surface border border-border rounded-lg shadow-2xl w-full ${maxWidth} mx-4`}
+            >
                 <div className="flex items-center justify-between p-4 border-b border-border">
                     <h2 className={`text-lg font-bold flex items-center gap-2 ${titleColor}`}>
                         {titleIcon}
@@ -61,9 +63,7 @@ interface DialogBodyProps {
 }
 
 export const DialogBody: React.FC<DialogBodyProps> = ({ children, className = '' }) => (
-    <div className={`p-4 space-y-4 ${className}`}>
-        {children}
-    </div>
+    <div className={`p-4 space-y-4 ${className}`}>{children}</div>
 );
 
 // ==================== Dialog Footer ====================
@@ -100,12 +100,12 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     confirmText = 'Confirm',
     confirmColor = 'red',
     confirmIcon,
-    children
+    children,
 }) => {
     const colorClasses = {
         red: 'bg-rose-600 hover:bg-rose-500',
         amber: 'bg-amber-600 hover:bg-amber-500',
-        emerald: 'bg-emerald-600 hover:bg-emerald-500'
+        emerald: 'bg-emerald-600 hover:bg-emerald-500',
     };
 
     return (

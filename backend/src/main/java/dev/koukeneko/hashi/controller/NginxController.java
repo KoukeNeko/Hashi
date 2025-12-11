@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Nginx Web Server 管理 Controller
- * 提供 Virtual Host、SSL 憑證管理與服務控制
+ * Nginx Web Server 管理 Controller 提供 Virtual Host、SSL 憑證管理與服務控制
  */
 @RestController
 @RequestMapping("/api/v1/nginx")
@@ -75,7 +74,8 @@ public class NginxController {
     /**
      * 取得單一 Host 設定
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return Host 設定
      */
     @GetMapping("/hosts/{name}")
@@ -90,7 +90,8 @@ public class NginxController {
     /**
      * 取得 Host 設定檔內容
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return 設定檔純文字
      */
     @GetMapping("/hosts/{name}/config")
@@ -105,7 +106,8 @@ public class NginxController {
     /**
      * 建立新 Virtual Host
      *
-     * @param request 建立請求
+     * @param request
+     *            建立請求
      * @return 建立後的 Host 資訊
      */
     @PostMapping("/hosts")
@@ -120,8 +122,10 @@ public class NginxController {
     /**
      * 更新 Host 設定檔內容
      *
-     * @param name    設定檔名稱
-     * @param request 包含新設定檔內容
+     * @param name
+     *            設定檔名稱
+     * @param request
+     *            包含新設定檔內容
      * @return 更新結果
      */
     @PutMapping("/hosts/{name}/config")
@@ -138,7 +142,8 @@ public class NginxController {
     /**
      * 刪除 Virtual Host
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return 刪除結果
      */
     @DeleteMapping("/hosts/{name}")
@@ -152,7 +157,8 @@ public class NginxController {
     /**
      * 啟用 Virtual Host
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return 啟用結果
      */
     @PostMapping("/hosts/{name}/enable")
@@ -169,7 +175,8 @@ public class NginxController {
     /**
      * 停用 Virtual Host
      *
-     * @param name 設定檔名稱
+     * @param name
+     *            設定檔名稱
      * @return 停用結果
      */
     @PostMapping("/hosts/{name}/disable")
@@ -198,7 +205,8 @@ public class NginxController {
     /**
      * 使用 Certbot 申請 SSL 憑證
      *
-     * @param request 包含 domain 和 email
+     * @param request
+     *            包含 domain 和 email
      * @return 申請結果
      */
     @PostMapping("/ssl/certbot")
@@ -214,7 +222,8 @@ public class NginxController {
     /**
      * 使用 acme.sh 申請 SSL 憑證
      *
-     * @param request 包含 domain 和 email
+     * @param request
+     *            包含 domain 和 email
      * @return 申請結果
      */
     @PostMapping("/ssl/acme")

@@ -14,4 +14,3 @@ public class SystemInfoConfig {
         return new SystemInfo();
     }
 }
-

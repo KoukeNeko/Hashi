@@ -42,11 +42,11 @@ public class VncWebSocketHandler extends BinaryWebSocketHandler {
         try {
             // 取得 VNC 連線資訊
             VncInfoDTO vncInfo = virtService.getVncInfo(vmName);
-            
+
             // 建立到 VNC server 的 TCP 連線
             Socket vncSocket = new Socket(vncInfo.host(), vncInfo.port());
             vncSocket.setTcpNoDelay(true);
-            
+
             VncConnection conn = new VncConnection(vncSocket, session);
             connections.put(session.getId(), conn);
 
@@ -56,7 +56,7 @@ public class VncWebSocketHandler extends BinaryWebSocketHandler {
                     InputStream in = vncSocket.getInputStream();
                     byte[] buffer = new byte[65536];
                     int bytesRead;
-                    
+
                     while ((bytesRead = in.read(buffer)) != -1 && session.isOpen()) {
                         byte[] data = new byte[bytesRead];
                         System.arraycopy(buffer, 0, data, 0, bytesRead);
@@ -124,8 +124,9 @@ public class VncWebSocketHandler extends BinaryWebSocketHandler {
 
     private String extractVmName(WebSocketSession session) {
         URI uri = session.getUri();
-        if (uri == null) return null;
-        
+        if (uri == null)
+            return null;
+
         String path = uri.getPath();
         // /ws/vnc/{vmName}
         String[] parts = path.split("/");
@@ -135,5 +136,6 @@ public class VncWebSocketHandler extends BinaryWebSocketHandler {
         return null;
     }
 
-    private record VncConnection(Socket socket, WebSocketSession session) {}
+    private record VncConnection(Socket socket, WebSocketSession session) {
+    }
 }

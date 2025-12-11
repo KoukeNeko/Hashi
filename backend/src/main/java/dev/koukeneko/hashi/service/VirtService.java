@@ -46,7 +46,7 @@ public class VirtService {
             // Libvirt API 比較老舊，需要分別列出 ID (執行中) 和 Name (所有)
             // 這裡我們直接列出所有定義的 Domain
             String[] definedDomains = conn.listDefinedDomains(); // 關機的
-            int[] activeDomains = conn.listDomains();            // 開機的
+            int[] activeDomains = conn.listDomains(); // 開機的
 
             // 處理執行中的
             for (int id : activeDomains) {
@@ -76,19 +76,22 @@ public class VirtService {
             Domain domain = conn.domainLookupByName(name);
 
             switch (action) {
-                case "start":
-                    if (!(domain.isActive() == 1)) domain.create(); // create = boot up
+                case "start" :
+                    if (!(domain.isActive() == 1))
+                        domain.create(); // create = boot up
                     break;
-                case "stop": // 優雅關機 (ACPI Shutdown)
-                    if (domain.isActive() == 1) domain.shutdown();
+                case "stop" : // 優雅關機 (ACPI Shutdown)
+                    if (domain.isActive() == 1)
+                        domain.shutdown();
                     break;
-                case "force-stop": // 拔電源
-                    if (domain.isActive() == 1) domain.destroy();
+                case "force-stop" : // 拔電源
+                    if (domain.isActive() == 1)
+                        domain.destroy();
                     break;
-                case "reboot":
+                case "reboot" :
                     domain.reboot(0);
                     break;
-                default:
+                default :
                     throw new IllegalArgumentException("Unknown action: " + action);
             }
         } catch (LibvirtException e) {
@@ -104,27 +107,26 @@ public class VirtService {
         try {
             conn = connect();
             Domain domain = conn.domainLookupByName(name);
-            
+
             if (domain.isActive() != 1) {
                 throw new IllegalStateException("VM is not running");
             }
 
             // 從 XML 中解析 VNC 資訊
             String xml = domain.getXMLDesc(0);
-            
+
             // 解析 VNC port
             int port = -1;
             String password = null;
-            
+
             // 簡單的 XML 解析（找 graphics type='vnc'）
             java.util.regex.Pattern portPattern = java.util.regex.Pattern.compile(
-                    "<graphics[^>]*type=['\"]vnc['\"][^>]*port=['\"](-?\\d+)['\"]"
-            );
+                    "<graphics[^>]*type=['\"]vnc['\"][^>]*port=['\"](-?\\d+)['\"]");
             java.util.regex.Matcher portMatcher = portPattern.matcher(xml);
             if (portMatcher.find()) {
                 port = Integer.parseInt(portMatcher.group(1));
             }
-            
+
             // 如果 port 是 -1，代表 autoport，需要從 libvirt 取得實際 port
             if (port == -1) {
                 // libvirt 會動態分配，通常從 5900 開始
@@ -138,8 +140,7 @@ public class VirtService {
 
             // 解析密碼 (如果有)
             java.util.regex.Pattern pwdPattern = java.util.regex.Pattern.compile(
-                    "<graphics[^>]*type=['\"]vnc['\"][^>]*passwd=['\"]([^'\"]*)['\"]"
-            );
+                    "<graphics[^>]*type=['\"]vnc['\"][^>]*passwd=['\"]([^'\"]*)['\"]");
             java.util.regex.Matcher pwdMatcher = pwdPattern.matcher(xml);
             if (pwdMatcher.find()) {
                 password = pwdMatcher.group(1);
@@ -184,7 +185,7 @@ public class VirtService {
             Domain domain = conn.domainLookupByName(name);
             DomainInfo info = domain.getInfo();
             String xml = domain.getXMLDesc(0);
-            
+
             VmDTO.VmDTOBuilder builder = VmDTO.builder()
                     .id(domain.getID())
                     .uuid(domain.getUUIDString())
@@ -194,10 +195,10 @@ public class VirtService {
                     .memory(info.memory * 1024L)
                     .maxMemory(info.maxMem * 1024L)
                     .autostart(domain.getAutostart());
-            
+
             // 解析 XML 取得詳細設定
             parseVmXmlToBuilder(xml, builder);
-            
+
             return builder.build();
         } catch (LibvirtException e) {
             throw new RuntimeException("Failed to get VM details: " + e.getMessage(), e);
@@ -210,19 +211,19 @@ public class VirtService {
     private void parseVmXmlToBuilder(String xml, VmDTO.VmDTOBuilder builder) {
         // Description
         builder.description(extractXmlValue(xml, "<description>([^<]*)</description>"));
-        
+
         // CPU Mode
         String cpuMode = extractXmlAttribute(xml, "<cpu[^>]*mode=['\"]([^'\"]+)['\"]");
         builder.cpuMode(cpuMode);
-        
+
         // CPU Topology
         builder.cpuSockets(extractXmlAttributeInt(xml, "sockets=['\"]([^'\"]+)['\"]"));
         builder.cpuCores(extractXmlAttributeInt(xml, "cores=['\"]([^'\"]+)['\"]"));
         builder.cpuThreads(extractXmlAttributeInt(xml, "threads=['\"]([^'\"]+)['\"]"));
-        
+
         // Hugepages
         builder.hugepages(xml.contains("<hugepages/>"));
-        
+
         // 解析所有磁碟
         List<DiskDTO> disks = new ArrayList<>();
         Pattern diskPattern = Pattern.compile("<disk[^>]*device=['\"]disk['\"][^>]*>.*?</disk>", Pattern.DOTALL);
@@ -234,14 +235,15 @@ public class VirtService {
             String diskFormat = extractXmlAttribute(diskXml, "type=['\"]([^'\"]+)['\"]");
             String diskBus = extractXmlAttribute(diskXml, "bus=['\"]([^'\"]+)['\"]");
             String targetDev = extractXmlAttribute(diskXml, "<target dev=['\"]([^'\"]+)['\"]");
-            
+
             Long diskSize = null;
             if (diskPath != null) {
                 try {
                     diskSize = Files.size(Path.of(diskPath));
-                } catch (Exception e) { /* ignore */ }
+                } catch (Exception e) {
+                    /* ignore */ }
             }
-            
+
             // 第一個磁碟設為主磁碟（向後相容）
             if (isFirstDisk) {
                 builder.diskPath(diskPath);
@@ -250,7 +252,7 @@ public class VirtService {
                 builder.diskSizeBytes(diskSize);
                 isFirstDisk = false;
             }
-            
+
             // 添加到磁碟列表
             disks.add(DiskDTO.builder()
                     .name(targetDev)
@@ -261,7 +263,7 @@ public class VirtService {
                     .build());
         }
         builder.disks(disks.isEmpty() ? null : disks);
-        
+
         // CD-ROM / ISO
         Pattern cdromPattern = Pattern.compile("<disk[^>]*device=['\"]cdrom['\"][^>]*>.*?</disk>", Pattern.DOTALL);
         Matcher cdromMatcher = cdromPattern.matcher(xml);
@@ -269,7 +271,7 @@ public class VirtService {
             String cdromXml = cdromMatcher.group();
             builder.isoPath(extractXmlAttribute(cdromXml, "<source file=['\"]([^'\"]+)['\"]"));
         }
-        
+
         // Network
         Pattern netPattern = Pattern.compile("<interface[^>]*>.*?</interface>", Pattern.DOTALL);
         Matcher netMatcher = netPattern.matcher(xml);
@@ -280,7 +282,7 @@ public class VirtService {
             builder.networkSource(extractXmlAttribute(netXml, "<source (?:network|bridge)=['\"]([^'\"]+)['\"]"));
             builder.networkModel(extractXmlAttribute(netXml, "<model type=['\"]([^'\"]+)['\"]"));
         }
-        
+
         // Graphics
         Pattern graphicsPattern = Pattern.compile("<graphics[^>]*>.*?</graphics>", Pattern.DOTALL);
         Matcher graphicsMatcher = graphicsPattern.matcher(xml);
@@ -290,7 +292,7 @@ public class VirtService {
             builder.graphicsPort(extractXmlAttributeInt(gfxXml, "port=['\"](-?\\d+)['\"]"));
             builder.graphicsListen(extractXmlAttribute(gfxXml, "listen=['\"]([^'\"]+)['\"]"));
         }
-        
+
         // Video
         Pattern videoPattern = Pattern.compile("<video>.*?</video>", Pattern.DOTALL);
         Matcher videoMatcher = videoPattern.matcher(xml);
@@ -299,7 +301,7 @@ public class VirtService {
             builder.videoModel(extractXmlAttribute(vidXml, "<model type=['\"]([^'\"]+)['\"]"));
             builder.videoVram(extractXmlAttributeInt(vidXml, "vram=['\"]([^'\"]+)['\"]"));
         }
-        
+
         // Boot Order
         List<String> bootOrder = new ArrayList<>();
         Pattern bootPattern = Pattern.compile("<boot dev=['\"]([^'\"]+)['\"]");
@@ -308,60 +310,61 @@ public class VirtService {
             bootOrder.add(bootMatcher.group(1));
         }
         builder.bootOrder(bootOrder.isEmpty() ? null : bootOrder);
-        
+
         // Boot Menu
         builder.bootMenu(xml.contains("<bootmenu enable='yes'") || xml.contains("<bootmenu enable=\"yes\""));
-        
+
         // UEFI
         builder.uefi(xml.contains("<loader") && xml.contains("OVMF"));
-        
+
         // OS Type
         if (xml.contains("localtime")) {
             builder.osType("windows");
         } else {
             builder.osType("linux");
         }
-        
+
         // Machine
         builder.machine(extractXmlAttribute(xml, "machine=['\"]([^'\"]+)['\"]"));
-        
+
         // Power Management
         builder.onPoweroff(extractXmlValue(xml, "<on_poweroff>([^<]+)</on_poweroff>"));
         builder.onReboot(extractXmlValue(xml, "<on_reboot>([^<]+)</on_reboot>"));
         builder.onCrash(extractXmlValue(xml, "<on_crash>([^<]+)</on_crash>"));
-        
+
         // Features
         builder.acpi(xml.contains("<acpi/>") || xml.contains("<acpi>"));
         builder.apic(xml.contains("<apic/>") || xml.contains("<apic>"));
-        
+
         // Clock
         builder.clockOffset(extractXmlAttribute(xml, "<clock offset=['\"]([^'\"]+)['\"]"));
-        
+
         // Devices
         builder.usb(xml.contains("<controller type='usb'") || xml.contains("<controller type=\"usb\""));
         builder.tablet(xml.contains("<input type='tablet'") || xml.contains("<input type=\"tablet\""));
         builder.serial(xml.contains("<serial type='pty'") || xml.contains("<serial type=\"pty\""));
         builder.tpm(xml.contains("<tpm"));
     }
-    
+
     private String extractXmlValue(String xml, String regex) {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(xml);
         return matcher.find() ? matcher.group(1) : null;
     }
-    
+
     private String extractXmlAttribute(String xml, String regex) {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(xml);
         return matcher.find() ? matcher.group(1) : null;
     }
-    
+
     private Integer extractXmlAttributeInt(String xml, String regex) {
         String value = extractXmlAttribute(xml, regex);
         if (value != null) {
             try {
                 return Integer.parseInt(value);
-            } catch (NumberFormatException e) { /* ignore */ }
+            } catch (NumberFormatException e) {
+                /* ignore */ }
         }
         return null;
     }
@@ -373,22 +376,22 @@ public class VirtService {
             conn = connect();
             Domain domain = conn.domainLookupByName(name);
             boolean isRunning = domain.isActive() == 1;
-            
+
             // 取得現有 XML
             String xml = domain.getXMLDesc(0);
-            
+
             // 修改 XML
             xml = applyUpdatesToXml(xml, request, isRunning);
-            
+
             // 重新定義 VM (無論運行狀態都可以更新定義)
             // 注意：運行中的 VM 某些設定需要重啟才能生效
             domain = conn.domainDefineXML(xml);
-            
+
             // 處理 autostart
             if (request.autostart() != null) {
                 domain.setAutostart(request.autostart());
             }
-            
+
             return getVmDetails(name);
         } catch (LibvirtException e) {
             throw new RuntimeException("Failed to update VM: " + e.getMessage(), e);
@@ -396,73 +399,74 @@ public class VirtService {
             close(conn);
         }
     }
-    
+
     // 將更新套用到 XML
     private String applyUpdatesToXml(String xml, UpdateVmDTO req, boolean isRunning) {
         // Description
         if (req.description() != null) {
             if (xml.contains("<description>")) {
-                xml = xml.replaceFirst("<description>[^<]*</description>", 
+                xml = xml.replaceFirst("<description>[^<]*</description>",
                         "<description>" + escapeXml(req.description()) + "</description>");
             } else {
-                xml = xml.replaceFirst("</name>", "</name>\n  <description>" + escapeXml(req.description()) + "</description>");
+                xml = xml.replaceFirst("</name>",
+                        "</name>\n  <description>" + escapeXml(req.description()) + "</description>");
             }
         }
-        
+
         // Memory (可部分熱更新) - 支援 KiB 和 MiB 兩種單位
         if (req.memoryMB() != null) {
             // 嘗試符合 KiB 單位
             if (xml.contains("<currentMemory unit='KiB'") || xml.contains("<currentMemory unit=\"KiB\"")) {
-                xml = xml.replaceFirst("<currentMemory unit=['\"]KiB['\"]>\\d+</currentMemory>", 
+                xml = xml.replaceFirst("<currentMemory unit=['\"]KiB['\"]>\\d+</currentMemory>",
                         "<currentMemory unit='KiB'>" + (req.memoryMB() * 1024) + "</currentMemory>");
             } else {
                 // 符合 MiB 單位
-                xml = xml.replaceFirst("<currentMemory unit=['\"]MiB['\"]>\\d+</currentMemory>", 
+                xml = xml.replaceFirst("<currentMemory unit=['\"]MiB['\"]>\\d+</currentMemory>",
                         "<currentMemory unit='MiB'>" + req.memoryMB() + "</currentMemory>");
             }
         }
         if (req.maxMemoryMB() != null) {
             // 嘗試符合 KiB 單位
             if (xml.contains("<memory unit='KiB'") || xml.contains("<memory unit=\"KiB\"")) {
-                xml = xml.replaceFirst("<memory unit=['\"]KiB['\"]>\\d+</memory>", 
+                xml = xml.replaceFirst("<memory unit=['\"]KiB['\"]>\\d+</memory>",
                         "<memory unit='KiB'>" + (req.maxMemoryMB() * 1024) + "</memory>");
             } else {
                 // 符合 MiB 單位
-                xml = xml.replaceFirst("<memory unit=['\"]MiB['\"]>\\d+</memory>", 
+                xml = xml.replaceFirst("<memory unit=['\"]MiB['\"]>\\d+</memory>",
                         "<memory unit='MiB'>" + req.maxMemoryMB() + "</memory>");
             }
         }
-        
+
         // vCPU (需關機)
         if (req.vcpu() != null && !isRunning) {
             xml = xml.replaceFirst("<vcpu[^>]*>\\d+</vcpu>", "<vcpu>" + req.vcpu() + "</vcpu>");
         }
-        
+
         // CPU Mode (需關機)
         if (req.cpuMode() != null && !isRunning) {
             if (xml.contains("<cpu mode=")) {
                 xml = xml.replaceFirst("<cpu mode=['\"][^'\"]*['\"]", "<cpu mode='" + req.cpuMode() + "'");
             }
         }
-        
+
         // Graphics Password (可熱更新)
         if (req.graphicsPassword() != null) {
             // 先移除現有密碼
             xml = xml.replaceFirst(" passwd=['\"][^'\"]*['\"]", "");
             // 加入新密碼
             if (!req.graphicsPassword().isEmpty()) {
-                xml = xml.replaceFirst("<graphics type=['\"]([^'\"]+)['\"]", 
+                xml = xml.replaceFirst("<graphics type=['\"]([^'\"]+)['\"]",
                         "<graphics type='$1' passwd='" + escapeXml(req.graphicsPassword()) + "'");
             }
         }
-        
+
         // Graphics Listen
         if (req.graphicsListen() != null) {
             xml = xml.replaceFirst("listen=['\"][^'\"]*['\"]", "listen='" + req.graphicsListen() + "'");
-            xml = xml.replaceFirst("<listen type=['\"]address['\"] address=['\"][^'\"]*['\"]/>", 
+            xml = xml.replaceFirst("<listen type=['\"]address['\"] address=['\"][^'\"]*['\"]/>",
                     "<listen type='address' address='" + req.graphicsListen() + "'/>");
         }
-        
+
         // Boot Order (需關機)
         if (req.bootOrder() != null && !isRunning) {
             // 移除現有 boot 設定
@@ -474,7 +478,7 @@ public class VirtService {
             }
             xml = xml.replaceFirst("(\\s*)</os>", "\n" + bootXml + "  </os>");
         }
-        
+
         // Boot Menu (需關機)
         if (req.bootMenu() != null && !isRunning) {
             xml = xml.replaceFirst("<bootmenu enable=['\"][^'\"]*['\"]/>", "");
@@ -482,26 +486,26 @@ public class VirtService {
                 xml = xml.replaceFirst("</os>", "    <bootmenu enable='yes'/>\n  </os>");
             }
         }
-        
+
         // Power Management
         if (req.onPoweroff() != null) {
-            xml = xml.replaceFirst("<on_poweroff>[^<]+</on_poweroff>", 
+            xml = xml.replaceFirst("<on_poweroff>[^<]+</on_poweroff>",
                     "<on_poweroff>" + req.onPoweroff() + "</on_poweroff>");
         }
         if (req.onReboot() != null) {
-            xml = xml.replaceFirst("<on_reboot>[^<]+</on_reboot>", 
+            xml = xml.replaceFirst("<on_reboot>[^<]+</on_reboot>",
                     "<on_reboot>" + req.onReboot() + "</on_reboot>");
         }
         if (req.onCrash() != null) {
-            xml = xml.replaceFirst("<on_crash>[^<]+</on_crash>", 
+            xml = xml.replaceFirst("<on_crash>[^<]+</on_crash>",
                     "<on_crash>" + req.onCrash() + "</on_crash>");
         }
-        
+
         // Clock Offset (需關機)
         if (req.clockOffset() != null && !isRunning) {
             xml = xml.replaceFirst("<clock offset=['\"][^'\"]*['\"]", "<clock offset='" + req.clockOffset() + "'");
         }
-        
+
         // CD-ROM / ISO (可熱插拔)
         if (req.isoPath() != null) {
             if (req.isoPath().isEmpty()) {
@@ -517,25 +521,26 @@ public class VirtService {
                 if (cdromMatcher.find()) {
                     String cdromContent = cdromMatcher.group(2);
                     if (cdromContent.contains("<source file=")) {
-                        cdromContent = cdromContent.replaceFirst("<source file=['\"][^'\"]*['\"]/>", 
+                        cdromContent = cdromContent.replaceFirst("<source file=['\"][^'\"]*['\"]/>",
                                 "<source file='" + req.isoPath() + "'/>");
                     } else {
-                            cdromContent = cdromContent.replaceFirst("<driver", 
-                                    "<source file='" + req.isoPath() + "'/>\n      <driver");
-                        }
-                        xml = cdromMatcher.replaceFirst("$1" + Matcher.quoteReplacement(cdromContent) + "$3");
+                        cdromContent = cdromContent.replaceFirst("<driver",
+                                "<source file='" + req.isoPath() + "'/>\n      <driver");
                     }
+                    xml = cdromMatcher.replaceFirst("$1" + Matcher.quoteReplacement(cdromContent) + "$3");
                 }
             }
+        }
 
-        
         return xml;
     }
 
     private void close(Connect conn) {
         try {
-            if (conn != null && conn.isConnected()) conn.close();
-        } catch (LibvirtException e) { /* ignore */ }
+            if (conn != null && conn.isConnected())
+                conn.close();
+        } catch (LibvirtException e) {
+            /* ignore */ }
     }
 
     // 建立新 VM
@@ -560,7 +565,7 @@ public class VirtService {
                 for (int i = 0; i < request.disks().size(); i++) {
                     DiskDTO disk = request.disks().get(i);
                     String diskPath;
-                    
+
                     if (disk.path() != null && !disk.path().isBlank()) {
                         // 使用現有磁碟
                         diskPath = disk.path();
@@ -574,7 +579,7 @@ public class VirtService {
                     } else {
                         continue; // 跳過無效磁碟定義
                     }
-                    
+
                     additionalDisks.add(DiskDTO.builder()
                             .name(disk.name())
                             .path(diskPath)
@@ -601,7 +606,8 @@ public class VirtService {
             for (String diskPath : createdDiskPaths) {
                 try {
                     Files.deleteIfExists(Path.of(diskPath));
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                }
             }
             throw new RuntimeException("Failed to create VM: " + e.getMessage(), e);
         } finally {
@@ -624,7 +630,9 @@ public class VirtService {
             // 從 XML 解析所有磁碟路徑
             String xml = domain.getXMLDesc(0);
             List<String> diskPaths = new ArrayList<>();
-            Pattern diskPattern = Pattern.compile("<disk[^>]*device=['\"]disk['\"][^>]*>.*?<source file=['\"]([^'\"]+)['\"].*?</disk>", Pattern.DOTALL);
+            Pattern diskPattern = Pattern.compile(
+                    "<disk[^>]*device=['\"]disk['\"][^>]*>.*?<source file=['\"]([^'\"]+)['\"].*?</disk>",
+                    Pattern.DOTALL);
             Matcher diskMatcher = diskPattern.matcher(xml);
             while (diskMatcher.find()) {
                 diskPaths.add(diskMatcher.group(1));
@@ -653,17 +661,16 @@ public class VirtService {
     // 使用 qemu-img 建立磁碟
     private void createDisk(String path, long sizeGB, String format) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(
-                "qemu-img", "create", "-f", format, path, sizeGB + "G"
-        );
+                "qemu-img", "create", "-f", format, path, sizeGB + "G");
         pb.redirectErrorStream(true); // 合併 stderr 到 stdout
         Process process = pb.start();
-        
+
         // 讀取輸出
         String output;
         try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
             output = reader.lines().collect(java.util.stream.Collectors.joining("\n"));
         }
-        
+
         try {
             int exitCode = process.waitFor();
             if (exitCode != 0) {
@@ -678,7 +685,7 @@ public class VirtService {
     // 產生 libvirt XML 定義
     private String generateVmXml(CreateVmDTO req, String uuid, String primaryDiskPath, List<DiskDTO> additionalDisks) {
         StringBuilder xml = new StringBuilder();
-        
+
         // 取得設定值（使用預設值）
         String cpuMode = req.cpuMode() != null ? req.cpuMode() : "host-passthrough";
         String diskFormat = req.diskFormat() != null ? req.diskFormat() : "qcow2";
@@ -693,12 +700,16 @@ public class VirtService {
         String graphicsListen = req.graphicsListen() != null ? req.graphicsListen() : "0.0.0.0";
         String videoModel = req.videoModel() != null ? req.videoModel() : "qxl";
         int videoVram = req.videoVram() != null ? req.videoVram() : 65536;
-        String machine = req.machine() != null ? req.machine() : ("windows".equalsIgnoreCase(req.osType()) ? "q35" : "pc");
+        String machine = req.machine() != null
+                ? req.machine()
+                : ("windows".equalsIgnoreCase(req.osType()) ? "q35" : "pc");
         String arch = req.arch() != null ? req.arch() : "x86_64";
         String onPoweroff = req.onPoweroff() != null ? req.onPoweroff() : "destroy";
         String onReboot = req.onReboot() != null ? req.onReboot() : "restart";
         String onCrash = req.onCrash() != null ? req.onCrash() : "destroy";
-        String clockOffset = req.clockOffset() != null ? req.clockOffset() : ("windows".equalsIgnoreCase(req.osType()) ? "localtime" : "utc");
+        String clockOffset = req.clockOffset() != null
+                ? req.clockOffset()
+                : ("windows".equalsIgnoreCase(req.osType()) ? "localtime" : "utc");
         boolean acpi = req.acpi() != null ? req.acpi() : true;
         boolean apic = req.apic() != null ? req.apic() : true;
         boolean usb = req.usb() != null ? req.usb() : true;
@@ -710,7 +721,7 @@ public class VirtService {
         xml.append("<domain type='kvm'>\n");
         xml.append("  <name>").append(escapeXml(req.name())).append("</name>\n");
         xml.append("  <uuid>").append(uuid).append("</uuid>\n");
-        
+
         // 描述
         if (req.description() != null && !req.description().isBlank()) {
             xml.append("  <description>").append(escapeXml(req.description())).append("</description>\n");
@@ -751,13 +762,15 @@ public class VirtService {
         xml.append("  <os>\n");
         if (Boolean.TRUE.equals(req.uefi())) {
             xml.append("    <type arch='").append(arch).append("' machine='").append(machine).append("'>hvm</type>\n");
-            xml.append("    <loader readonly='yes' secure='").append(Boolean.TRUE.equals(req.secureBoot()) ? "yes" : "no")
-               .append("' type='pflash'>/usr/share/OVMF/OVMF_CODE.fd</loader>\n");
-            xml.append("    <nvram>/var/lib/libvirt/qemu/nvram/").append(escapeXml(req.name())).append("_VARS.fd</nvram>\n");
+            xml.append("    <loader readonly='yes' secure='")
+                    .append(Boolean.TRUE.equals(req.secureBoot()) ? "yes" : "no")
+                    .append("' type='pflash'>/usr/share/OVMF/OVMF_CODE.fd</loader>\n");
+            xml.append("    <nvram>/var/lib/libvirt/qemu/nvram/").append(escapeXml(req.name()))
+                    .append("_VARS.fd</nvram>\n");
         } else {
             xml.append("    <type arch='").append(arch).append("' machine='").append(machine).append("'>hvm</type>\n");
         }
-        
+
         // 開機順序
         if (req.bootOrder() != null && !req.bootOrder().isEmpty()) {
             for (String boot : req.bootOrder()) {
@@ -767,7 +780,7 @@ public class VirtService {
             xml.append("    <boot dev='cdrom'/>\n");
             xml.append("    <boot dev='hd'/>\n");
         }
-        
+
         // 開機選單
         if (Boolean.TRUE.equals(req.bootMenu())) {
             xml.append("    <bootmenu enable='yes'/>\n");
@@ -776,8 +789,10 @@ public class VirtService {
 
         // Features
         xml.append("  <features>\n");
-        if (acpi) xml.append("    <acpi/>\n");
-        if (apic) xml.append("    <apic/>\n");
+        if (acpi)
+            xml.append("    <acpi/>\n");
+        if (apic)
+            xml.append("    <apic/>\n");
         xml.append("  </features>\n");
 
         // 時鐘
@@ -826,23 +841,25 @@ public class VirtService {
         }
 
         // 磁碟計數器 (用於生成裝置名稱)
-        int virtioIdx = 0;  // vda, vdb, vdc...
-        int sataIdx = 0;    // sda, sdb, sdc...
-        int scsiIdx = 0;    // sda, sdb, sdc... (SCSI)
-        int ideIdx = 0;     // hda, hdb, hdc...
+        int virtioIdx = 0; // vda, vdb, vdc...
+        int sataIdx = 0; // sda, sdb, sdc...
+        int scsiIdx = 0; // sda, sdb, sdc... (SCSI)
+        int ideIdx = 0; // hda, hdb, hdc...
 
         // 主磁碟
         if (primaryDiskPath != null) {
             xml.append("    <disk type='file' device='disk'>\n");
             xml.append("      <driver name='qemu' type='").append(diskFormat).append("'");
-            if (diskCache != null) xml.append(" cache='").append(diskCache).append("'");
-            if (diskIo != null) xml.append(" io='").append(diskIo).append("'");
+            if (diskCache != null)
+                xml.append(" cache='").append(diskCache).append("'");
+            if (diskIo != null)
+                xml.append(" io='").append(diskIo).append("'");
             xml.append("/>\n");
             xml.append("      <source file='").append(primaryDiskPath).append("'/>\n");
             String diskDev = getDiskDeviceName(diskBus, virtioIdx, sataIdx, scsiIdx, ideIdx);
             xml.append("      <target dev='").append(diskDev).append("' bus='").append(diskBus).append("'/>\n");
             xml.append("    </disk>\n");
-            
+
             // 更新計數器
             switch (diskBus) {
                 case "virtio" -> virtioIdx++;
@@ -857,17 +874,19 @@ public class VirtService {
             for (DiskDTO disk : additionalDisks) {
                 String bus = disk.bus() != null ? disk.bus() : "virtio";
                 String format = disk.format() != null ? disk.format() : "qcow2";
-                
+
                 xml.append("    <disk type='file' device='disk'>\n");
                 xml.append("      <driver name='qemu' type='").append(format).append("'");
-                if (disk.cache() != null) xml.append(" cache='").append(disk.cache()).append("'");
-                if (disk.io() != null) xml.append(" io='").append(disk.io()).append("'");
+                if (disk.cache() != null)
+                    xml.append(" cache='").append(disk.cache()).append("'");
+                if (disk.io() != null)
+                    xml.append(" io='").append(disk.io()).append("'");
                 xml.append("/>\n");
                 xml.append("      <source file='").append(disk.path()).append("'/>\n");
                 String diskDev = getDiskDeviceName(bus, virtioIdx, sataIdx, scsiIdx, ideIdx);
                 xml.append("      <target dev='").append(diskDev).append("' bus='").append(bus).append("'/>\n");
                 xml.append("    </disk>\n");
-                
+
                 // 更新計數器
                 switch (bus) {
                     case "virtio" -> virtioIdx++;
@@ -918,7 +937,8 @@ public class VirtService {
         // 顯示
         xml.append("    <graphics type='").append(graphicsType).append("'");
         xml.append(" port='").append(graphicsPort).append("'");
-        if (graphicsPort == -1) xml.append(" autoport='yes'");
+        if (graphicsPort == -1)
+            xml.append(" autoport='yes'");
         xml.append(" listen='").append(graphicsListen).append("'");
         if (req.graphicsPassword() != null && !req.graphicsPassword().isBlank()) {
             xml.append(" passwd='").append(escapeXml(req.graphicsPassword())).append("'");
@@ -931,7 +951,8 @@ public class VirtService {
         xml.append("    <video>\n");
         xml.append("      <model type='").append(videoModel).append("'");
         if ("qxl".equals(videoModel)) {
-            xml.append(" ram='").append(videoVram).append("' vram='").append(videoVram).append("' vgamem='16384' heads='1'");
+            xml.append(" ram='").append(videoVram).append("' vram='").append(videoVram)
+                    .append("' vgamem='16384' heads='1'");
         } else if ("virtio".equals(videoModel)) {
             xml.append(" heads='1' primary='yes'");
         }
@@ -967,17 +988,18 @@ public class VirtService {
     // 根據匯流排類型和索引生成磁碟裝置名稱
     private String getDiskDeviceName(String bus, int virtioIdx, int sataIdx, int scsiIdx, int ideIdx) {
         return switch (bus) {
-            case "virtio" -> "vd" + (char)('a' + virtioIdx);
-            case "sata" -> "sd" + (char)('a' + sataIdx);
-            case "scsi" -> "sd" + (char)('a' + scsiIdx);
-            case "ide" -> "hd" + (char)('a' + ideIdx);
-            default -> "vd" + (char)('a' + virtioIdx);
+            case "virtio" -> "vd" + (char) ('a' + virtioIdx);
+            case "sata" -> "sd" + (char) ('a' + sataIdx);
+            case "scsi" -> "sd" + (char) ('a' + scsiIdx);
+            case "ide" -> "hd" + (char) ('a' + ideIdx);
+            default -> "vd" + (char) ('a' + virtioIdx);
         };
     }
 
     // XML 字元跳脫
     private String escapeXml(String input) {
-        if (input == null) return "";
+        if (input == null)
+            return "";
         return input
                 .replace("&", "&amp;")
                 .replace("<", "&lt;")
@@ -987,7 +1009,7 @@ public class VirtService {
     }
 
     // ==================== ISO 檔案管理 ====================
-    
+
     public List<IsoFileDTO> listIsoFiles() {
         List<IsoFileDTO> isoFiles = new ArrayList<>();
         try {

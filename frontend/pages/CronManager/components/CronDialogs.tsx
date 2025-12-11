@@ -34,15 +34,32 @@ export const CronJobDialog: React.FC<{
             title={job ? 'Edit Cron Job' : 'Add Cron Job'}
             titleIcon={<Clock size={20} className="text-emerald-400" />}
             submitText={job ? 'Update' : 'Create'}
-            initialValues={job ? {
-                expression: job.expression,
-                command: job.command,
-                comment: job.comment || ''
-            } : undefined}
+            initialValues={
+                job
+                    ? {
+                          expression: job.expression,
+                          command: job.command,
+                          comment: job.comment || '',
+                      }
+                    : undefined
+            }
             fields={[
-                { name: 'expression', label: 'Cron Expression', required: true, placeholder: '0 3 * * *', hint: 'Format: minute hour day month weekday', mono: true },
-                { name: 'command', label: 'Command', required: true, placeholder: '/path/to/script.sh', mono: true },
-                { name: 'comment', label: 'Comment (optional)', placeholder: 'Brief description' }
+                {
+                    name: 'expression',
+                    label: 'Cron Expression',
+                    required: true,
+                    placeholder: '0 3 * * *',
+                    hint: 'Format: minute hour day month weekday',
+                    mono: true,
+                },
+                {
+                    name: 'command',
+                    label: 'Command',
+                    required: true,
+                    placeholder: '/path/to/script.sh',
+                    mono: true,
+                },
+                { name: 'comment', label: 'Comment (optional)', placeholder: 'Brief description' },
             ]}
         />
     );

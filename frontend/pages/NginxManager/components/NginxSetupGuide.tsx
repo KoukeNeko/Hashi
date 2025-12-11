@@ -19,7 +19,8 @@ export const NginxSetupGuide: React.FC<NginxSetupGuideProps> = ({ onRetry }) => 
                 <div>
                     <h3 className="text-lg font-bold text-zinc-100">Nginx Not Installed</h3>
                     <p className="text-sm text-zinc-400 mt-1">
-                        The Nginx web server is not detected on this system. To use this feature, please install Nginx and Certbot:
+                        The Nginx web server is not detected on this system. To use this feature,
+                        please install Nginx and Certbot:
                     </p>
                 </div>
             </div>

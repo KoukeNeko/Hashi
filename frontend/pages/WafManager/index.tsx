@@ -29,7 +29,9 @@ const WafManager: React.FC = () => {
                         <ShieldCheck size={32} className="text-emerald-500" />
                     </div>
                     <div>
-                        <h3 className="text-zinc-500 text-xs uppercase font-bold">Total Requests</h3>
+                        <h3 className="text-zinc-500 text-xs uppercase font-bold">
+                            Total Requests
+                        </h3>
                         <p className="text-2xl font-bold text-white">1.2M</p>
                     </div>
                 </div>
@@ -38,7 +40,9 @@ const WafManager: React.FC = () => {
                         <Shield size={32} className="text-rose-500" />
                     </div>
                     <div>
-                        <h3 className="text-zinc-500 text-xs uppercase font-bold">Threats Blocked</h3>
+                        <h3 className="text-zinc-500 text-xs uppercase font-bold">
+                            Threats Blocked
+                        </h3>
                         <p className="text-2xl font-bold text-white">14.3K</p>
                     </div>
                 </div>
@@ -47,7 +51,9 @@ const WafManager: React.FC = () => {
                         <AlertTriangle size={32} className="text-amber-500" />
                     </div>
                     <div>
-                        <h3 className="text-zinc-500 text-xs uppercase font-bold">Suspicious Activity</h3>
+                        <h3 className="text-zinc-500 text-xs uppercase font-bold">
+                            Suspicious Activity
+                        </h3>
                         <p className="text-2xl font-bold text-white">420</p>
                     </div>
                 </div>
@@ -55,11 +61,18 @@ const WafManager: React.FC = () => {
 
             <h3 className="text-lg font-bold text-white mb-4">Active Protection Rules</h3>
             <div className="space-y-4">
-                {MOCK_WAF_RULES.map(rule => (
-                    <div key={rule.id} className="bg-surface border border-border p-5 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md hover:border-zinc-600 transition-colors">
+                {MOCK_WAF_RULES.map((rule) => (
+                    <div
+                        key={rule.id}
+                        className="bg-surface border border-border p-5 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md hover:border-zinc-600 transition-colors"
+                    >
                         <div className="flex items-center gap-4">
-                            <div className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors ${rule.enabled ? 'bg-emerald-600' : 'bg-zinc-700'}`}>
-                                <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${rule.enabled ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                            <div
+                                className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors ${rule.enabled ? 'bg-emerald-600' : 'bg-zinc-700'}`}
+                            >
+                                <div
+                                    className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${rule.enabled ? 'translate-x-4' : 'translate-x-0'}`}
+                                ></div>
                             </div>
                             <div>
                                 <h4 className="font-bold text-zinc-200">{rule.name}</h4>
@@ -69,7 +82,9 @@ const WafManager: React.FC = () => {
 
                         <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
                             <div className="text-right">
-                                <div className="text-xs text-zinc-500 uppercase font-bold">Hits</div>
+                                <div className="text-xs text-zinc-500 uppercase font-bold">
+                                    Hits
+                                </div>
                                 <div className="font-mono text-zinc-300">{rule.hits}</div>
                             </div>
                             <button className="p-2 hover:bg-zinc-800 text-zinc-500 hover:text-white rounded transition-colors">

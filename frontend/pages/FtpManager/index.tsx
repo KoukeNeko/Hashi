@@ -3,7 +3,16 @@ import { PageHeader, Toast, ActionButton } from '../../components';
 import { Tabs, TabItem, Alert, CommandCard } from '../../components/ui';
 import { FtpService } from '../../services/api';
 import { FtpServerInfo, FtpServerType } from '../../types';
-import { Server, Users, FileText, ScrollText, RefreshCw, Loader2, Download, AlertCircle } from 'lucide-react';
+import {
+    Server,
+    Users,
+    FileText,
+    ScrollText,
+    RefreshCw,
+    Loader2,
+    Download,
+    AlertCircle,
+} from 'lucide-react';
 import FtpStatusPanel from './components/FtpStatusPanel';
 import FtpUsersPanel from './components/FtpUsersPanel';
 import FtpConfigPanel from './components/FtpConfigPanel';
@@ -17,7 +26,7 @@ const FTP_TABS: TabItem[] = [
     { id: 'status', label: 'Status', icon: Server },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'config', label: 'Config', icon: FileText },
-    { id: 'logs', label: 'Logs', icon: ScrollText }
+    { id: 'logs', label: 'Logs', icon: ScrollText },
 ];
 
 // ==================== Setup Guide Component ====================
@@ -39,18 +48,9 @@ const FtpSetupGuide: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
 
         {/* Installation Options */}
         <div className="space-y-3">
-            <CommandCard
-                title="vsftpd (Recommended)"
-                command="sudo apt install vsftpd"
-            />
-            <CommandCard
-                title="proftpd"
-                command="sudo apt install proftpd"
-            />
-            <CommandCard
-                title="pure-ftpd"
-                command="sudo apt install pure-ftpd"
-            />
+            <CommandCard title="vsftpd (Recommended)" command="sudo apt install vsftpd" />
+            <CommandCard title="proftpd" command="sudo apt install proftpd" />
+            <CommandCard title="pure-ftpd" command="sudo apt install pure-ftpd" />
         </div>
 
         <Alert variant="info">
@@ -96,7 +96,7 @@ const FtpManager: React.FC = () => {
         loadServers();
     }, []);
 
-    const currentServer = servers.find(s => s.type === selectedServer);
+    const currentServer = servers.find((s) => s.type === selectedServer);
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -114,7 +114,7 @@ const FtpManager: React.FC = () => {
                                 onChange={(e) => setSelectedServer(e.target.value as FtpServerType)}
                                 className="bg-zinc-800 border border-zinc-700 text-zinc-200 px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                             >
-                                {servers.map(server => (
+                                {servers.map((server) => (
                                     <option key={server.type} value={server.type}>
                                         {server.type} {server.running ? '(running)' : '(stopped)'}
                                     </option>
@@ -144,8 +144,10 @@ const FtpManager: React.FC = () => {
                     {/* Single server info */}
                     {servers.length === 1 && (
                         <Alert variant="info" icon={Server}>
-                            Using <strong>{currentServer.type}</strong> |
-                            Config: <code className="bg-blue-500/20 px-1 rounded">{currentServer.configPath}</code>
+                            Using <strong>{currentServer.type}</strong> | Config:{' '}
+                            <code className="bg-blue-500/20 px-1 rounded">
+                                {currentServer.configPath}
+                            </code>
                         </Alert>
                     )}
 
@@ -158,16 +160,10 @@ const FtpManager: React.FC = () => {
 
                     {/* Tab Content */}
                     {activeTab === 'status' && (
-                        <FtpStatusPanel
-                            serverType={selectedServer}
-                            onToast={setToast}
-                        />
+                        <FtpStatusPanel serverType={selectedServer} onToast={setToast} />
                     )}
                     {activeTab === 'users' && (
-                        <FtpUsersPanel
-                            serverType={selectedServer}
-                            onToast={setToast}
-                        />
+                        <FtpUsersPanel serverType={selectedServer} onToast={setToast} />
                     )}
                     {activeTab === 'config' && (
                         <FtpConfigPanel
@@ -176,21 +172,13 @@ const FtpManager: React.FC = () => {
                             onToast={setToast}
                         />
                     )}
-                    {activeTab === 'logs' && (
-                        <FtpLogsPanel
-                            serverType={selectedServer}
-                        />
-                    )}
+                    {activeTab === 'logs' && <FtpLogsPanel serverType={selectedServer} />}
                 </>
             ) : null}
 
             {/* Toast */}
             {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
+                <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
             )}
         </div>
     );

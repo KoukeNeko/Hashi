@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PageHeader, Tabs } from '../../components';
-import { ScrollText, Download, Trash2, Search, Pause, Play, ArrowDown, Loader2, Wifi, WifiOff } from 'lucide-react';
+import {
+    ScrollText,
+    Download,
+    Trash2,
+    Search,
+    Pause,
+    Play,
+    ArrowDown,
+    Loader2,
+    Wifi,
+    WifiOff,
+} from 'lucide-react';
 
 interface LogEntry {
     id: number;
@@ -15,10 +26,12 @@ interface LogEntry {
 const parseLogLine = (line: string, id: number): LogEntry | null => {
     if (!line.trim()) return null;
 
-    // journalctl 格式範例: 
+    // journalctl 格式範例:
     // Dec 05 12:34:56 hostname service[pid]: message
     // 或: Dec 05 12:34:56 hostname kernel: message
-    const match = line.match(/^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+(\S+?)(?:\[\d+\])?:\s*(.*)$/);
+    const match = line.match(
+        /^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+(\S+?)(?:\[\d+\])?:\s*(.*)$/
+    );
 
     if (match) {
         const [, timestamp, , service, message] = match;
@@ -28,7 +41,11 @@ const parseLogLine = (line: string, id: number): LogEntry | null => {
         const lowerMsg = message.toLowerCase();
         const lowerService = service.toLowerCase();
 
-        if (lowerMsg.includes('error') || lowerMsg.includes('failed') || lowerMsg.includes('fatal')) {
+        if (
+            lowerMsg.includes('error') ||
+            lowerMsg.includes('failed') ||
+            lowerMsg.includes('fatal')
+        ) {
             level = 'ERROR';
         } else if (lowerMsg.includes('warn') || lowerMsg.includes('warning')) {
             level = 'WARN';
@@ -42,7 +59,14 @@ const parseLogLine = (line: string, id: number): LogEntry | null => {
             level = 'DEBUG';
         }
 
-        return { id, timestamp, level, service: service.replace(/\[\d+\]$/, ''), message, raw: line };
+        return {
+            id,
+            timestamp,
+            level,
+            service: service.replace(/\[\d+\]$/, ''),
+            message,
+            raw: line,
+        };
     }
 
     // 無法解析，直接當作 raw log
@@ -99,7 +123,7 @@ const LogManager: React.FC = () => {
 
             if (newLogs.length === 0) return;
 
-            setLogs(prev => {
+            setLogs((prev) => {
                 const combined = [...prev, ...newLogs];
                 return combined.slice(-2000);
             });
@@ -142,22 +166,26 @@ const LogManager: React.FC = () => {
     }, [logs, autoScroll, paused]);
 
     // 過濾和搜尋
-    const filteredLogs = logs.filter(log => {
-        if (paused) return true; // 暫停時不過濾，保持原狀
-        const matchFilter = filter === 'ALL' || log.level === filter;
-        const matchSearch = !searchQuery ||
-            log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            log.service.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchFilter && matchSearch;
-    }).filter(log => {
-        // 再次過濾（非暫停時）
-        if (!paused) return true;
-        const matchFilter = filter === 'ALL' || log.level === filter;
-        const matchSearch = !searchQuery ||
-            log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            log.service.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchFilter && matchSearch;
-    });
+    const filteredLogs = logs
+        .filter((log) => {
+            if (paused) return true; // 暫停時不過濾，保持原狀
+            const matchFilter = filter === 'ALL' || log.level === filter;
+            const matchSearch =
+                !searchQuery ||
+                log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                log.service.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchFilter && matchSearch;
+        })
+        .filter((log) => {
+            // 再次過濾（非暫停時）
+            if (!paused) return true;
+            const matchFilter = filter === 'ALL' || log.level === filter;
+            const matchSearch =
+                !searchQuery ||
+                log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                log.service.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchFilter && matchSearch;
+        });
 
     // 清除 logs
     const handleClear = () => {
@@ -167,7 +195,7 @@ const LogManager: React.FC = () => {
 
     // 匯出 logs
     const handleExport = () => {
-        const content = filteredLogs.map(l => l.raw).join('\n');
+        const content = filteredLogs.map((l) => l.raw).join('\n');
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -196,12 +224,19 @@ const LogManager: React.FC = () => {
 
     const getLevelColor = (level: LogEntry['level']) => {
         switch (level) {
-            case 'INFO': return 'text-emerald-500';
-            case 'WARN': return 'text-amber-500';
-            case 'ERROR': case 'CRIT': return 'text-rose-500';
-            case 'DEBUG': return 'text-blue-500';
-            case 'NOTICE': return 'text-cyan-500';
-            default: return 'text-zinc-500';
+            case 'INFO':
+                return 'text-emerald-500';
+            case 'WARN':
+                return 'text-amber-500';
+            case 'ERROR':
+            case 'CRIT':
+                return 'text-rose-500';
+            case 'DEBUG':
+                return 'text-blue-500';
+            case 'NOTICE':
+                return 'text-cyan-500';
+            default:
+                return 'text-zinc-500';
         }
     };
 
@@ -237,10 +272,11 @@ const LogManager: React.FC = () => {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setPaused(!paused)}
-                            className={`px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 shadow-lg border ${paused
+                            className={`px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 shadow-lg border ${
+                                paused
                                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/50 hover:bg-emerald-500/20'
                                     : 'bg-amber-500/10 text-amber-400 border-amber-500/50 hover:bg-amber-500/20'
-                                }`}
+                            }`}
                         >
                             {paused ? <Play size={16} /> : <Pause size={16} />}
                             {paused ? 'Resume' : 'Pause'}
@@ -276,7 +312,10 @@ const LogManager: React.FC = () => {
                 />
 
                 <div className="relative w-full sm:w-auto">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
+                    <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                        size={14}
+                    />
                     <input
                         type="text"
                         placeholder="Search logs..."
@@ -301,16 +340,26 @@ const LogManager: React.FC = () => {
                                 <p>{connecting ? 'Connecting to log stream...' : 'No logs yet'}</p>
                             </div>
                         ) : (
-                            filteredLogs.map(log => (
-                                <div key={log.id} className="flex gap-2 hover:bg-zinc-900/50 py-0.5 px-1 rounded group">
-                                    <span className="text-zinc-600 whitespace-nowrap shrink-0">{log.timestamp}</span>
+                            filteredLogs.map((log) => (
+                                <div
+                                    key={log.id}
+                                    className="flex gap-2 hover:bg-zinc-900/50 py-0.5 px-1 rounded group"
+                                >
+                                    <span className="text-zinc-600 whitespace-nowrap shrink-0">
+                                        {log.timestamp}
+                                    </span>
                                     {log.level !== 'UNKNOWN' && (
-                                        <span className={`w-12 text-center font-bold shrink-0 ${getLevelColor(log.level)}`}>
+                                        <span
+                                            className={`w-12 text-center font-bold shrink-0 ${getLevelColor(log.level)}`}
+                                        >
                                             [{log.level}]
                                         </span>
                                     )}
                                     {log.service && (
-                                        <span className="text-purple-400 shrink-0 max-w-[120px] truncate" title={log.service}>
+                                        <span
+                                            className="text-purple-400 shrink-0 max-w-[120px] truncate"
+                                            title={log.service}
+                                        >
                                             {log.service}:
                                         </span>
                                     )}

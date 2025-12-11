@@ -3,8 +3,7 @@ package dev.koukeneko.hashi.service;
 import dev.koukeneko.hashi.model.dto.SystemStatusDTO;
 
 /**
- * 系統儀表板服務介面
- * 提供系統狀態資訊 (CPU、RAM、Disk 等)
+ * 系統儀表板服務介面 提供系統狀態資訊 (CPU、RAM、Disk 等)
  */
 public interface DashboardService {
     /**

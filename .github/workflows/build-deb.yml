@@ -2,7 +2,8 @@
 # Hashi Backend - Build Linux Packages
 # ==============================================================================
 # 自動建置 Linux 安裝包 (DEB + RPM) 的 GitHub Actions workflow
-# 觸發條件：push 到任何分支、手動觸發
+# 支援架構：amd64, arm64
+# 觸發條件：push 到任何分支、tag、手動觸發
 # ==============================================================================
 
 name: Build Linux Packages
@@ -24,69 +25,39 @@ on:
         default: "0.0.1"
 
 jobs:
-  build-package:
-    name: Build ${{ matrix.type }} Package
+  # ===========================================================================
+  # Build JAR (架構無關，只需建置一次)
+  # ===========================================================================
+  build-jar:
+    name: Build JAR
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.prepare.outputs.version }}
-
-    strategy:
-      matrix:
-        include:
-          - type: deb
-            deps: binutils fakeroot
-            extension: deb
-          - type: rpm
-            deps: rpm
-            extension: rpm
+      jar_name: ${{ steps.prepare.outputs.jar_name }}
 
     steps:
-      # -------------------------------------------------------------------------
-      # 1. Checkout 程式碼
-      # -------------------------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # -------------------------------------------------------------------------
-      # 2. 安裝系統打包依賴
-      # -------------------------------------------------------------------------
-      - name: Install packaging dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ${{ matrix.deps }}
-
-      # -------------------------------------------------------------------------
-      # 3. 設定 JDK 25
-      # -------------------------------------------------------------------------
       - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
           distribution: "oracle"
           java-version: "25"
 
-      # -------------------------------------------------------------------------
-      # 4. 設定 Gradle (含快取)
-      # -------------------------------------------------------------------------
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-      # -------------------------------------------------------------------------
-      # 5. Gradle 建置 JAR
-      # -------------------------------------------------------------------------
       - name: Build JAR with Gradle
         working-directory: backend
         run: ./gradlew clean bootJar
 
-      # -------------------------------------------------------------------------
-      # 6. 確定版本號與 JAR 檔名
-      # -------------------------------------------------------------------------
       - name: Determine version and JAR name
         id: prepare
         working-directory: backend
         run: |
-          # 版本號優先順序：手動輸入 > tag > 預設值
           if [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
           elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
@@ -94,89 +65,111 @@ jobs:
           else
             VERSION="0.0.1"
           fi
-
-          # RPM 不允許版本號包含 '-'，替換為 '~'
-          if [ "${{ matrix.type }}" = "rpm" ]; then
-            VERSION=$(echo "$VERSION" | sed 's/-/~/g')
-          fi
-
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-          # 取得 JAR 檔名
           JAR_NAME=$(ls build/libs/hashi-*.jar | head -n 1 | xargs basename)
           echo "jar_name=$JAR_NAME" >> $GITHUB_OUTPUT
           echo "📦 版本: $VERSION"
           echo "📦 JAR: $JAR_NAME"
 
-      # -------------------------------------------------------------------------
-      # 7. 使用 jpackage 打包
-      # -------------------------------------------------------------------------
-      - name: Package with jpackage (${{ matrix.type }})
-        working-directory: backend
-        run: |
-          mkdir -p output
-
-          # 根據套件類型設定額外參數
-          EXTRA_ARGS=""
-          if [ "${{ matrix.type }}" = "deb" ]; then
-            EXTRA_ARGS="--linux-deb-maintainer koukeneko@dev"
-          elif [ "${{ matrix.type }}" = "rpm" ]; then
-            EXTRA_ARGS="--linux-rpm-license-type MIT"
-          fi
-
-          jpackage \
-            --verbose \
-            --name hashi-backend \
-            --app-version "${{ steps.prepare.outputs.version }}" \
-            --type ${{ matrix.type }} \
-            --input build/libs \
-            --main-jar "${{ steps.prepare.outputs.jar_name }}" \
-            --main-class "org.springframework.boot.loader.launch.JarLauncher" \
-            --java-options "-Djava.library.path=/usr/lib/jni" \
-            --arguments "--spring.profiles.active=prod" \
-            --linux-package-deps "libvirt-clients, libvirt-daemon-system, iptables, docker.io, sudo" \
-            --resource-dir "packaging/linux" \
-            --dest output \
-            $EXTRA_ARGS
-
-      # -------------------------------------------------------------------------
-      # 8. 驗證套件並顯示資訊
-      # -------------------------------------------------------------------------
-      - name: Verify package
-        working-directory: backend
-        run: |
-          PKG_FILE=$(ls output/*.${{ matrix.extension }} | head -n 1)
-          echo "📦 產生的套件: $PKG_FILE"
-          echo ""
-          echo "=== 套件資訊 ==="
-          if [ "${{ matrix.type }}" = "deb" ]; then
-            dpkg-deb --info "$PKG_FILE"
-            echo ""
-            echo "=== 套件內容 ==="
-            dpkg-deb --contents "$PKG_FILE" | head -50
-          elif [ "${{ matrix.type }}" = "rpm" ]; then
-            rpm -qip "$PKG_FILE"
-            echo ""
-            echo "=== 套件內容 ==="
-            rpm -qlp "$PKG_FILE" | head -50
-          fi
-
-      # -------------------------------------------------------------------------
-      # 9. 上傳套件作為 Artifact
-      # -------------------------------------------------------------------------
-      - name: Upload package artifact
+      - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hashi-backend-${{ steps.prepare.outputs.version }}-${{ matrix.type }}
-          path: backend/output/*.${{ matrix.extension }}
+          name: hashi-jar
+          path: backend/build/libs/*.jar
+          retention-days: 1
+
+  # ===========================================================================
+  # Build DEB packages for each architecture
+  # ===========================================================================
+  build-deb:
+    name: Build DEB (${{ matrix.arch }})
+    needs: build-jar
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            jdk_arch: x64
+          - arch: arm64
+            platform: linux/arm64
+            jdk_arch: aarch64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: hashi-jar
+          path: backend/build/libs
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build DEB in Docker (${{ matrix.arch }})
+        run: |
+          docker run --rm --platform ${{ matrix.platform }} \
+            -v ${{ github.workspace }}/backend:/workspace \
+            -w /workspace \
+            ubuntu:24.04 bash -c "
+              set -e
+              echo '📦 Installing dependencies...'
+              apt-get update
+              apt-get install -y wget binutils fakeroot
+
+              echo '📦 Installing JDK 21 for ${{ matrix.arch }}...'
+              wget -q https://download.oracle.com/java/21/latest/jdk-21_linux-${{ matrix.jdk_arch }}_bin.tar.gz
+              tar xzf jdk-21_linux-${{ matrix.jdk_arch }}_bin.tar.gz
+              export JAVA_HOME=\$(pwd)/jdk-21.*
+              export PATH=\$JAVA_HOME/bin:\$PATH
+
+              echo '📦 Packaging with jpackage...'
+              mkdir -p output
+              JAR_NAME=\$(ls build/libs/hashi-*.jar | head -n 1 | xargs basename)
+
+              \$JAVA_HOME/bin/jpackage \\
+                --verbose \\
+                --name hashi-backend \\
+                --app-version '${{ needs.build-jar.outputs.version }}' \\
+                --type deb \\
+                --input build/libs \\
+                --main-jar \"\$JAR_NAME\" \\
+                --main-class 'org.springframework.boot.loader.launch.JarLauncher' \\
+                --java-options '-Djava.library.path=/usr/lib/jni' \\
+                --arguments '--spring.profiles.active=prod' \\
+                --linux-deb-maintainer 'koukeneko@dev' \\
+                --linux-package-deps 'libvirt-clients, libvirt-daemon-system, iptables, docker.io, sudo' \\
+                --resource-dir 'packaging/linux' \\
+                --dest output
+
+              echo '📦 Done!'
+              ls -la output/
+            "
+
+      - name: Verify package
+        run: |
+          PKG_FILE=$(ls backend/output/*.deb | head -n 1)
+          echo "📦 產生的套件: $PKG_FILE"
+          dpkg-deb --info "$PKG_FILE"
+
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hashi-backend-${{ needs.build-jar.outputs.version }}-deb-${{ matrix.arch }}
+          path: backend/output/*.deb
           retention-days: 30
 
-  # =============================================================================
-  # Publish to APT Repository (only for DEB + tag)
-  # =============================================================================
+  # ===========================================================================
+  # Publish to APT Repository (only for tag or manual dispatch)
+  # ===========================================================================
   publish-to-apt-repo:
     name: Publish to APT Repository
-    needs: build-package
+    needs: [build-jar, build-deb]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
 
@@ -188,16 +181,17 @@ jobs:
           token: ${{ secrets.APT_REPO_TOKEN }}
           path: apt-repo
 
-      - name: Download DEB artifact
+      - name: Download all DEB artifacts
         uses: actions/download-artifact@v4
         with:
-          name: hashi-backend-${{ needs.build-package.outputs.version || '0.0.1' }}-deb
+          pattern: hashi-backend-*-deb-*
           path: ./incoming
+          merge-multiple: true
 
-      - name: Move package to pool
+      - name: Move packages to pool
         run: |
           mkdir -p apt-repo/pool/main
-          mv ./incoming/*.deb apt-repo/pool/main/
+          find ./incoming -name "*.deb" -exec mv {} apt-repo/pool/main/ \;
           ls -la apt-repo/pool/main/
 
       - name: Import GPG key
@@ -216,5 +210,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "📦 Add hashi-backend ${{ needs.build-package.outputs.version || '0.0.1' }}" || echo "No changes"
+          git commit -m "📦 Add hashi-backend ${{ needs.build-jar.outputs.version }} (amd64 + arm64)" || echo "No changes"
           git push

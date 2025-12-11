@@ -104,7 +104,7 @@ fi
 
 "$JPACKAGE_BIN" \
   --verbose \
-  --name hashi-backend \
+  --name hashi \
   --app-version "$APP_VERSION" \
   --type deb \
   --input "$BUILD_OUTPUT_DIR" \

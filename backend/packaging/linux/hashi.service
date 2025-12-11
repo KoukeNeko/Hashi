@@ -1,0 +1,17 @@
+[Unit]
+Description=Hashi Server Management Dashboard
+After=network.target docker.service libvirtd.service
+Requires=docker.service libvirtd.service
+
+[Service]
+Type=simple
+User=hashi
+Group=hashi
+# Path normalized to /opt/hashi/bin/hashi based on package name 'hashi'
+ExecStart=/opt/hashi/bin/hashi
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

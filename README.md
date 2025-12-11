@@ -20,8 +20,8 @@
 ## 📋 System Requirements
 
 - **OS**: Ubuntu 20.04+, Debian 11+, Fedora 36+, or Arch Linux
-- **Java**: JDK 17+
-- **Node.js**: 18+
+- **Java**: JDK 25+
+- **Node.js**: 22+
 - **Docker**: 20.10+ (optional)
 - **KVM/Libvirt**: (optional, for VM management)
 

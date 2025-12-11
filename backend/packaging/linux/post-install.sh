@@ -20,31 +20,31 @@ systemctl daemon-reload
 systemctl enable hashi-backend
 systemctl restart hashi-backend
 
-# 5. 顯示安裝完成資訊
+# 5. Display installation complete message
 echo ""
 echo "╔══════════════════════════════════════════════════════════════════╗"
 echo "║                                                                  ║"
-echo "║   🎉  Hashi Backend 安裝完成！                                     ║"
+echo "║   🎉  Hashi Backend Installed Successfully!                      ║"
 echo "║                                                                  ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
-echo "📦 服務資訊："
-echo "   • 服務名稱：hashi-backend"
-echo "   • 安裝路徑：/opt/hashi-backend"
-echo "   • 執行使用者：hashi"
+echo "📦 Service Info:"
+echo "   • Service Name: hashi-backend"
+echo "   • Install Path: /opt/hashi-backend"
+echo "   • Run As User:  hashi"
 echo ""
-echo "🔧 常用指令："
-echo "   • 查看狀態：sudo systemctl status hashi-backend"
-echo "   • 停止服務：sudo systemctl stop hashi-backend"
-echo "   • 重啟服務：sudo systemctl restart hashi-backend"
-echo "   • 查看日誌：sudo journalctl -u hashi-backend -f"
+echo "🔧 Useful Commands:"
+echo "   • Check status:  sudo systemctl status hashi-backend"
+echo "   • Stop service:  sudo systemctl stop hashi-backend"
+echo "   • Restart:       sudo systemctl restart hashi-backend"
+echo "   • View logs:     sudo journalctl -u hashi-backend -f"
 echo ""
-echo "🌐 存取方式："
-echo "   • API 端點：http://localhost:8080"
-echo "   • 健康檢查：http://localhost:8080/actuator/health"
+echo "🌐 Access:"
+echo "   • API Endpoint:  http://localhost:8080"
+echo "   • Health Check:  http://localhost:8080/actuator/health"
 echo ""
 
-# 顯示服務狀態
-echo "📊 目前服務狀態："
-systemctl status hashi-backend --no-pager -l 2>/dev/null || echo "   ⚠️ 服務可能尚在啟動中，請稍後再確認"
+# Display service status
+echo "📊 Current Service Status:"
+systemctl status hashi-backend --no-pager -l 2>/dev/null || echo "   ⚠️ Service may still be starting, please check again later"
 echo ""

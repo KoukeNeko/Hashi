@@ -96,9 +96,8 @@ jobs:
             VERSION="${BASE_VERSION}~beta"
             CHANNEL="beta"
           else
-            # dev: 加 ~dev.YYYYMMDD
-            DATE=$(date +%Y%m%d)
-            VERSION="${BASE_VERSION}~dev.${DATE}"
+            # dev: 加 ~dev
+            VERSION="${BASE_VERSION}~dev"
             CHANNEL="dev"
           fi
 

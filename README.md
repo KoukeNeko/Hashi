@@ -27,9 +27,21 @@
 
 ## 🚀 Quick Start
 
-### 1. Setup System Permissions
+### Option 1: Install via Package Manager (Recommended)
 
-Run the permission setup script:
+**Debian / Ubuntu:**
+```bash
+curl -fsSL https://koukeneko.github.io/pkg-repo/apt/install.sh | sudo bash
+sudo apt install hashi-backend
+```
+
+**RHEL / CentOS / Fedora:**
+```bash
+curl -fsSL https://koukeneko.github.io/pkg-repo/rpm/install.sh | sudo bash
+sudo dnf install hashi-backend
+```
+
+### Option 2: Development Setup
 
 ```bash
 # Clone the repository

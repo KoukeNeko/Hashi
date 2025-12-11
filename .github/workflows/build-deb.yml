@@ -121,16 +121,17 @@ jobs:
   build-deb:
     name: Build DEB (${{ matrix.arch }})
     needs: build-jar
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     strategy:
       matrix:
-        arch: [amd64, arm64]
         include:
           - arch: amd64
+            runner: ubuntu-latest
             platform: linux/amd64
             jdk_arch: x64
           - arch: arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             jdk_arch: aarch64
 
@@ -144,8 +145,7 @@ jobs:
           name: hashi-jar
           path: backend/build/libs
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+
 
       - name: Build DEB in Docker (${{ matrix.arch }})
         run: |
@@ -206,16 +206,17 @@ jobs:
   build-rpm:
     name: Build RPM (${{ matrix.arch }})
     needs: build-jar
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     strategy:
       matrix:
-        arch: [amd64, arm64]
         include:
           - arch: amd64
+            runner: ubuntu-latest
             platform: linux/amd64
             jdk_arch: x64
           - arch: arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             jdk_arch: aarch64
 
@@ -229,8 +230,7 @@ jobs:
           name: hashi-jar
           path: backend/build/libs
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+
 
       - name: Build RPM in Docker (${{ matrix.arch }})
         run: |

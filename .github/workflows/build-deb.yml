@@ -158,10 +158,10 @@ jobs:
               apt-get update
               apt-get install -y wget binutils fakeroot
 
-              echo '📦 Installing JDK 21 for ${{ matrix.arch }}...'
-              wget -q https://download.oracle.com/java/21/latest/jdk-21_linux-${{ matrix.jdk_arch }}_bin.tar.gz
-              tar xzf jdk-21_linux-${{ matrix.jdk_arch }}_bin.tar.gz
-              export JAVA_HOME=\$(pwd)/jdk-21.*
+              echo '📦 Installing JDK 25 for ${{ matrix.arch }}...'
+              wget -q https://download.oracle.com/java/25/latest/jdk-25_linux-${{ matrix.jdk_arch }}_bin.tar.gz
+              tar xzf jdk-25_linux-${{ matrix.jdk_arch }}_bin.tar.gz
+              export JAVA_HOME=\$(pwd)/jdk-25.*
               export PATH=\$JAVA_HOME/bin:\$PATH
 
               echo '📦 Packaging with jpackage...'
@@ -242,10 +242,10 @@ jobs:
               echo '📦 Installing dependencies...'
               dnf install -y wget rpm-build
 
-              echo '📦 Installing JDK 21 for ${{ matrix.arch }}...'
-              wget -q https://download.oracle.com/java/21/latest/jdk-21_linux-${{ matrix.jdk_arch }}_bin.tar.gz
-              tar xzf jdk-21_linux-${{ matrix.jdk_arch }}_bin.tar.gz
-              export JAVA_HOME=\$(pwd)/jdk-21.*
+              echo '📦 Installing JDK 25 for ${{ matrix.arch }}...'
+              wget -q https://download.oracle.com/java/25/latest/jdk-25_linux-${{ matrix.jdk_arch }}_bin.tar.gz
+              tar xzf jdk-25_linux-${{ matrix.jdk_arch }}_bin.tar.gz
+              export JAVA_HOME=\$(pwd)/jdk-25.*
               export PATH=\$JAVA_HOME/bin:\$PATH
 
               echo '📦 Packaging with jpackage...'

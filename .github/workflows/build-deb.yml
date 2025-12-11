@@ -287,13 +287,12 @@ jobs:
           retention-days: 30
 
   # ===========================================================================
-  # Publish to Package Repository (only for tag or manual dispatch)
+  # Publish to Package Repository
   # ===========================================================================
   publish-to-pkg-repo:
     name: Publish to Package Repository
     needs: [build-jar, build-deb, build-rpm]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout pkg-repo

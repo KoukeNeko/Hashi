@@ -47,7 +47,7 @@ jobs:
       - name: Build Frontend
         working-directory: frontend
         run: |
-          npm ci
+          npm install
           npm run build
           echo "📦 Frontend built successfully"
 

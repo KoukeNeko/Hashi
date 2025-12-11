@@ -165,6 +165,92 @@ jobs:
           retention-days: 30
 
   # ===========================================================================
+  # Build RPM packages for each architecture
+  # ===========================================================================
+  build-rpm:
+    name: Build RPM (${{ matrix.arch }})
+    needs: build-jar
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            jdk_arch: x64
+          - arch: arm64
+            platform: linux/arm64
+            jdk_arch: aarch64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: hashi-jar
+          path: backend/build/libs
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build RPM in Docker (${{ matrix.arch }})
+        run: |
+          docker run --rm --platform ${{ matrix.platform }} \
+            -v ${{ github.workspace }}/backend:/workspace \
+            -w /workspace \
+            fedora:40 bash -c "
+              set -e
+              echo '📦 Installing dependencies...'
+              dnf install -y wget rpm-build
+
+              echo '📦 Installing JDK 21 for ${{ matrix.arch }}...'
+              wget -q https://download.oracle.com/java/21/latest/jdk-21_linux-${{ matrix.jdk_arch }}_bin.tar.gz
+              tar xzf jdk-21_linux-${{ matrix.jdk_arch }}_bin.tar.gz
+              export JAVA_HOME=\$(pwd)/jdk-21.*
+              export PATH=\$JAVA_HOME/bin:\$PATH
+
+              echo '📦 Packaging with jpackage...'
+              mkdir -p output
+              JAR_NAME=\$(ls build/libs/hashi-*.jar | head -n 1 | xargs basename)
+
+              # RPM version cannot contain '-'
+              VERSION='${{ needs.build-jar.outputs.version }}'
+              VERSION=\${VERSION//-/\~}
+
+              \$JAVA_HOME/bin/jpackage \\
+                --verbose \\
+                --name hashi-backend \\
+                --app-version \"\$VERSION\" \\
+                --type rpm \\
+                --input build/libs \\
+                --main-jar \"\$JAR_NAME\" \\
+                --main-class 'org.springframework.boot.loader.launch.JarLauncher' \\
+                --java-options '-Djava.library.path=/usr/lib/jni' \\
+                --arguments '--spring.profiles.active=prod' \\
+                --linux-rpm-license-type MIT \\
+                --dest output
+
+              echo '📦 Done!'
+              ls -la output/
+            "
+
+      - name: Verify package
+        run: |
+          PKG_FILE=$(ls backend/output/*.rpm | head -n 1)
+          echo "📦 產生的套件: $PKG_FILE"
+          rpm -qip "$PKG_FILE" 2>/dev/null || echo "Cannot read RPM info on Ubuntu"
+
+      - name: Upload RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hashi-backend-${{ needs.build-jar.outputs.version }}-rpm-${{ matrix.arch }}
+          path: backend/output/*.rpm
+          retention-days: 30
+
+  # ===========================================================================
   # Publish to APT Repository (only for tag or manual dispatch)
   # ===========================================================================
   publish-to-apt-repo:

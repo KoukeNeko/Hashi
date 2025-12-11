@@ -113,7 +113,7 @@ fi
   --java-options "-Djava.library.path=/usr/lib/jni" \
   --arguments "--spring.profiles.active=prod" \
   --linux-deb-maintainer "koukeneko@dev" \
-  --linux-package-deps "libvirt-clients, libvirt-daemon-system, iptables, docker.io, sudo" \
+  --linux-package-deps "libvirt-clients, libvirt-daemon-system, iptables, sudo" \
   --resource-dir "$RESOURCE_DIR" \
   --dest "$OUTPUT_DIR"
 

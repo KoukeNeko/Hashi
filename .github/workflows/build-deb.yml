@@ -1,11 +1,11 @@
 # ==============================================================================
-# Hashi Backend - Build DEB Package
+# Hashi Backend - Build Linux Packages
 # ==============================================================================
-# 自動建置 .deb 安裝包的 GitHub Actions workflow
+# 自動建置 Linux 安裝包 (DEB + RPM) 的 GitHub Actions workflow
 # 觸發條件：push 到任何分支、手動觸發
 # ==============================================================================
 
-name: Build DEB Package
+name: Build Linux Packages
 
 on:
   push:
@@ -22,9 +22,19 @@ on:
         default: "0.0.1"
 
 jobs:
-  build-deb:
-    name: Build .deb Package
+  build-package:
+    name: Build ${{ matrix.type }} Package
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - type: deb
+            deps: binutils fakeroot
+            extension: deb
+          - type: rpm
+            deps: rpm-build
+            extension: rpm
 
     steps:
       # -------------------------------------------------------------------------
@@ -39,7 +49,7 @@ jobs:
       - name: Install packaging dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y binutils fakeroot
+          sudo apt-get install -y ${{ matrix.deps }}
 
       # -------------------------------------------------------------------------
       # 3. 設定 JDK 25
@@ -89,55 +99,64 @@ jobs:
           echo "📦 JAR: $JAR_NAME"
 
       # -------------------------------------------------------------------------
-      # 7. 使用 jpackage 打包 .deb
+      # 7. 使用 jpackage 打包
       # -------------------------------------------------------------------------
-      - name: Package with jpackage
+      - name: Package with jpackage (${{ matrix.type }})
         working-directory: backend
         run: |
           mkdir -p output
+
+          # 根據套件類型設定額外參數
+          EXTRA_ARGS=""
+          if [ "${{ matrix.type }}" = "deb" ]; then
+            EXTRA_ARGS="--linux-deb-maintainer koukeneko@dev"
+          elif [ "${{ matrix.type }}" = "rpm" ]; then
+            EXTRA_ARGS="--linux-rpm-license-type MIT"
+          fi
+
           jpackage \
             --verbose \
             --name hashi-backend \
             --app-version "${{ steps.prepare.outputs.version }}" \
-            --type deb \
+            --type ${{ matrix.type }} \
             --input build/libs \
             --main-jar "${{ steps.prepare.outputs.jar_name }}" \
             --main-class "org.springframework.boot.loader.launch.JarLauncher" \
             --java-options "-Djava.library.path=/usr/lib/jni" \
             --arguments "--spring.profiles.active=prod" \
-            --linux-deb-maintainer "koukeneko@dev" \
             --linux-package-deps "libvirt-clients, libvirt-daemon-system, iptables, docker.io, sudo" \
             --resource-dir "packaging/linux" \
-            --dest output
+            --dest output \
+            $EXTRA_ARGS
 
       # -------------------------------------------------------------------------
-      # 8. 驗證 .deb 安裝並顯示資訊
+      # 8. 驗證套件並顯示資訊
       # -------------------------------------------------------------------------
-      - name: Verify DEB package
+      - name: Verify package
         working-directory: backend
         run: |
-          DEB_FILE=$(ls output/*.deb | head -n 1)
-          echo "📦 產生的 .deb 檔案: $DEB_FILE"
+          PKG_FILE=$(ls output/*.${{ matrix.extension }} | head -n 1)
+          echo "📦 產生的套件: $PKG_FILE"
           echo ""
           echo "=== 套件資訊 ==="
-          dpkg-deb --info "$DEB_FILE"
-          echo ""
-          echo "=== 套件內容 ==="
-          dpkg-deb --contents "$DEB_FILE" | head -50
-          echo ""
-          echo "=== 測試安裝 ==="
-          sudo dpkg -i "$DEB_FILE" || true
-          echo ""
-          echo "=== 已安裝套件資訊 ==="
-          dpkg -s hashi-backend || echo "⚠️ 套件安裝可能有相依性問題（這在 CI 環境中是正常的）"
+          if [ "${{ matrix.type }}" = "deb" ]; then
+            dpkg-deb --info "$PKG_FILE"
+            echo ""
+            echo "=== 套件內容 ==="
+            dpkg-deb --contents "$PKG_FILE" | head -50
+          elif [ "${{ matrix.type }}" = "rpm" ]; then
+            rpm -qip "$PKG_FILE"
+            echo ""
+            echo "=== 套件內容 ==="
+            rpm -qlp "$PKG_FILE" | head -50
+          fi
 
       # -------------------------------------------------------------------------
-      # 9. 上傳 .deb 作為 Artifact (僅 tag 或手動觸發時)
+      # 9. 上傳套件作為 Artifact
       # -------------------------------------------------------------------------
-      - name: Upload DEB artifact
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+      - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hashi-backend-${{ steps.prepare.outputs.version }}-deb
-          path: backend/output/*.deb
+          name: hashi-backend-${{ steps.prepare.outputs.version }}-${{ matrix.type }}
+          path: backend/output/*.${{ matrix.extension }}
           retention-days: 30

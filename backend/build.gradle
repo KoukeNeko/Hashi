@@ -160,8 +160,3 @@ tasks.named('test') {
     // 使用 JUnit 5 (JUnit Platform) 執行測試
     useJUnitPlatform()
 }
-
-tasks.register('copyDependencies', Copy) {
-    from configurations.runtimeClasspath
-    into "$buildDir/libs/dependency"
-}

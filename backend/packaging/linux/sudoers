@@ -1,0 +1,2 @@
+# Allow hashi user to manage system resources without password
+hashi ALL=(ALL) NOPASSWD: /usr/sbin/iptables, /usr/bin/systemctl, /usr/bin/su, /usr/bin/getent

@@ -34,6 +34,7 @@ jobs:
     outputs:
       version: ${{ steps.prepare.outputs.version }}
       jar_name: ${{ steps.prepare.outputs.jar_name }}
+      pkg_name: ${{ steps.prepare.outputs.pkg_name }}
 
     steps:
       - name: Checkout repository
@@ -77,34 +78,33 @@ jobs:
         id: prepare
         working-directory: backend
         run: |
-          # 基礎版本號
+          # 版本號
           if [ -n "${{ github.event.inputs.version }}" ]; then
-            BASE_VERSION="${{ github.event.inputs.version }}"
+            VERSION="${{ github.event.inputs.version }}"
           elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            BASE_VERSION="${GITHUB_REF#refs/tags/v}"
+            VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            BASE_VERSION="0.0.1"
+            VERSION="0.0.1"
           fi
 
-          # 根據來源加上版本後綴
+          # 根據來源決定套件名稱
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            # stable: 無後綴
-            VERSION="$BASE_VERSION"
+            PKG_NAME="hashi"
             CHANNEL="stable"
           elif [[ "${GITHUB_REF}" == refs/heads/beta ]]; then
-            # beta: 加 ~beta
-            VERSION="${BASE_VERSION}~beta"
+            PKG_NAME="hashi-beta"
             CHANNEL="beta"
           else
-            # dev: 加 ~dev
-            VERSION="${BASE_VERSION}~dev"
+            PKG_NAME="hashi-dev"
             CHANNEL="dev"
           fi
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "pkg_name=$PKG_NAME" >> $GITHUB_OUTPUT
 
           JAR_NAME=$(ls build/libs/hashi-*.jar | head -n 1 | xargs basename)
           echo "jar_name=$JAR_NAME" >> $GITHUB_OUTPUT
+          echo "📦 套件: $PKG_NAME"
           echo "📦 版本: $VERSION ($CHANNEL)"
           echo "📦 JAR: $JAR_NAME"
 
@@ -170,7 +170,7 @@ jobs:
 
               \$JAVA_HOME/bin/jpackage \\
                 --verbose \\
-                --name hashi \\
+                --name '${{ needs.build-jar.outputs.pkg_name }}' \\
                 --app-version '${{ needs.build-jar.outputs.version }}' \\
                 --type deb \\
                 --input build/libs \\
@@ -196,7 +196,7 @@ jobs:
       - name: Upload DEB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hashi-${{ needs.build-jar.outputs.version }}-deb-${{ matrix.arch }}
+          name: ${{ needs.build-jar.outputs.pkg_name }}-${{ needs.build-jar.outputs.version }}-deb-${{ matrix.arch }}
           path: backend/output/*.deb
           retention-days: 30
 
@@ -258,7 +258,7 @@ jobs:
 
               \$JAVA_HOME/bin/jpackage \\
                 --verbose \\
-                --name hashi \\
+                --name '${{ needs.build-jar.outputs.pkg_name }}' \\
                 --app-version \"\$VERSION\" \\
                 --type rpm \\
                 --input build/libs \\
@@ -282,7 +282,7 @@ jobs:
       - name: Upload RPM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hashi-${{ needs.build-jar.outputs.version }}-rpm-${{ matrix.arch }}
+          name: ${{ needs.build-jar.outputs.pkg_name }}-${{ needs.build-jar.outputs.version }}-rpm-${{ matrix.arch }}
           path: backend/output/*.rpm
           retention-days: 30
 
@@ -350,6 +350,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "📦 Add hashi ${{ needs.build-jar.outputs.version }} (DEB + RPM, amd64 + arm64)" || echo "No changes"
+          git commit -m "📦 Add ${{ needs.build-jar.outputs.pkg_name }} ${{ needs.build-jar.outputs.version }} (DEB + RPM, amd64 + arm64)" || echo "No changes"
           git push
 

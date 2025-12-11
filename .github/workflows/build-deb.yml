@@ -34,7 +34,6 @@ jobs:
     outputs:
       version: ${{ steps.prepare.outputs.version }}
       jar_name: ${{ steps.prepare.outputs.jar_name }}
-      suite: ${{ steps.prepare.outputs.suite }}
 
     steps:
       - name: Checkout repository
@@ -78,30 +77,36 @@ jobs:
         id: prepare
         working-directory: backend
         run: |
-          # 判斷版本號
+          # 基礎版本號
           if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+            BASE_VERSION="${{ github.event.inputs.version }}"
           elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
+            BASE_VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            VERSION="0.0.1"
+            BASE_VERSION="0.0.1"
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-          # 判斷 Suite：tag → stable, beta 分支 → beta, 其他 → dev
+          # 根據來源加上版本後綴
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            SUITE="stable"
+            # stable: 無後綴
+            VERSION="$BASE_VERSION"
+            CHANNEL="stable"
           elif [[ "${GITHUB_REF}" == refs/heads/beta ]]; then
-            SUITE="beta"
+            # beta: 加 ~beta
+            VERSION="${BASE_VERSION}~beta"
+            CHANNEL="beta"
           else
-            SUITE="dev"
+            # dev: 加 ~dev.YYYYMMDD
+            DATE=$(date +%Y%m%d)
+            VERSION="${BASE_VERSION}~dev.${DATE}"
+            CHANNEL="dev"
           fi
-          echo "suite=$SUITE" >> $GITHUB_OUTPUT
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
           JAR_NAME=$(ls build/libs/hashi-*.jar | head -n 1 | xargs basename)
           echo "jar_name=$JAR_NAME" >> $GITHUB_OUTPUT
-          echo "📦 版本: $VERSION"
-          echo "📦 Suite: $SUITE"
+          echo "📦 版本: $VERSION ($CHANNEL)"
           echo "📦 JAR: $JAR_NAME"
 
       - name: Upload JAR artifact
@@ -315,11 +320,10 @@ jobs:
 
       - name: Move DEB packages
         run: |
-          SUITE="${{ needs.build-jar.outputs.suite }}"
-          mkdir -p pkg-repo/apt/pool/$SUITE/hashi
-          find ./incoming-deb -name "*.deb" -exec mv {} pkg-repo/apt/pool/$SUITE/hashi/ \; 2>/dev/null || true
-          echo "📦 DEB packages ($SUITE/hashi):"
-          ls -la pkg-repo/apt/pool/$SUITE/hashi/ 2>/dev/null || echo "No DEB packages"
+          mkdir -p pkg-repo/apt/pool/stable/hashi
+          find ./incoming-deb -name "*.deb" -exec mv {} pkg-repo/apt/pool/stable/hashi/ \; 2>/dev/null || true
+          echo "📦 DEB packages:"
+          ls -la pkg-repo/apt/pool/stable/hashi/ 2>/dev/null || echo "No DEB packages"
 
       - name: Move RPM packages
         run: |
@@ -347,6 +351,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "📦 Add hashi ${{ needs.build-jar.outputs.version }} to ${{ needs.build-jar.outputs.suite }} (DEB + RPM, amd64 + arm64)" || echo "No changes"
+          git commit -m "📦 Add hashi ${{ needs.build-jar.outputs.version }} (DEB + RPM, amd64 + arm64)" || echo "No changes"
           git push
 

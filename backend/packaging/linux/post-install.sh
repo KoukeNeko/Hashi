@@ -24,7 +24,7 @@ systemctl restart hashi-backend
 echo ""
 echo "╔══════════════════════════════════════════════════════════════════╗"
 echo "║                                                                  ║"
-echo "║   🎉  Hashi Backend 安裝完成！                                   ║"
+echo "║   🎉  Hashi Backend 安裝完成！                                     ║"
 echo "║                                                                  ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""

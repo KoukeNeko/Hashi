@@ -33,7 +33,7 @@ jobs:
             deps: binutils fakeroot
             extension: deb
           - type: rpm
-            deps: rpm-build
+            deps: rpm
             extension: rpm
 
     steps:

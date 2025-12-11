@@ -36,8 +36,31 @@ echo "   ✅ Added to docker, libvirt, kvm groups"
 # -----------------------------------------------------------------------------
 echo "🔐 Setting up sudo permissions..."
 cat > /etc/sudoers.d/hashi << 'EOF'
-# Allow hashi user to manage system resources without password
-hashi ALL=(ALL) NOPASSWD: /usr/sbin/iptables, /usr/bin/systemctl, /usr/bin/su, /usr/bin/getent
+# Hashi Server Management Dashboard - Sudo Permissions
+# This file grants the hashi user passwordless sudo access to manage system resources
+
+# System service management
+hashi ALL=(ALL) NOPASSWD: /usr/bin/systemctl
+
+# Firewall management (iptables and ufw)
+hashi ALL=(ALL) NOPASSWD: /usr/sbin/iptables, /usr/sbin/iptables-save, /usr/sbin/iptables-restore
+hashi ALL=(ALL) NOPASSWD: /usr/sbin/netfilter-persistent
+hashi ALL=(ALL) NOPASSWD: /usr/sbin/ufw
+
+# Nginx management
+hashi ALL=(ALL) NOPASSWD: /usr/sbin/nginx
+
+# SSL certificate management
+hashi ALL=(ALL) NOPASSWD: /usr/bin/certbot
+
+# File operations (for config file management)
+hashi ALL=(ALL) NOPASSWD: /usr/bin/tee, /usr/bin/rm, /usr/bin/ln, /usr/bin/mkdir, /usr/bin/chown, /usr/bin/chmod
+
+# User management (for FTP users)
+hashi ALL=(ALL) NOPASSWD: /usr/sbin/useradd, /usr/sbin/userdel, /usr/sbin/usermod, /usr/sbin/chpasswd
+
+# User info (for listing users)
+hashi ALL=(ALL) NOPASSWD: /usr/bin/getent, /usr/bin/passwd
 EOF
 chmod 0440 /etc/sudoers.d/hashi
 echo "   ✅ Sudoers configuration created"

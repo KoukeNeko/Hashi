@@ -87,3 +87,22 @@ sudo ./scripts/setup-permissions.sh --remove  # Remove permissions
 sudo ./scripts/setup-permissions.sh --help    # Show help
 ```
 
+## 📦 Package Channels
+
+| Package | Channel | Description | Trigger |
+|---------|---------|-------------|---------|
+| `hashi` | stable | Production release | `git tag v*` |
+| `hashi-beta` | beta | Pre-release testing | Push to `beta` branch |
+| `hashi-dev` | dev | Development builds | Push to other branches |
+
+All packages support architectures: `amd64`, `arm64`
+
+### Switch Channels
+
+```bash
+# Remove current version
+sudo apt remove hashi hashi-beta hashi-dev
+
+# Install desired channel
+sudo apt install hashi-dev
+```

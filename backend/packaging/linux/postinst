@@ -93,8 +93,10 @@ echo "   • View logs:     sudo journalctl -u hashi -f"
 echo "   • Restart:       sudo systemctl restart hashi"
 echo ""
 echo "🌐 Access:"
-echo "   • Dashboard:     http://localhost:3847"
-echo "   • Health Check:  http://localhost:3847/actuator/health"
+IP=\$(hostname -I | awk '{print \$1}')
+[ -z "\$IP" ] && IP="localhost"
+echo "   • Dashboard:     http://\$IP:3847"
+echo "   • Health Check:  http://\$IP:3847/actuator/health"
 echo ""
 
 # Display service status

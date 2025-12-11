@@ -41,7 +41,10 @@ sudo apt install hashi-dev    # dev
 **RHEL / CentOS / Fedora:**
 ```bash
 curl -fsSL https://koukeneko.github.io/pkg-repo/rpm/install.sh | sudo bash
-sudo dnf install hashi
+
+sudo dnf install hashi        # stable
+sudo dnf install hashi-beta   # beta
+sudo dnf install hashi-dev    # dev
 ```
 
 **Access:** http://localhost:3847

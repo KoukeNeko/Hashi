@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# Hashi Backend Post-Installation Script
+# Hashi Post-Installation Script
 # ==============================================================================
 
 set -e
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════════════╗"
-echo "║   📦  Hashi Backend Post-Installation                            ║"
+echo "║   📦  Hashi Post-Installation                                    ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -35,27 +35,27 @@ echo "   ✅ Added to docker, libvirt, kvm groups"
 # 3. Create sudoers configuration
 # -----------------------------------------------------------------------------
 echo "🔐 Setting up sudo permissions..."
-cat > /etc/sudoers.d/hashi-backend << 'EOF'
+cat > /etc/sudoers.d/hashi << 'EOF'
 # Allow hashi user to manage system resources without password
 hashi ALL=(ALL) NOPASSWD: /usr/sbin/iptables, /usr/bin/systemctl, /usr/bin/su, /usr/bin/getent
 EOF
-chmod 0440 /etc/sudoers.d/hashi-backend
+chmod 0440 /etc/sudoers.d/hashi
 echo "   ✅ Sudoers configuration created"
 
 # -----------------------------------------------------------------------------
 # 4. Create systemd service
 # -----------------------------------------------------------------------------
 echo "⚙️ Creating systemd service..."
-cat > /etc/systemd/system/hashi-backend.service << 'EOF'
+cat > /etc/systemd/system/hashi.service << 'EOF'
 [Unit]
-Description=Hashi Backend Service
+Description=Hashi Server Management Dashboard
 After=network.target
 
 [Service]
 Type=simple
 User=hashi
 Group=hashi
-ExecStart=/opt/hashi-backend/bin/hashi-backend
+ExecStart=/opt/hashi/bin/hashi
 SuccessExitStatus=143
 Restart=always
 RestartSec=10
@@ -70,8 +70,8 @@ echo "   ✅ Systemd service created"
 # -----------------------------------------------------------------------------
 echo "🚀 Starting service..."
 systemctl daemon-reload
-systemctl enable hashi-backend
-systemctl restart hashi-backend || true
+systemctl enable hashi
+systemctl restart hashi || true
 echo "   ✅ Service enabled and started"
 
 # -----------------------------------------------------------------------------
@@ -79,25 +79,25 @@ echo "   ✅ Service enabled and started"
 # -----------------------------------------------------------------------------
 echo ""
 echo "╔══════════════════════════════════════════════════════════════════╗"
-echo "║   🎉  Hashi Backend Installed Successfully!                      ║"
+echo "║   🎉  Hashi Installed Successfully!                              ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
 echo "📦 Service Info:"
-echo "   • Service Name: hashi-backend"
-echo "   • Install Path: /opt/hashi-backend"
+echo "   • Service Name: hashi"
+echo "   • Install Path: /opt/hashi"
 echo "   • Run As User:  hashi"
 echo ""
 echo "🔧 Useful Commands:"
-echo "   • Check status:  sudo systemctl status hashi-backend"
-echo "   • View logs:     sudo journalctl -u hashi-backend -f"
-echo "   • Restart:       sudo systemctl restart hashi-backend"
+echo "   • Check status:  sudo systemctl status hashi"
+echo "   • View logs:     sudo journalctl -u hashi -f"
+echo "   • Restart:       sudo systemctl restart hashi"
 echo ""
 echo "🌐 Access:"
-echo "   • API Endpoint:  http://localhost:8080"
-echo "   • Health Check:  http://localhost:8080/actuator/health"
+echo "   • Dashboard:     http://localhost:3847"
+echo "   • Health Check:  http://localhost:3847/actuator/health"
 echo ""
 
 # Display service status
 echo "📊 Current Service Status:"
-systemctl status hashi-backend --no-pager -l 2>/dev/null || echo "   ⚠️ Service may still be starting..."
+systemctl status hashi --no-pager -l 2>/dev/null || echo "   ⚠️ Service may still be starting..."
 echo ""

@@ -32,13 +32,13 @@
 **Debian / Ubuntu:**
 ```bash
 curl -fsSL https://koukeneko.github.io/pkg-repo/apt/install.sh | sudo bash
-sudo apt install hashi-backend
+sudo apt install hashi
 ```
 
 **RHEL / CentOS / Fedora:**
 ```bash
 curl -fsSL https://koukeneko.github.io/pkg-repo/rpm/install.sh | sudo bash
-sudo dnf install hashi-backend
+sudo dnf install hashi
 ```
 
 ### Option 2: Development Setup
@@ -72,7 +72,7 @@ npm run dev
 
 ### 3. Access the Dashboard
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open [http://localhost:3847](http://localhost:3847) in your browser.
 
 ## 🛠️ Permission Script Options
 

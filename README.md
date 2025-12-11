@@ -31,7 +31,12 @@
 
 **Debian / Ubuntu:**
 ```bash
+# Stable (default)
 curl -fsSL https://koukeneko.github.io/pkg-repo/apt/install.sh | sudo bash
+
+# Or choose a suite: beta, dev
+# curl ... | sudo bash -s beta
+
 sudo apt install hashi
 ```
 
@@ -40,6 +45,8 @@ sudo apt install hashi
 curl -fsSL https://koukeneko.github.io/pkg-repo/rpm/install.sh | sudo bash
 sudo dnf install hashi
 ```
+
+**Access:** http://localhost:3847
 
 ### Option 2: Development Setup
 

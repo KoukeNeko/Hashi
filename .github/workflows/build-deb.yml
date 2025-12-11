@@ -88,8 +88,14 @@ jobs:
           elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            VERSION="0.0.1-SNAPSHOT"
+            VERSION="0.0.1"
           fi
+
+          # RPM 不允許版本號包含 '-'，替換為 '~'
+          if [ "${{ matrix.type }}" = "rpm" ]; then
+            VERSION=$(echo "$VERSION" | sed 's/-/~/g')
+          fi
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
           # 取得 JAR 檔名

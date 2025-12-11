@@ -11,6 +11,8 @@ on:
   push:
     branches:
       - "*"
+    tags:
+      - "v*"
     paths:
       - "backend/**"
       - ".github/workflows/build-deb.yml"

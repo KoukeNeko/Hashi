@@ -86,6 +86,8 @@ const LogManager: React.FC = () => {
     const logContainerRef = useRef<HTMLDivElement>(null);
     const logIdRef = useRef(0);
     const pausedLogsRef = useRef<LogEntry[]>([]);
+    const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isUnmountedRef = useRef(false);
 
     // 滾動到底部
     const scrollToBottom = () => {
@@ -135,10 +137,14 @@ const LogManager: React.FC = () => {
             setConnecting(false);
             wsRef.current = null;
 
-            // 5 秒後自動重連
-            setTimeout(() => {
-                connectWebSocket();
-            }, 5000);
+            // 5 秒後自動重連（如果元件尚未卸載）
+            if (!isUnmountedRef.current) {
+                reconnectTimeoutRef.current = setTimeout(() => {
+                    if (!isUnmountedRef.current) {
+                        connectWebSocket();
+                    }
+                }, 5000);
+            }
         };
 
         ws.onerror = (err) => {
@@ -148,9 +154,19 @@ const LogManager: React.FC = () => {
     };
 
     useEffect(() => {
+        isUnmountedRef.current = false;
         connectWebSocket();
 
         return () => {
+            isUnmountedRef.current = true;
+
+            // 清理重連 timeout
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+                reconnectTimeoutRef.current = null;
+            }
+
+            // 關閉 WebSocket
             if (wsRef.current) {
                 wsRef.current.close();
                 wsRef.current = null;

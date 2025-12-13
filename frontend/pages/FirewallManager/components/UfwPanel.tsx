@@ -67,7 +67,7 @@ const UfwPanel: React.FC = () => {
         try {
             setTogglingStatus(true);
 
-            // 啟用防火牆前，先確保面板 Port 在例外清單中，避免用戶被鎖在外面
+            // 啟用防火牆前，先確保面板 Port 在例外清單中，避免使用者被鎖在外面
             if (!enabled) {
                 const panelPortAlreadyAllowed = rules.some(
                     rule => rule.to.includes(HASHI_PANEL_PORT) && rule.action.includes('ALLOW')
@@ -266,10 +266,10 @@ const UfwPanel: React.FC = () => {
                                     <td className="p-4">
                                         <span
                                             className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
-                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                    : rule.action.includes('DENY')
-                                                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                : rule.action.includes('DENY')
+                                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                                 }`}
                                         >
                                             {rule.action}
@@ -321,10 +321,10 @@ const UfwPanel: React.FC = () => {
                                     <td className="p-4">
                                         <span
                                             className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
-                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                    : rule.action.includes('DENY')
-                                                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                : rule.action.includes('DENY')
+                                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                                 }`}
                                         >
                                             {rule.action}

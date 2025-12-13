@@ -76,7 +76,7 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant Client as 用戶端
+    participant Client as 使用者端
     participant Controller as Controller
     participant Interface as 介面
     participant LinuxImpl as Linux 實作

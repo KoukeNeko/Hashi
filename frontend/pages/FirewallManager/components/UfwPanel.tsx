@@ -17,6 +17,9 @@ import {
 import { AddRuleDialog, DeleteRuleDialog } from './FirewallDialogs';
 import { UfwSetupGuide } from './UfwSetupGuide';
 
+// Hashi 面板使用的 Port，未來可改為動態取得
+const HASHI_PANEL_PORT = '3847';
+
 /**
  * UFW 防火牆管理面板
  * 從 FirewallManager 抽取的 UFW 專用元件
@@ -63,11 +66,29 @@ const UfwPanel: React.FC = () => {
 
         try {
             setTogglingStatus(true);
+
+            // 啟用防火牆前，先確保面板 Port 在例外清單中，避免用戶被鎖在外面
+            if (!enabled) {
+                const panelPortAlreadyAllowed = rules.some(
+                    rule => rule.to.includes(HASHI_PANEL_PORT) && rule.action.includes('ALLOW')
+                );
+
+                if (!panelPortAlreadyAllowed) {
+                    await FirewallService.addRule(HASHI_PANEL_PORT, 'tcp');
+                    await loadRules();
+                }
+            }
+
             await FirewallService.setStatus(!enabled);
             setEnabled(!enabled);
+
+            const panelPortMessage = !enabled
+                ? ` (Port ${HASHI_PANEL_PORT} auto-allowed)`
+                : '';
+
             setToast({
                 message: `Firewall ${!enabled ? 'enabled' : 'disabled'} successfully`,
-                type: 'success',
+                type: 'success'
             });
         } catch (err: unknown) {
             console.error('Failed to toggle firewall:', err);
@@ -244,13 +265,12 @@ const UfwPanel: React.FC = () => {
                                     <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
                                     <td className="p-4">
                                         <span
-                                            className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                                rule.action.includes('ALLOW')
+                                            className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
                                                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                     : rule.action.includes('DENY')
-                                                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                            }`}
+                                                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                }`}
                                         >
                                             {rule.action}
                                         </span>
@@ -300,13 +320,12 @@ const UfwPanel: React.FC = () => {
                                     <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
                                     <td className="p-4">
                                         <span
-                                            className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                                rule.action.includes('ALLOW')
+                                            className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
                                                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                     : rule.action.includes('DENY')
-                                                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                            }`}
+                                                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                }`}
                                         >
                                             {rule.action}
                                         </span>

@@ -196,8 +196,9 @@ public class UpdateServiceImpl implements UpdateService {
     private void runRepositoryUpdate() {
         try {
             ProcessBuilder pb = switch (packageManager) {
-                case APT -> new ProcessBuilder("sudo", "apt-get", "update", "-qq");
-                case RPM -> new ProcessBuilder("sudo", "dnf", "check-update", "-q");
+                // 使用絕對路徑避免 sudo path 問題
+                case APT -> new ProcessBuilder("sudo", "/usr/bin/apt-get", "update", "-qq");
+                case RPM -> new ProcessBuilder("sudo", "/usr/bin/dnf", "check-update", "-q");
                 default -> null;
             };
 
@@ -338,8 +339,10 @@ public class UpdateServiceImpl implements UpdateService {
 
         int maxLength = Math.max(parts1.length, parts2.length);
         for (int i = 0; i < maxLength; i++) {
-            int num1 = i < parts1.length ? parseVersionPart(parts1[i]) : 0;
-            int num2 = i < parts2.length ? parseVersionPart(parts2[i]) : 0;
+            // dpkg 邏輯：如果一段有數值，一段沒有，沒有的那段視為 -1 (比 0 小)
+            // 這樣確保 0.0.1.0 > 0.0.1
+            int num1 = i < parts1.length ? parseVersionPart(parts1[i]) : -1;
+            int num2 = i < parts2.length ? parseVersionPart(parts2[i]) : -1;
             if (num1 != num2)
                 return num1 - num2;
         }

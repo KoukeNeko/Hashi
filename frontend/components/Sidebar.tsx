@@ -127,11 +127,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         <button
                                             key={item.id}
                                             onClick={() => handleNavClick(item.id)}
-                                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                                isActive
+                                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
                                                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]'
                                                     : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900'
-                                            }`}
+                                                }`}
                                         >
                                             <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                                             {item.label}
@@ -158,7 +157,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                             </div>
                         </div>
                     )}
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors">
+                    <button
+                        onClick={() => handleNavClick(TabView.SETTINGS)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentTab === TabView.SETTINGS
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
+                            }`}
+                    >
                         <Settings size={18} /> Settings
                     </button>
                     <button

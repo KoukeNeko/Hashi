@@ -29,3 +29,6 @@ export * from './file';
 
 // Common and miscellaneous
 export * from './common';
+
+// Update-related
+export * from './update';

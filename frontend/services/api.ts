@@ -26,6 +26,7 @@ import {
     ServiceItem,
     SystemStatus,
     UpdateFtpUserRequest,
+    UpdateInfo,
     UpdateVmRequest,
     UserInfo,
     VM,
@@ -542,6 +543,22 @@ export const NginxApiService = {
     },
     requestAcmeCert: async (domain: string, email: string) => {
         const response = await api.post('/nginx/ssl/acme', { domain, email });
+        return response.data;
+    },
+};
+
+// ==================== Update Service ====================
+
+/** Application update checking API */
+export const UpdateService = {
+    /** Get cached update information */
+    getUpdateInfo: async (): Promise<UpdateInfo> => {
+        const response = await api.get<UpdateInfo>('/update/info');
+        return response.data;
+    },
+    /** Force check for updates (bypass cache) */
+    checkForUpdates: async (): Promise<UpdateInfo> => {
+        const response = await api.post<UpdateInfo>('/update/check');
         return response.data;
     },
 };

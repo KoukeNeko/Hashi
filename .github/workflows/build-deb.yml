@@ -79,13 +79,20 @@ jobs:
         id: prepare
         working-directory: backend
         run: |
+          # 取得最近的 tag 版本號
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.1")
+          BASE_VERSION="${LATEST_TAG#v}"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+
           # 版本號
           if [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
           elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            # 正式 tag release：使用 tag 版本
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            VERSION="0.0.1"
+            # dev/beta builds：使用最近 tag + commit hash
+            VERSION="${BASE_VERSION}+${SHORT_SHA}"
           fi
 
           # 根據來源決定套件名稱

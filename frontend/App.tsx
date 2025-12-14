@@ -14,6 +14,7 @@ import LogManager from './pages/LogManager/index';
 import TerminalManager from './pages/TerminalManager/index';
 import FtpManager from './pages/FtpManager/index';
 import UserManager from './pages/UserManager/index';
+import SettingsPage from './pages/Settings/index';
 import Login from './pages/Login/index';
 import { TabView, UserInfo } from './types';
 import { AuthService, SessionStorage } from './services/api';
@@ -125,6 +126,8 @@ const App: React.FC = () => {
                 return <ConstructionView title="Mail Server" />;
             case TabView.TERMINAL:
                 return <TerminalManager />;
+            case TabView.SETTINGS:
+                return <SettingsPage />;
             default:
                 return <SystemOverview />;
         }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard,
     Box,
@@ -23,6 +23,7 @@ import {
     Users,
 } from 'lucide-react';
 import { TabView, UserInfo } from '../types';
+import { UpdateService } from '../services/api';
 
 interface SidebarProps {
     currentTab: TabView;
@@ -41,6 +42,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     onLogout,
     user,
 }) => {
+    const [version, setVersion] = useState<string>('...');
+
+    useEffect(() => {
+        UpdateService.getUpdateInfo()
+            .then((info) => setVersion(`v${info.currentVersion}`))
+            .catch(() => setVersion('dev'));
+    }, []);
+
     const navGroups = [
         {
             label: 'General',
@@ -128,8 +137,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             key={item.id}
                                             onClick={() => handleNavClick(item.id)}
                                             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
-                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]'
-                                                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900'
+                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]'
+                                                : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900'
                                                 }`}
                                         >
                                             <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
@@ -160,8 +169,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <button
                         onClick={() => handleNavClick(TabView.SETTINGS)}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentTab === TabView.SETTINGS
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
                             }`}
                     >
                         <Settings size={18} /> Settings
@@ -174,7 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </button>
                 </div>
 
-                <div className="p-4 text-xs text-center text-zinc-600 font-mono">v3.1.0-hashi</div>
+                <div className="p-4 text-xs text-center text-zinc-600 font-mono">{version}</div>
             </aside>
         </>
     );

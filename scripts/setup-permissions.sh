@@ -83,6 +83,9 @@ $HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/crontab
 $HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/vsftpd
 $HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/proftpd
 $HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/pure-ftpd
+
+# ==================== Update Check ====================
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/apt-get update
 EOF
 
     chmod 440 "$SUDOERS_FILE"

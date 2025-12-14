@@ -61,6 +61,9 @@ hashi ALL=(ALL) NOPASSWD: /usr/sbin/useradd, /usr/sbin/userdel, /usr/sbin/usermo
 
 # User info (for listing users)
 hashi ALL=(ALL) NOPASSWD: /usr/bin/getent, /usr/bin/passwd
+
+# Update check
+hashi ALL=(ALL) NOPASSWD: /usr/bin/apt-get update
 EOF
 chmod 0440 /etc/sudoers.d/hashi
 echo "   ✅ Sudoers configuration created"

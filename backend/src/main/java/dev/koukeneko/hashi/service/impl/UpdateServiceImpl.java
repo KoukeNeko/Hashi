@@ -190,6 +190,9 @@ public class UpdateServiceImpl implements UpdateService {
         return Duration.between(lastCheckTime, Instant.now()).compareTo(CACHE_DURATION) < 0;
     }
 
+    /**
+     * 嘗試更新套件庫索引（非必要，失敗不影響版本檢查）
+     */
     private void runRepositoryUpdate() {
         try {
             ProcessBuilder pb = switch (packageManager) {
@@ -199,23 +202,25 @@ public class UpdateServiceImpl implements UpdateService {
             };
 
             if (pb != null) {
-                log.info("Running repository update for {}...", packageManager);
+                log.debug("Attempting repository update for {}...", packageManager);
                 pb.redirectErrorStream(true);
                 Process process = pb.start();
 
-                String output = readProcessOutput(process);
+                // 消耗 process output 避免 blocking，但不需要使用內容
+                readProcessOutput(process);
                 boolean completed = process.waitFor(COMMAND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                 int exitCode = completed ? process.exitValue() : -1;
 
                 if (completed && exitCode == 0) {
-                    log.info("Repository update completed successfully");
+                    log.info("Repository cache updated successfully");
                 } else {
-                    log.warn("Repository update finished with exit code {}: {}",
-                            exitCode, output.trim());
+                    // 不是致命錯誤，繼續使用現有快取
+                    log.debug("Repository update skipped (exit code {}). Using cached package info.", exitCode);
                 }
             }
         } catch (Exception e) {
-            log.warn("Failed to update repository: {}", e.getMessage());
+            // 不是致命錯誤，繼續使用現有快取
+            log.debug("Repository update skipped: {}. Using cached package info.", e.getMessage());
         }
     }
 
@@ -314,56 +319,22 @@ public class UpdateServiceImpl implements UpdateService {
         };
     }
 
+    /**
+     * 比較版本號
+     * 支援格式：major.minor.patch 或 major.minor.patch.build
+     * 例如：0.0.1.5 > 0.0.1.4 > 0.0.1
+     */
     private int compareVersions(String v1, String v2) {
         if ("unknown".equals(v1) || "(none)".equals(v1) || "dev".equals(v2)) {
             return 0;
         }
 
-        // 分離基礎版本和 build metadata
-        String baseV1 = extractBaseVersion(v1);
-        String baseV2 = extractBaseVersion(v2);
-        String metaV1 = extractBuildMetadata(v1);
-        String metaV2 = extractBuildMetadata(v2);
+        // 移除可能的舊格式後綴 (+xxx 或 ~xxx)
+        String cleanV1 = v1.replaceAll("[+~].*$", "");
+        String cleanV2 = v2.replaceAll("[+~].*$", "");
 
-        // 先比較基礎版本 (major.minor.patch)
-        int baseCompare = compareBaseVersions(baseV1, baseV2);
-        if (baseCompare != 0) {
-            return baseCompare;
-        }
-
-        // 基礎版本相同，比較 build metadata (commit hash)
-        // 如果兩者的 metadata 不同，視為有更新
-        if (!metaV1.equals(metaV2)) {
-            // 有 metadata 的版本比沒有的新
-            if (metaV1.isEmpty())
-                return -1;
-            if (metaV2.isEmpty())
-                return 1;
-            // 兩者都有 metadata 且不同，視為 v1 較新
-            return 1;
-        }
-
-        return 0;
-    }
-
-    private String extractBaseVersion(String version) {
-        // 移除 +xxx 或 ~xxx 後綴
-        int plusIndex = version.indexOf('+');
-        int tildeIndex = version.indexOf('~');
-        int endIndex = Math.min(
-                plusIndex >= 0 ? plusIndex : version.length(),
-                tildeIndex >= 0 ? tildeIndex : version.length());
-        return version.substring(0, endIndex);
-    }
-
-    private String extractBuildMetadata(String version) {
-        int plusIndex = version.indexOf('+');
-        return plusIndex >= 0 ? version.substring(plusIndex + 1) : "";
-    }
-
-    private int compareBaseVersions(String v1, String v2) {
-        String[] parts1 = v1.split("\\.");
-        String[] parts2 = v2.split("\\.");
+        String[] parts1 = cleanV1.split("\\.");
+        String[] parts2 = cleanV2.split("\\.");
 
         int maxLength = Math.max(parts1.length, parts2.length);
         for (int i = 0; i < maxLength; i++) {

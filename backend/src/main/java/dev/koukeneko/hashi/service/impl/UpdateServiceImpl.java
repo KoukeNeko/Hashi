@@ -199,10 +199,20 @@ public class UpdateServiceImpl implements UpdateService {
             };
 
             if (pb != null) {
-                log.debug("Running repository update...");
+                log.info("Running repository update for {}...", packageManager);
                 pb.redirectErrorStream(true);
                 Process process = pb.start();
-                process.waitFor(COMMAND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+
+                String output = readProcessOutput(process);
+                boolean completed = process.waitFor(COMMAND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                int exitCode = completed ? process.exitValue() : -1;
+
+                if (completed && exitCode == 0) {
+                    log.info("Repository update completed successfully");
+                } else {
+                    log.warn("Repository update finished with exit code {}: {}",
+                            exitCode, output.trim());
+                }
             }
         } catch (Exception e) {
             log.warn("Failed to update repository: {}", e.getMessage());
@@ -309,8 +319,51 @@ public class UpdateServiceImpl implements UpdateService {
             return 0;
         }
 
-        String[] parts1 = normalizeVersion(v1).split("\\.");
-        String[] parts2 = normalizeVersion(v2).split("\\.");
+        // 分離基礎版本和 build metadata
+        String baseV1 = extractBaseVersion(v1);
+        String baseV2 = extractBaseVersion(v2);
+        String metaV1 = extractBuildMetadata(v1);
+        String metaV2 = extractBuildMetadata(v2);
+
+        // 先比較基礎版本 (major.minor.patch)
+        int baseCompare = compareBaseVersions(baseV1, baseV2);
+        if (baseCompare != 0) {
+            return baseCompare;
+        }
+
+        // 基礎版本相同，比較 build metadata (commit hash)
+        // 如果兩者的 metadata 不同，視為有更新
+        if (!metaV1.equals(metaV2)) {
+            // 有 metadata 的版本比沒有的新
+            if (metaV1.isEmpty())
+                return -1;
+            if (metaV2.isEmpty())
+                return 1;
+            // 兩者都有 metadata 且不同，視為 v1 較新
+            return 1;
+        }
+
+        return 0;
+    }
+
+    private String extractBaseVersion(String version) {
+        // 移除 +xxx 或 ~xxx 後綴
+        int plusIndex = version.indexOf('+');
+        int tildeIndex = version.indexOf('~');
+        int endIndex = Math.min(
+                plusIndex >= 0 ? plusIndex : version.length(),
+                tildeIndex >= 0 ? tildeIndex : version.length());
+        return version.substring(0, endIndex);
+    }
+
+    private String extractBuildMetadata(String version) {
+        int plusIndex = version.indexOf('+');
+        return plusIndex >= 0 ? version.substring(plusIndex + 1) : "";
+    }
+
+    private int compareBaseVersions(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
 
         int maxLength = Math.max(parts1.length, parts2.length);
         for (int i = 0; i < maxLength; i++) {
@@ -320,10 +373,6 @@ public class UpdateServiceImpl implements UpdateService {
                 return num1 - num2;
         }
         return 0;
-    }
-
-    private String normalizeVersion(String version) {
-        return version.replaceAll("[+~-].*$", "");
     }
 
     private int parseVersionPart(String part) {

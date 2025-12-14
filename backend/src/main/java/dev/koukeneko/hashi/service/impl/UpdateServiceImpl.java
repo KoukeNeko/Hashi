@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 /**
  * 更新檢查服務實作
- * 透過 dpkg 檢測已安裝的套件資訊，透過 apt 檢查最新版本
+ * 支援 APT (Debian/Ubuntu) 和 RPM (CentOS/RHEL) 套件管理器
  */
 @Service
 @Slf4j
@@ -30,7 +30,13 @@ public class UpdateServiceImpl implements UpdateService {
     private static final String PACKAGE_BETA = "hashi-beta";
     private static final String PACKAGE_DEV = "hashi-dev";
 
-    /** 從系統動態偵測的套件資訊 */
+    /** 套件管理器類型 */
+    private enum PackageManager {
+        APT, RPM, UNKNOWN
+    }
+
+    /** 從系統動態偵測的資訊 */
+    private PackageManager packageManager;
     private String installedPackageName;
     private String installedVersion;
     private String detectedChannel;
@@ -40,20 +46,46 @@ public class UpdateServiceImpl implements UpdateService {
 
     @PostConstruct
     public void init() {
+        detectPackageManager();
         detectInstalledPackage();
     }
 
     /**
-     * 從 dpkg 偵測已安裝的 Hashi 套件資訊
+     * 偵測系統使用的套件管理器
+     */
+    private void detectPackageManager() {
+        if (commandExists("dpkg")) {
+            packageManager = PackageManager.APT;
+            log.info("Detected package manager: APT (Debian/Ubuntu)");
+        } else if (commandExists("rpm")) {
+            packageManager = PackageManager.RPM;
+            log.info("Detected package manager: RPM (CentOS/RHEL)");
+        } else {
+            packageManager = PackageManager.UNKNOWN;
+            log.warn("No supported package manager detected");
+        }
+    }
+
+    private boolean commandExists(String command) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("which", command);
+            Process process = pb.start();
+            return process.waitFor(5, TimeUnit.SECONDS) && process.exitValue() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 偵測已安裝的 Hashi 套件
      */
     private void detectInstalledPackage() {
         log.info("Detecting installed Hashi package...");
 
-        // 依優先順序檢查各頻道的套件
         String[] packageNames = { PACKAGE_STABLE, PACKAGE_BETA, PACKAGE_DEV };
 
         for (String packageName : packageNames) {
-            String version = getInstalledVersionFromDpkg(packageName);
+            String version = getInstalledVersion(packageName);
             if (version != null) {
                 this.installedPackageName = packageName;
                 this.installedVersion = version;
@@ -64,48 +96,53 @@ public class UpdateServiceImpl implements UpdateService {
             }
         }
 
-        // 如果找不到已安裝的套件，使用預設值（開發模式）
-        log.warn("No Hashi package detected via dpkg, using development defaults");
+        // 開發模式預設值
+        log.warn("No Hashi package detected, using development defaults");
         this.installedPackageName = PACKAGE_DEV;
         this.installedVersion = "dev";
         this.detectedChannel = "dev";
     }
 
-    /**
-     * 使用 dpkg-query 取得指定套件的已安裝版本
-     *
-     * @return 版本號，如果未安裝則返回 null
-     */
-    private String getInstalledVersionFromDpkg(String packageName) {
+    private String getInstalledVersion(String packageName) {
+        return switch (packageManager) {
+            case APT -> getVersionFromDpkg(packageName);
+            case RPM -> getVersionFromRpm(packageName);
+            default -> null;
+        };
+    }
+
+    private String getVersionFromDpkg(String packageName) {
         try {
             ProcessBuilder pb = new ProcessBuilder(
                     "dpkg-query", "-W", "-f=${Version}", packageName);
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
-            StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line);
-                }
-            }
-
-            boolean finished = process.waitFor(10, TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                return null;
-            }
-
-            if (process.exitValue() == 0) {
-                String version = output.toString().trim();
-                if (!version.isEmpty()) {
-                    return version;
-                }
+            String output = readProcessOutput(process);
+            if (process.waitFor(10, TimeUnit.SECONDS) && process.exitValue() == 0) {
+                String version = output.trim();
+                return version.isEmpty() ? null : version;
             }
         } catch (Exception e) {
-            log.debug("Package {} not found: {}", packageName, e.getMessage());
+            log.debug("dpkg query failed for {}: {}", packageName, e.getMessage());
+        }
+        return null;
+    }
+
+    private String getVersionFromRpm(String packageName) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                    "rpm", "-q", "--queryformat", "%{VERSION}", packageName);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            String output = readProcessOutput(process);
+            if (process.waitFor(10, TimeUnit.SECONDS) && process.exitValue() == 0) {
+                String version = output.trim();
+                return version.isEmpty() || version.contains("not installed") ? null : version;
+            }
+        } catch (Exception e) {
+            log.debug("rpm query failed for {}: {}", packageName, e.getMessage());
         }
         return null;
     }
@@ -128,14 +165,11 @@ public class UpdateServiceImpl implements UpdateService {
 
     @Override
     public UpdateInfoDTO checkForUpdates() {
-        log.info("Checking for updates via apt...");
+        log.info("Checking for updates via {}...", packageManager);
 
         try {
-            // 先執行 apt update 更新套件索引
-            runAptUpdate();
-
-            // 使用 apt-cache policy 檢查可用版本
-            String latestVersion = getLatestVersionFromApt(installedPackageName);
+            runRepositoryUpdate();
+            String latestVersion = getLatestVersion(installedPackageName);
 
             cachedInfo = buildUpdateInfo(latestVersion);
             lastCheckTime = Instant.now();
@@ -144,7 +178,7 @@ public class UpdateServiceImpl implements UpdateService {
                     cachedInfo.latestVersion(), cachedInfo.currentVersion());
             return cachedInfo;
         } catch (Exception e) {
-            log.warn("Failed to check for updates via apt: {}", e.getMessage());
+            log.warn("Failed to check for updates: {}", e.getMessage());
             return buildFallbackInfo();
         }
     }
@@ -156,34 +190,75 @@ public class UpdateServiceImpl implements UpdateService {
         return Duration.between(lastCheckTime, Instant.now()).compareTo(CACHE_DURATION) < 0;
     }
 
-    /**
-     * 執行 apt update 更新套件索引
-     */
-    private void runAptUpdate() {
+    private void runRepositoryUpdate() {
         try {
-            log.debug("Running apt update...");
-            ProcessBuilder pb = new ProcessBuilder("sudo", "apt-get", "update", "-qq");
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
+            ProcessBuilder pb = switch (packageManager) {
+                case APT -> new ProcessBuilder("sudo", "apt-get", "update", "-qq");
+                case RPM -> new ProcessBuilder("sudo", "dnf", "check-update", "-q");
+                default -> null;
+            };
 
-            boolean finished = process.waitFor(COMMAND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                log.warn("apt update timed out");
+            if (pb != null) {
+                log.debug("Running repository update...");
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                process.waitFor(COMMAND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             }
         } catch (Exception e) {
-            log.warn("Failed to run apt update: {}", e.getMessage());
+            log.warn("Failed to update repository: {}", e.getMessage());
         }
     }
 
-    /**
-     * 使用 apt-cache policy 取得指定套件的最新可用版本
-     */
-    private String getLatestVersionFromApt(String packageName) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("apt-cache", "policy", packageName);
-        pb.redirectErrorStream(true);
-        Process process = pb.start();
+    private String getLatestVersion(String packageName) {
+        return switch (packageManager) {
+            case APT -> getLatestVersionFromApt(packageName);
+            case RPM -> getLatestVersionFromDnf(packageName);
+            default -> "unknown";
+        };
+    }
 
+    private String getLatestVersionFromApt(String packageName) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("apt-cache", "policy", packageName);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            String output = readProcessOutput(process);
+            process.waitFor();
+
+            Pattern pattern = Pattern.compile("Candidate:\\s*([\\d.]+(?:[+~-][\\w.]+)?)");
+            Matcher matcher = pattern.matcher(output);
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
+        } catch (Exception e) {
+            log.warn("apt-cache policy failed: {}", e.getMessage());
+        }
+        return "unknown";
+    }
+
+    private String getLatestVersionFromDnf(String packageName) {
+        try {
+            // dnf info 會顯示可用的最新版本
+            ProcessBuilder pb = new ProcessBuilder("dnf", "info", "--available", packageName);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            String output = readProcessOutput(process);
+            process.waitFor();
+
+            Pattern pattern = Pattern.compile("Version\\s*:\\s*([\\d.]+(?:[+~-][\\w.]+)?)");
+            Matcher matcher = pattern.matcher(output);
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
+        } catch (Exception e) {
+            log.warn("dnf info failed: {}", e.getMessage());
+        }
+        return "unknown";
+    }
+
+    private String readProcessOutput(Process process) throws Exception {
         StringBuilder output = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream()))) {
@@ -192,23 +267,7 @@ public class UpdateServiceImpl implements UpdateService {
                 output.append(line).append("\n");
             }
         }
-
-        process.waitFor();
-        return parseCandidateVersion(output.toString());
-    }
-
-    /**
-     * 從 apt-cache policy 輸出中解析 Candidate 版本
-     */
-    private String parseCandidateVersion(String policyOutput) {
-        Pattern pattern = Pattern.compile("Candidate:\\s*([\\d.]+(?:-[\\w.]+)?)");
-        Matcher matcher = pattern.matcher(policyOutput);
-
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-
-        return "unknown";
+        return output.toString();
     }
 
     private UpdateInfoDTO buildUpdateInfo(String latestVersion) {
@@ -238,15 +297,13 @@ public class UpdateServiceImpl implements UpdateService {
     }
 
     private String generateUpdateInstructions() {
-        return String.format("""
-                To update, run:
-                sudo apt update && sudo apt upgrade %s
-                """, installedPackageName);
+        return switch (packageManager) {
+            case APT -> String.format("sudo apt update && sudo apt upgrade %s", installedPackageName);
+            case RPM -> String.format("sudo dnf upgrade %s", installedPackageName);
+            default -> "Please update using your system's package manager";
+        };
     }
 
-    /**
-     * 比較兩個語義化版本號
-     */
     private int compareVersions(String v1, String v2) {
         if ("unknown".equals(v1) || "(none)".equals(v1) || "dev".equals(v2)) {
             return 0;
@@ -256,21 +313,17 @@ public class UpdateServiceImpl implements UpdateService {
         String[] parts2 = normalizeVersion(v2).split("\\.");
 
         int maxLength = Math.max(parts1.length, parts2.length);
-
         for (int i = 0; i < maxLength; i++) {
             int num1 = i < parts1.length ? parseVersionPart(parts1[i]) : 0;
             int num2 = i < parts2.length ? parseVersionPart(parts2[i]) : 0;
-
-            if (num1 != num2) {
+            if (num1 != num2)
                 return num1 - num2;
-            }
         }
-
         return 0;
     }
 
     private String normalizeVersion(String version) {
-        return version.replaceAll("-.*$", "");
+        return version.replaceAll("[+~-].*$", "");
     }
 
     private int parseVersionPart(String part) {

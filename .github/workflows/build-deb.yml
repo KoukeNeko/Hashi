@@ -16,11 +16,12 @@ on:
       - "v*"
     paths:
       - "backend/**"
+      - "frontend/**"
       - ".github/workflows/build-deb.yml"
   workflow_dispatch:
     inputs:
       version:
-        description: "版本號 (例如: 1.0.0)"
+        description: "版本 (例如: 1.0.0)"
         required: false
         default: "0.0.1"
 

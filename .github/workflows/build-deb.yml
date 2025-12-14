@@ -82,11 +82,16 @@ jobs:
         working-directory: backend
         run: |
           # 取得最近的 tag 版本號
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.1")
-          BASE_VERSION="${LATEST_TAG#v}"
+          if git describe --tags --abbrev=0 >/dev/null 2>&1; then
+            LATEST_TAG=$(git describe --tags --abbrev=0)
+            BASE_VERSION="${LATEST_TAG#v}"
+            COMMIT_COUNT=$(git rev-list --count ${LATEST_TAG}..HEAD)
+          else
+            # 沒找到 tag，使用預設版本 0.0.1 並計算所有 commits
+            BASE_VERSION="0.0.1"
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+          fi
           SHORT_SHA=$(git rev-parse --short HEAD)
-          # 計算從最近 tag 以來的 commit 數量
-          COMMIT_COUNT=$(git rev-list --count ${LATEST_TAG}..HEAD 2>/dev/null || echo "0")
 
           # 版本號
           if [ -n "${{ github.event.inputs.version }}" ]; then

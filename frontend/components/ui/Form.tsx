@@ -145,14 +145,15 @@ export const FormError: React.FC<FormErrorProps> = ({ message }) => (
 interface ActionButtonProps {
     onClick?: () => void;
     type?: 'button' | 'submit';
-    variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost';
+    variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost' | 'outline';
     size?: 'sm' | 'md';
     disabled?: boolean;
     loading?: boolean;
     icon?: React.ReactNode;
     loadingIcon?: React.ReactNode;
-    children: React.ReactNode;
+    children?: React.ReactNode;
     className?: string;
+    title?: string;
 }
 
 export const ActionButton: React.FC<ActionButtonProps> = ({
@@ -166,13 +167,16 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
     loadingIcon,
     children,
     className = '',
+    title,
 }) => {
     const variantClasses = {
-        primary: 'bg-emerald-600 hover:bg-emerald-500 text-white',
-        secondary: 'bg-zinc-700 hover:bg-zinc-600 text-white',
-        danger: 'bg-rose-600 hover:bg-rose-500 text-white',
-        warning: 'bg-amber-600 hover:bg-amber-500 text-white',
-        ghost: 'text-zinc-400 hover:text-white',
+        primary:
+            'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/50 shadow-lg shadow-emerald-900/20',
+        secondary: 'bg-zinc-700 hover:bg-zinc-600 text-white border border-zinc-600',
+        danger: 'bg-rose-600 hover:bg-rose-500 text-white border border-rose-500/50',
+        warning: 'bg-amber-600 hover:bg-amber-500 text-white border border-amber-500/50',
+        ghost: 'text-zinc-400 hover:text-white hover:bg-zinc-800',
+        outline: 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700',
     };
 
     const sizeClasses = {
@@ -185,6 +189,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
             type={type}
             onClick={onClick}
             disabled={disabled || loading}
+            title={title}
             className={`flex items-center gap-2 rounded font-medium transition-colors disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
         >
             {loading ? loadingIcon : icon}
@@ -192,6 +197,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         </button>
     );
 };
+
 
 // ==================== Form Dialog ====================
 export interface FormDialogField {

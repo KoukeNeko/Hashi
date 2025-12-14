@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ContainerDTO } from '../../types';
 import { MOCK_IMAGES, MOCK_NETWORKS, MOCK_VOLUMES } from '../../constants';
 import { PageHeader, Tabs } from '../../components';
+import { ActionButton } from '../../components/ui';
 import { DockerService } from '../../services/api';
 import {
     Box,
@@ -121,6 +122,19 @@ const DockerManager: React.FC = () => {
         { id: 'volumes', label: 'Volumes', icon: Database },
     ];
 
+    const getAddButtonLabel = () => {
+        switch (activeTab) {
+            case 'containers':
+                return 'Add Container';
+            case 'images':
+                return 'Pull Image';
+            case 'networks':
+                return 'Add Network';
+            default:
+                return 'Add Volume';
+        }
+    };
+
     return (
         <div className="space-y-6 animate-fade-in">
             <PageHeader
@@ -145,26 +159,20 @@ const DockerManager: React.FC = () => {
                                     className="bg-zinc-900 border border-zinc-700 text-zinc-300 pl-9 pr-4 py-2 rounded text-sm focus:outline-none focus:border-emerald-500 w-full sm:w-64 transition-colors shadow-lg"
                                 />
                             </div>
-                            <button
+                            <ActionButton
+                                variant="outline"
                                 onClick={fetchContainers}
-                                className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-lg whitespace-nowrap"
+                                icon={<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />}
                             >
-                                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                                 <span className="hidden sm:inline">Refresh</span>
-                            </button>
-                            <button className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 whitespace-nowrap">
-                                <Plus size={16} />
-                                <span className="hidden sm:inline">
-                                    {activeTab === 'containers'
-                                        ? 'Add Container'
-                                        : activeTab === 'images'
-                                          ? 'Pull Image'
-                                          : activeTab === 'networks'
-                                            ? 'Add Network'
-                                            : 'Add Volume'}
-                                </span>
+                            </ActionButton>
+                            <ActionButton
+                                variant="primary"
+                                icon={<Plus size={16} />}
+                            >
+                                <span className="hidden sm:inline">{getAddButtonLabel()}</span>
                                 <span className="sm:hidden">Add</span>
-                            </button>
+                            </ActionButton>
                         </div>
                     )
                 }

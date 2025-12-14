@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader, Tabs, Alert } from '../../components';
+import { ActionButton } from '../../components/ui';
 import { NginxApiService } from '../../services/api';
 import { NginxHostDTO, NginxStatusDTO, SslCertDTO } from '../../types';
 import AddHostDialog from './components/AddHostDialog';
@@ -194,40 +195,39 @@ const NginxManager: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* 重載按鈕 */}
-                            <button
+                            <ActionButton
+                                variant="outline"
                                 onClick={handleReload}
                                 disabled={reloading}
-                                className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white rounded font-medium text-sm transition-colors border border-zinc-700"
+                                icon={<RefreshCw size={16} className={reloading ? 'animate-spin' : ''} />}
                             >
-                                <RefreshCw size={16} className={reloading ? 'animate-spin' : ''} />
                                 Reload
-                            </button>
+                            </ActionButton>
 
-                            <button
+                            <ActionButton
+                                variant="outline"
                                 onClick={() => setIsSslDialogOpen(true)}
-                                className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded font-medium text-sm transition-colors border border-zinc-700"
+                                icon={<Lock size={16} />}
                             >
-                                <Lock size={16} />
                                 Request SSL
-                            </button>
+                            </ActionButton>
 
-                            {/* 新增按鈕 */}
-                            <button
+                            <ActionButton
+                                variant="primary"
                                 onClick={() => setIsAddDialogOpen(true)}
-                                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-medium text-sm transition-colors border border-emerald-500/50 flex items-center gap-2 shadow-lg shadow-emerald-900/20"
+                                icon={<Plus size={16} />}
                             >
-                                <Plus size={16} />{' '}
                                 <span className="hidden sm:inline">Add Host</span>
-                            </button>
+                            </ActionButton>
                         </div>
                     ) : (
-                        <button
+                        <ActionButton
+                            variant="outline"
                             onClick={loadData}
-                            className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 border border-zinc-700"
+                            icon={<RefreshCw size={16} />}
                         >
-                            <RefreshCw size={16} /> Check Installation
-                        </button>
+                            Check Installation
+                        </ActionButton>
                     )
                 }
             />
@@ -286,8 +286,8 @@ const NginxManager: React.FC = () => {
                                             <div className="flex flex-col items-end gap-1">
                                                 <span
                                                     className={`px - 2 py - 0.5 rounded text - [10px] uppercase font - bold tracking - wide ${host.enabled
-                                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                                                         } `}
                                                 >
                                                     {host.enabled ? 'Enabled' : 'Disabled'}
@@ -366,8 +366,8 @@ const NginxManager: React.FC = () => {
                                                     onClick={() => handleToggleHost(host)}
                                                     disabled={togglingHost === host.name}
                                                     className={`p - 1.5 rounded transition - colors ${host.enabled
-                                                            ? 'hover:bg-rose-500/20 text-rose-400'
-                                                            : 'hover:bg-emerald-500/20 text-emerald-400'
+                                                        ? 'hover:bg-rose-500/20 text-rose-400'
+                                                        : 'hover:bg-emerald-500/20 text-emerald-400'
                                                         } `}
                                                     title={host.enabled ? 'Disable' : 'Enable'}
                                                 >
@@ -435,10 +435,10 @@ const NginxManager: React.FC = () => {
                                                     <td className="p-4">
                                                         <span
                                                             className={`px - 2 py - 0.5 rounded text - xs font - bold ${cert.daysRemaining <= 7
-                                                                    ? 'bg-rose-500/10 text-rose-400'
-                                                                    : cert.daysRemaining <= 30
-                                                                        ? 'bg-amber-500/10 text-amber-400'
-                                                                        : 'bg-emerald-500/10 text-emerald-400'
+                                                                ? 'bg-rose-500/10 text-rose-400'
+                                                                : cert.daysRemaining <= 30
+                                                                    ? 'bg-amber-500/10 text-amber-400'
+                                                                    : 'bg-emerald-500/10 text-emerald-400'
                                                                 } `}
                                                         >
                                                             {cert.daysRemaining} days
@@ -447,8 +447,8 @@ const NginxManager: React.FC = () => {
                                                     <td className="p-4">
                                                         <span
                                                             className={`px - 2 py - 0.5 rounded text - xs font - bold ${cert.autoRenew
-                                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                                                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                                                                 } `}
                                                         >
                                                             {cert.autoRenew ? 'ON' : 'MANUAL'}
@@ -500,8 +500,8 @@ const NginxManager: React.FC = () => {
                                             </div>
                                             <span
                                                 className={`px - 2 py - 0.5 rounded text - [10px] uppercase font - bold tracking - wide shrink - 0 ml - 2 ${cert.autoRenew
-                                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                                                     } `}
                                             >
                                                 {cert.autoRenew ? 'Auto' : 'Man'}
@@ -521,10 +521,10 @@ const NginxManager: React.FC = () => {
                                                 <span className="text-zinc-500">Days Left</span>
                                                 <span
                                                     className={`text - xs font - medium ${cert.daysRemaining <= 7
-                                                            ? 'text-rose-400'
-                                                            : cert.daysRemaining <= 30
-                                                                ? 'text-amber-400'
-                                                                : 'text-emerald-400'
+                                                        ? 'text-rose-400'
+                                                        : cert.daysRemaining <= 30
+                                                            ? 'text-amber-400'
+                                                            : 'text-emerald-400'
                                                         } `}
                                                 >
                                                     {cert.daysRemaining} days

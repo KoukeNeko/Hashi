@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { UpdateInfo, UpdateChannel } from '../../../types';
 import { UpdateService } from '../../../services/api';
+import { ActionButton } from '../../../components/ui';
 
 /** Channel display configuration */
 const CHANNEL_CONFIG: Record<UpdateChannel, { label: string; color: string; description: string }> =
@@ -157,18 +158,16 @@ const UpdatePanel: React.FC = () => {
 
                 {/* Check Button */}
                 <div className="mt-6 pt-4 border-t border-zinc-800">
-                    <button
+                    <ActionButton
+                        variant="primary"
                         onClick={handleCheckForUpdates}
                         disabled={checking}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 text-white font-medium rounded-md transition-colors"
+                        loading={checking}
+                        icon={<RefreshCw size={16} />}
+                        loadingIcon={<Loader2 className="animate-spin" size={16} />}
                     >
-                        {checking ? (
-                            <Loader2 className="animate-spin" size={16} />
-                        ) : (
-                            <RefreshCw size={16} />
-                        )}
                         {checking ? 'Checking...' : 'Check for Updates'}
-                    </button>
+                    </ActionButton>
                 </div>
             </div>
 
@@ -216,8 +215,8 @@ const UpdatePanel: React.FC = () => {
                             <div
                                 key={channel}
                                 className={`flex items-center justify-between p-4 rounded-lg border ${isActive
-                                        ? config.color
-                                        : 'bg-zinc-800/50 border-zinc-700 text-zinc-400'
+                                    ? config.color
+                                    : 'bg-zinc-800/50 border-zinc-700 text-zinc-400'
                                     }`}
                             >
                                 <div>

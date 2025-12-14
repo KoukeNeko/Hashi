@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { PageHeader, Toast } from '../../components';
+import { ActionButton } from '../../components/ui';
 import { ServiceItem } from '../../types';
 import { SystemdService } from '../../services/api';
 import { Alert } from '../../components/ui';
@@ -51,7 +52,6 @@ const ServiceManager: React.FC = () => {
     const showToast = (type: 'success' | 'error', message: string) => {
         const id = Date.now();
         setToasts((prev) => [...prev, { id, type, message }]);
-        // 自動消失
         setTimeout(() => {
             setToasts((prev) => prev.filter((t) => t.id !== id));
         }, 5000);
@@ -68,21 +68,19 @@ const ServiceManager: React.FC = () => {
         try {
             await SystemdService.controlService(name, action);
             showToast('success', `Successfully ${action}ed ${name}`);
-            // 等一下再重新載入，讓 systemd 有時間更新狀態
             setTimeout(() => {
                 loadServices();
             }, 500);
         } catch (err: any) {
             console.error(`Failed to ${action} service:`, err);
-            // 處理錯誤訊息，確保是字串
             let errorMsg = 'Unknown error';
             if (err.response?.data) {
                 errorMsg =
                     typeof err.response.data === 'string'
                         ? err.response.data
                         : err.response.data.message ||
-                          err.response.data.error ||
-                          JSON.stringify(err.response.data);
+                        err.response.data.error ||
+                        JSON.stringify(err.response.data);
             } else if (err.message) {
                 errorMsg = err.message;
             }
@@ -129,14 +127,13 @@ const ServiceManager: React.FC = () => {
                                 className="bg-zinc-900 border border-zinc-700 text-zinc-300 pl-9 pr-4 py-2 rounded text-sm focus:outline-none focus:border-purple-500 w-64 shadow-lg transition-colors"
                             />
                         </div>
-                        <button
+                        <ActionButton
+                            variant="outline"
                             onClick={loadServices}
                             disabled={loading}
-                            className="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 border border-zinc-700 disabled:opacity-50"
+                            icon={<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />}
                             title="Refresh"
-                        >
-                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                        </button>
+                        />
                     </div>
                 }
             />
@@ -232,13 +229,12 @@ const ServiceManager: React.FC = () => {
                                         </td>
                                         <td className="p-4">
                                             <span
-                                                className={`text-xs px-2 py-1 rounded ${
-                                                    svc.loadState === 'loaded'
+                                                className={`text-xs px-2 py-1 rounded ${svc.loadState === 'loaded'
                                                         ? 'text-emerald-400 bg-emerald-400/10'
                                                         : svc.loadState === 'not-found'
-                                                          ? 'text-rose-400 bg-rose-400/10'
-                                                          : 'text-zinc-400 bg-zinc-700'
-                                                }`}
+                                                            ? 'text-rose-400 bg-rose-400/10'
+                                                            : 'text-zinc-400 bg-zinc-700'
+                                                    }`}
                                             >
                                                 {svc.loadState}
                                             </span>
@@ -246,21 +242,20 @@ const ServiceManager: React.FC = () => {
                                         <td className="p-4">
                                             <span className={`flex items-center gap-2`}>
                                                 <span
-                                                    className={`w-2 h-2 rounded-full ${
-                                                        svc.activeState === 'active'
+                                                    className={`w-2 h-2 rounded-full ${svc.activeState === 'active'
                                                             ? 'bg-emerald-500'
                                                             : svc.activeState === 'failed'
-                                                              ? 'bg-rose-500'
-                                                              : 'bg-zinc-500'
-                                                    }`}
+                                                                ? 'bg-rose-500'
+                                                                : 'bg-zinc-500'
+                                                        }`}
                                                 ></span>
                                                 <span
                                                     className={
                                                         svc.activeState === 'active'
                                                             ? 'text-emerald-400'
                                                             : svc.activeState === 'failed'
-                                                              ? 'text-rose-400'
-                                                              : 'text-zinc-500'
+                                                                ? 'text-rose-400'
+                                                                : 'text-zinc-500'
                                                     }
                                                 >
                                                     {svc.activeState}

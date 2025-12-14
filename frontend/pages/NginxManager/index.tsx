@@ -180,7 +180,7 @@ const NginxManager: React.FC = () => {
                     isNginxInstalled ? (
                         <div className="flex items-center gap-3">
                             {/* 狀態指示器 */}
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 rounded-lg border border-zinc-700">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800 rounded-lg border border-zinc-700">
                                 {status?.running ? (
                                     <CheckCircle size={14} className="text-emerald-400" />
                                 ) : (
@@ -198,24 +198,24 @@ const NginxManager: React.FC = () => {
                             <button
                                 onClick={handleReload}
                                 disabled={reloading}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white rounded text-sm transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white rounded font-medium text-sm transition-colors border border-zinc-700"
                             >
-                                <RefreshCw size={14} className={reloading ? 'animate-spin' : ''} />
+                                <RefreshCw size={16} className={reloading ? 'animate-spin' : ''} />
                                 Reload
                             </button>
 
                             <button
                                 onClick={() => setIsSslDialogOpen(true)}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-white rounded text-sm transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded font-medium text-sm transition-colors border border-zinc-700"
                             >
-                                <Lock size={14} />
+                                <Lock size={16} />
                                 Request SSL
                             </button>
 
                             {/* 新增按鈕 */}
                             <button
                                 onClick={() => setIsAddDialogOpen(true)}
-                                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1 rounded font-medium text-sm transition-colors border border-emerald-500/50 flex items-center gap-2 shadow-lg shadow-emerald-900/20"
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-medium text-sm transition-colors border border-emerald-500/50 flex items-center gap-2 shadow-lg shadow-emerald-900/20"
                             >
                                 <Plus size={16} />{' '}
                                 <span className="hidden sm:inline">Add Host</span>
@@ -224,7 +224,7 @@ const NginxManager: React.FC = () => {
                     ) : (
                         <button
                             onClick={loadData}
-                            className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2"
+                            className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 border border-zinc-700"
                         >
                             <RefreshCw size={16} /> Check Installation
                         </button>
@@ -285,11 +285,10 @@ const NginxManager: React.FC = () => {
                                             </div>
                                             <div className="flex flex-col items-end gap-1">
                                                 <span
-                                                    className={`px - 2 py - 0.5 rounded text - [10px] uppercase font - bold tracking - wide ${
-                                                        host.enabled
+                                                    className={`px - 2 py - 0.5 rounded text - [10px] uppercase font - bold tracking - wide ${host.enabled
                                                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                                             : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                                    } `}
+                                                        } `}
                                                 >
                                                     {host.enabled ? 'Enabled' : 'Disabled'}
                                                 </span>
@@ -366,11 +365,10 @@ const NginxManager: React.FC = () => {
                                                 <button
                                                     onClick={() => handleToggleHost(host)}
                                                     disabled={togglingHost === host.name}
-                                                    className={`p - 1.5 rounded transition - colors ${
-                                                        host.enabled
+                                                    className={`p - 1.5 rounded transition - colors ${host.enabled
                                                             ? 'hover:bg-rose-500/20 text-rose-400'
                                                             : 'hover:bg-emerald-500/20 text-emerald-400'
-                                                    } `}
+                                                        } `}
                                                     title={host.enabled ? 'Disable' : 'Enable'}
                                                 >
                                                     {togglingHost === host.name ? (
@@ -436,24 +434,22 @@ const NginxManager: React.FC = () => {
                                                     </td>
                                                     <td className="p-4">
                                                         <span
-                                                            className={`px - 2 py - 0.5 rounded text - xs font - bold ${
-                                                                cert.daysRemaining <= 7
+                                                            className={`px - 2 py - 0.5 rounded text - xs font - bold ${cert.daysRemaining <= 7
                                                                     ? 'bg-rose-500/10 text-rose-400'
                                                                     : cert.daysRemaining <= 30
-                                                                      ? 'bg-amber-500/10 text-amber-400'
-                                                                      : 'bg-emerald-500/10 text-emerald-400'
-                                                            } `}
+                                                                        ? 'bg-amber-500/10 text-amber-400'
+                                                                        : 'bg-emerald-500/10 text-emerald-400'
+                                                                } `}
                                                         >
                                                             {cert.daysRemaining} days
                                                         </span>
                                                     </td>
                                                     <td className="p-4">
                                                         <span
-                                                            className={`px - 2 py - 0.5 rounded text - xs font - bold ${
-                                                                cert.autoRenew
+                                                            className={`px - 2 py - 0.5 rounded text - xs font - bold ${cert.autoRenew
                                                                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                                                     : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                                            } `}
+                                                                } `}
                                                         >
                                                             {cert.autoRenew ? 'ON' : 'MANUAL'}
                                                         </span>
@@ -503,11 +499,10 @@ const NginxManager: React.FC = () => {
                                                 </div>
                                             </div>
                                             <span
-                                                className={`px - 2 py - 0.5 rounded text - [10px] uppercase font - bold tracking - wide shrink - 0 ml - 2 ${
-                                                    cert.autoRenew
+                                                className={`px - 2 py - 0.5 rounded text - [10px] uppercase font - bold tracking - wide shrink - 0 ml - 2 ${cert.autoRenew
                                                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                                         : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                                } `}
+                                                    } `}
                                             >
                                                 {cert.autoRenew ? 'Auto' : 'Man'}
                                             </span>
@@ -525,13 +520,12 @@ const NginxManager: React.FC = () => {
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-zinc-500">Days Left</span>
                                                 <span
-                                                    className={`text - xs font - medium ${
-                                                        cert.daysRemaining <= 7
+                                                    className={`text - xs font - medium ${cert.daysRemaining <= 7
                                                             ? 'text-rose-400'
                                                             : cert.daysRemaining <= 30
-                                                              ? 'text-amber-400'
-                                                              : 'text-emerald-400'
-                                                    } `}
+                                                                ? 'text-amber-400'
+                                                                : 'text-emerald-400'
+                                                        } `}
                                                 >
                                                     {cert.daysRemaining} days
                                                 </span>

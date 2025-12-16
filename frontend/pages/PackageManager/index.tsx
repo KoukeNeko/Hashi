@@ -3,6 +3,7 @@ import { Package, Search, RotateCw, Download, Trash2, ArrowUpCircle, List, Searc
 import { PackageInfo } from '../../types';
 import { PackageService } from '../../services/api';
 import { Tabs } from '../../components/ui/Tabs';
+import { PageHeader } from '../../components/PageHeader';
 
 const PackageManager: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -107,15 +108,11 @@ const PackageManager: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                        <Package className="text-emerald-500" />
-                        Package Management
-                    </h1>
-                    <p className="text-zinc-400 mt-1">Manage system software packages</p>
-                </div>
-                <div className="flex gap-2">
+            <PageHeader
+                title="Package Management"
+                icon={Package}
+                description="Manage system software packages"
+                actions={
                     <button
                         onClick={updateCache}
                         disabled={isLoading}
@@ -124,8 +121,8 @@ const PackageManager: React.FC = () => {
                         <RotateCw size={16} className={isLoading ? 'animate-spin' : ''} />
                         Update Cache
                     </button>
-                </div>
-            </div>
+                }
+            />
 
             <Tabs items={tabItems} activeId={activeTab} onChange={setActiveTab} />
 

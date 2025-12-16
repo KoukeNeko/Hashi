@@ -1,15 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Network, Activity, RotateCw, Wifi, Globe, Shield } from 'lucide-react';
-import { NetworkInterface } from '../../types';
-import { NetworkService } from '../../services/api';
+import { Network, Activity, RotateCw, Globe } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import { NetworkInterface, SystemStatus } from '../../types';
+import { NetworkService, connectWebSocket } from '../../services/api';
 import { PageHeader } from '../../components/PageHeader';
 
 const NetworkManager: React.FC = () => {
     const [interfaces, setInterfaces] = useState<NetworkInterface[]>([]);
+    const [trafficHistory, setTrafficHistory] = useState<Record<string, { time: number; rx: number; tx: number }[]>>({});
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         fetchInterfaces();
+
+        const client = connectWebSocket((status: SystemStatus) => {
+            if (status.network?.details) {
+                setTrafficHistory(prev => {
+                    const next = { ...prev };
+                    const now = Date.now();
+                    status.network.details.forEach(stat => {
+                        if (!next[stat.name]) {
+                            next[stat.name] = [];
+                        }
+                        // Add new data point
+                        next[stat.name].push({
+                            time: now,
+                            rx: stat.downloadRate,
+                            tx: stat.uploadRate
+                        });
+                        // Keep last 60 points
+                        if (next[stat.name].length > 60) {
+                            next[stat.name].shift();
+                        }
+                    });
+                    return next;
+                });
+            }
+        });
+
+        return () => {
+            client.deactivate();
+        };
     }, []);
 
     const fetchInterfaces = async () => {
@@ -27,6 +58,14 @@ const NetworkManager: React.FC = () => {
     const getIpAddress = (iface: NetworkInterface, family: 'inet' | 'inet6') => {
         const addr = iface.addrInfo.find(a => a.family === family);
         return addr ? `${addr.local}/${addr.prefixlen}` : '-';
+    };
+
+    const formatSpeed = (bytes: number) => {
+        if (!bytes) return '0 B/s';
+        const k = 1024;
+        const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     };
 
     return (
@@ -86,6 +125,53 @@ const NetworkManager: React.FC = () => {
                                     <span className="text-sm font-mono text-white w-32 truncate text-right" title={getIpAddress(iface, 'inet6')}>
                                         {getIpAddress(iface, 'inet6')}
                                     </span>
+                                </div>
+
+                                {/* Traffic Chart */}
+                                <div className="h-32 mt-4 bg-zinc-900/30 rounded-lg p-2 border border-zinc-800/50">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={trafficHistory[iface.ifname] || []}>
+                                            <defs>
+                                                <linearGradient id={`colorRx-${iface.ifname}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                                </linearGradient>
+                                                <linearGradient id={`colorTx-${iface.ifname}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', fontSize: '12px' }}
+                                                itemStyle={{ fontSize: '12px', padding: 0 }}
+                                                formatter={(value: number) => formatSpeed(value)}
+                                                labelFormatter={() => ''}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="rx"
+                                                stroke="#10b981"
+                                                fillOpacity={1}
+                                                fill={`url(#colorRx-${iface.ifname})`}
+                                                strokeWidth={2}
+                                                isAnimationActive={false}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="tx"
+                                                stroke="#3b82f6"
+                                                fillOpacity={1}
+                                                fill={`url(#colorTx-${iface.ifname})`}
+                                                strokeWidth={2}
+                                                isAnimationActive={false}
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs font-mono">
+                                    <span className="text-emerald-500">RX: {formatSpeed(trafficHistory[iface.ifname]?.slice(-1)[0]?.rx || 0)}</span>
+                                    <span className="text-blue-500">TX: {formatSpeed(trafficHistory[iface.ifname]?.slice(-1)[0]?.tx || 0)}</span>
                                 </div>
 
                                 <div className="border-t border-zinc-800 pt-4 mt-4 grid grid-cols-2 gap-4">

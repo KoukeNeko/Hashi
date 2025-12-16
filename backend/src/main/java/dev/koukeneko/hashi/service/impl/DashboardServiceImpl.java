@@ -1,6 +1,7 @@
 package dev.koukeneko.hashi.service.impl;
 
 import dev.koukeneko.hashi.model.dto.SystemStatusDTO;
+import dev.koukeneko.hashi.model.dto.SystemStatusDTO.InterfaceStat;
 import dev.koukeneko.hashi.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -51,16 +52,41 @@ public class DashboardServiceImpl implements DashboardService {
 
         long currRecv = 0;
         long currSent = 0;
+        List<InterfaceStat> ifaceStats = new java.util.ArrayList<>();
+
         for (NetworkIF net : networkIFs) {
+            long startRecv = net.getBytesRecv();
+            long startSent = net.getBytesSent();
+
             net.updateAttributes();
-            currRecv += net.getBytesRecv();
-            currSent += net.getBytesSent();
+
+            long endRecv = net.getBytesRecv();
+            long endSent = net.getBytesSent();
+
+            long ifaceDownloadSpeed = (long) ((endRecv - startRecv) * (1000.0 / 300.0));
+            long ifaceUploadSpeed = (long) ((endSent - startSent) * (1000.0 / 300.0));
+
+            // Accumulate global stats
+            currRecv += endRecv;
+            currSent += endSent;
+
+            ifaceStats.add(InterfaceStat.builder()
+                    .name(net.getName())
+                    .downloadRate(ifaceDownloadSpeed)
+                    .uploadRate(ifaceUploadSpeed)
+                    .totalRecv(endRecv)
+                    .totalSent(endSent)
+                    .build());
         }
 
-        // 計算速率 (Bytes / 0.3s) -> 換算成 Bytes / sec
-        // 數學原理: (Diff Bytes) / (300ms / 1000ms) = Diff * (1000/300)
-        long downloadSpeed = (long) ((currRecv - prevRecv) * (1000.0 / 300.0));
-        long uploadSpeed = (long) ((currSent - prevSent) * (1000.0 / 300.0));
+        // Global rates (sum of interfaces) - Re-calculating correctly based on
+        // accumulated totals might be tricky due to timing,
+        // but summing up the individual rates is a reasonable approximation for
+        // display.
+        long downloadSpeed = interfaceStats.stream().mapToLong(SystemStatusDTO.NetworkInfo.InterfaceStat::downloadRate)
+                .sum();
+        long uploadSpeed = interfaceStats.stream().mapToLong(SystemStatusDTO.NetworkInfo.InterfaceStat::uploadRate)
+                .sum();
 
         // 4. [Disk] 獲取磁碟資訊
         FileSystem fileSystem = os.getFileSystem();

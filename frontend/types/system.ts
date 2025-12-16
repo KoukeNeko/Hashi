@@ -17,6 +17,15 @@ export interface NetworkInfo {
     downloadRate: number;
     totalSent: number;
     totalRecv: number;
+    details: InterfaceStat[];
+}
+
+export interface InterfaceStat {
+    name: string;
+    uploadRate: number;
+    downloadRate: number;
+    totalSent: number;
+    totalRecv: number;
 }
 
 /** System status from dashboard API */

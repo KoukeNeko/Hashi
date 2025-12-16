@@ -9,53 +9,67 @@ import java.util.List;
  */
 @Builder
 public record SystemStatusDTO(
-        /** CPU 使用率 (0.0 ~ 100.0) */
-        double cpuUsage,
-        /** CPU 核心數 */
-        int coreCount,
-        /** 總記憶體 (bytes) */
-        long totalMemory,
-        /** 已使用記憶體 (bytes) */
-        long usedMemory,
-        /** 記憶體使用率 (0.0 ~ 100.0) */
-        double memoryUsage,
-        /** 作業系統名稱 */
-        String osName,
-        /** 系統負載 */
-        double systemLoad,
-        /** 硬碟資訊列表 */
-        List<DiskInfo> disks,
-        /** 網路資訊 */
-        NetworkInfo network) {
-    /**
-     * 硬碟資訊
-     */
-    @Builder
-    public record DiskInfo(
-            /** 磁碟名稱 (e.g. "Local Disk" 或 "/dev/sda1") */
-            String name,
-            /** 掛載點 (e.g. "/" 或 "C:\") */
-            String mount,
-            /** 總容量 (bytes) */
-            long totalSpace,
-            /** 已使用容量 (bytes) */
-            long usedSpace,
-            /** 可用容量 (bytes) */
-            long usableSpace) {
-    }
+                /** CPU 使用率 (0.0 ~ 100.0) */
+                double cpuUsage,
+                /** CPU 核心數 */
+                int coreCount,
+                /** 總記憶體 (bytes) */
+                long totalMemory,
+                /** 已使用記憶體 (bytes) */
+                long usedMemory,
+                /** 記憶體使用率 (0.0 ~ 100.0) */
+                double memoryUsage,
+                /** 作業系統名稱 */
+                String osName,
+                /** 系統負載 */
+                double systemLoad,
+                /** 硬碟資訊列表 */
+                List<DiskInfo> disks,
+                /** 網路資訊 */
+                NetworkInfo network) {
+        /**
+         * 硬碟資訊
+         */
+        @Builder
+        public record DiskInfo(
+                        /** 磁碟名稱 (e.g. "Local Disk" 或 "/dev/sda1") */
+                        String name,
+                        /** 掛載點 (e.g. "/" 或 "C:\") */
+                        String mount,
+                        /** 總容量 (bytes) */
+                        long totalSpace,
+                        /** 已使用容量 (bytes) */
+                        long usedSpace,
+                        /** 可用容量 (bytes) */
+                        long usableSpace) {
+        }
 
-    /**
-     * 網路資訊
-     */
-    @Builder
-    public record NetworkInfo(
-            /** 上傳速率 (Bytes per second) */
-            long uploadRate,
-            /** 下載速率 (Bytes per second) */
-            long downloadRate,
-            /** 總發送量 (Bytes) */
-            long totalSent,
-            /** 總接收量 (Bytes) */
-            long totalRecv) {
-    }
+        /**
+         * 網路資訊
+         */
+        @Builder
+        public record NetworkInfo(
+                        /** 上傳速率 (Bytes per second) */
+                        long uploadRate,
+                        /** 下載速率 (Bytes per second) */
+                        long downloadRate,
+                        /** 總發送量 (Bytes) */
+                        long totalSent,
+                        /** 總接收量 (Bytes) */
+                        long totalRecv,
+                        /** 個別介面流量資訊 */
+                        List<InterfaceStat> details) {
+        }
+
+        /**
+         * 個別網路介面流量資訊
+         */
+        @Builder
+        public record InterfaceStat(
+                        String name,
+                        long uploadRate,
+                        long downloadRate,
+                        long totalSent,
+                        long totalRecv) {
+        }
 }

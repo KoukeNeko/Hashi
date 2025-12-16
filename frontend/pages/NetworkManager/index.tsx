@@ -25,7 +25,7 @@ const NetworkManager: React.FC = () => {
     };
 
     const getIpAddress = (iface: NetworkInterface, family: 'inet' | 'inet6') => {
-        const addr = iface.addr_info.find(a => a.family === family);
+        const addr = iface.addrInfo.find(a => a.family === family);
         return addr ? `${addr.local}/${addr.prefixlen}` : '-';
     };
 

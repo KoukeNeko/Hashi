@@ -13,5 +13,5 @@ export interface NetworkInterface {
     qdisc: string;
     master?: string;
     mtu: number;
-    addr_info: NetworkAddress[];
+    addrInfo: NetworkAddress[];
 }

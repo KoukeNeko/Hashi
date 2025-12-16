@@ -47,6 +47,48 @@ const DiskManager: React.FC = () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    const [mountDialog, setMountDialog] = useState<{ isOpen: boolean; partition: string | null }>({ isOpen: false, partition: null });
+    const [mountForm, setMountForm] = useState({ target: '', fstype: '', options: '' });
+
+    const openMountDialog = (partitionName: string) => {
+        setMountDialog({ isOpen: true, partition: partitionName });
+        setMountForm({ target: '', fstype: '', options: '' });
+    };
+
+    const handleMount = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!mountDialog.partition || !mountForm.target) return;
+
+        setProcessing(mountDialog.partition);
+        // Find the full path for the partition name (approximate since we don't have the map handy here easily, 
+        // but backend expects 'source' which is usually device path like /dev/sda1)
+        // We need to pass the device path. Let's look it up from the disks data.
+        let devicePath = '';
+        disks.forEach(d => {
+            d.partitions?.forEach(p => {
+                if (p.name === mountDialog.partition) {
+                    // Assuming partition name is like sda1, and path is like /dev/sda1
+                    // Actually lsblk output: name="sda1", path="/dev/sda1" (based on LinuxDiskService)
+                    // Wait, LinuxDiskService uses "path" from lsblk.
+                    // The Frontend "SystemPartition" type might need verification. 
+                    // Let's rely on finding it in the disks list.
+                    devicePath = p.path || `/dev/${p.name}`;
+                }
+            });
+        });
+
+        try {
+            await DiskService.mount(devicePath, mountForm.target, mountForm.fstype, mountForm.options);
+            await fetchDisks();
+            setMountDialog({ isOpen: false, partition: null });
+        } catch (error: any) {
+            console.error('Failed to mount:', error);
+            alert(`Failed to mount: ${error.response?.data?.error || error.message}`);
+        } finally {
+            setProcessing(null);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <PageHeader
@@ -117,7 +159,7 @@ const DiskManager: React.FC = () => {
                                                 <td className="px-6 py-3 text-right">
                                                     {part.mountpoint ? (
                                                         <button
-                                                            onClick={() => handleUnmount(part.mountpoint)}
+                                                            onClick={() => handleUnmount(part.mountpoint!)}
                                                             disabled={!!processing}
                                                             className="text-rose-400 hover:text-rose-300 text-xs font-medium px-2 py-1 hover:bg-rose-500/10 rounded"
                                                         >
@@ -125,10 +167,11 @@ const DiskManager: React.FC = () => {
                                                         </button>
                                                     ) : (
                                                         <button
-                                                            className="text-zinc-500 cursor-not-allowed text-xs font-medium px-2 py-1"
-                                                            disabled
+                                                            onClick={() => openMountDialog(part.name)}
+                                                            className="text-emerald-400 hover:text-emerald-300 text-xs font-medium px-2 py-1 hover:bg-emerald-500/10 rounded"
+                                                            disabled={!!processing}
                                                         >
-                                                            Mount (TODO)
+                                                            Mount
                                                         </button>
                                                     )}
                                                 </td>
@@ -146,6 +189,64 @@ const DiskManager: React.FC = () => {
                     ))
                 )}
             </div>
+
+            {/* Mount Dialog */}
+            {mountDialog.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+                        <h3 className="text-xl font-bold text-white mb-4">Mount Partition: {mountDialog.partition}</h3>
+                        <form onSubmit={handleMount} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-400 mb-1">Mount Point (Target)</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="/mnt/data"
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                    value={mountForm.target}
+                                    onChange={e => setMountForm({ ...mountForm, target: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-400 mb-1">Filesystem Type <span className="text-zinc-600">(Optional)</span></label>
+                                <input
+                                    type="text"
+                                    placeholder="ext4, ntfs, etc."
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                    value={mountForm.fstype}
+                                    onChange={e => setMountForm({ ...mountForm, fstype: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-400 mb-1">Mount Options <span className="text-zinc-600">(Optional)</span></label>
+                                <input
+                                    type="text"
+                                    placeholder="defaults, noatime"
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                    value={mountForm.options}
+                                    onChange={e => setMountForm({ ...mountForm, options: e.target.value })}
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setMountDialog({ isOpen: false, partition: null })}
+                                    className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={!!processing}
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                                >
+                                    {processing ? 'Mounting...' : 'Mount'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

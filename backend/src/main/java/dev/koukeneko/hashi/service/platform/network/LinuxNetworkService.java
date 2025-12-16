@@ -110,4 +110,79 @@ public class LinuxNetworkService implements NetworkService {
             throw new RuntimeException("Failed to execute sudo tee", e);
         }
     }
+
+    @Override
+    public void setInterfaceState(String interfaceName, String state) {
+        String action = "up".equalsIgnoreCase(state) ? "connect" : "disconnect";
+        runCommand("sudo", "nmcli", "device", action, interfaceName);
+    }
+
+    @Override
+    public void configureInterface(String interfaceName, String ipv4Method, String ipAddress, String gateway) {
+        // Find connection UUID for this device
+        String uuid = findConnectionUuid(interfaceName);
+        if (uuid == null) {
+            throw new RuntimeException("No connection found for interface: " + interfaceName);
+        }
+
+        // Configure IPv4
+        if ("auto".equalsIgnoreCase(ipv4Method) || "dhcp".equalsIgnoreCase(ipv4Method)) {
+            runCommand("sudo", "nmcli", "con", "mod", uuid, "ipv4.method", "auto");
+        } else {
+            runCommand("sudo", "nmcli", "con", "mod", uuid, "ipv4.method", "manual", "ipv4.addresses", ipAddress);
+            if (gateway != null && !gateway.isEmpty()) {
+                runCommand("sudo", "nmcli", "con", "mod", uuid, "ipv4.gateway", gateway);
+            }
+        }
+
+        // Apply changes
+        runCommand("sudo", "nmcli", "con", "up", uuid);
+    }
+
+    private String findConnectionUuid(String interfaceName) {
+        try {
+            // Try active connections first
+            String output = runCommand("nmcli", "-t", "-f", "UUID,DEVICE", "con", "show", "--active");
+            for (String line : output.split("\n")) {
+                String[] parts = line.split(":");
+                if (parts.length >= 2 && parts[1].equals(interfaceName)) {
+                    return parts[0];
+                }
+            }
+
+            // Try all connections
+            output = runCommand("nmcli", "-t", "-f", "UUID,DEVICE", "con", "show");
+            for (String line : output.split("\n")) {
+                String[] parts = line.split(":");
+                if (parts.length >= 2 && parts[1].equals(interfaceName)) {
+                    return parts[0];
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to find connection UUID for {}", interfaceName, e);
+        }
+        return null;
+    }
+
+    private String runCommand(String... command) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            int exitCode = process.waitFor();
+
+            if (exitCode != 0) {
+                // Ignore empty output if exit code is non-zero but we expected it? No, explicit
+                // error.
+                // But for nmcli show, it might return non-zero if no connections? Check later.
+                // Actually process.waitFor() returns exit code.
+                throw new RuntimeException(output.trim());
+            }
+            return output.trim();
+        } catch (Exception e) {
+            throw new RuntimeException("Command failed: " + e.getMessage(), e);
+        }
+    }
 }

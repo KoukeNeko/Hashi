@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class DashboardServiceImpl implements DashboardService {
 
     private final SystemInfo systemInfo;
@@ -38,9 +39,9 @@ public class DashboardServiceImpl implements DashboardService {
             net.updateAttributes(); // 必須更新才能拿到最新數據 (T1)
         }
 
-        // 2. [Wait] 等待取樣時間 (300ms)
+        // 2. [Wait] 等待取樣時間 (800ms) - Increased to capture more traffic
         try {
-            TimeUnit.MILLISECONDS.sleep(300);
+            TimeUnit.MILLISECONDS.sleep(800);
         } catch (InterruptedException e) {
         }
 
@@ -65,8 +66,8 @@ public class DashboardServiceImpl implements DashboardService {
             long diffRecv = endRecv >= startRecv ? endRecv - startRecv : 0;
             long diffSent = endSent >= startSent ? endSent - startSent : 0;
 
-            long ifaceDownloadSpeed = (long) (diffRecv * (1000.0 / 300.0));
-            long ifaceUploadSpeed = (long) (diffSent * (1000.0 / 300.0));
+            long ifaceDownloadSpeed = (long) (diffRecv * (1000.0 / 800.0));
+            long ifaceUploadSpeed = (long) (diffSent * (1000.0 / 800.0));
 
             // Accumulate global stats
             currRecv += endRecv;
@@ -79,6 +80,9 @@ public class DashboardServiceImpl implements DashboardService {
                     .totalRecv(endRecv)
                     .totalSent(endSent)
                     .build());
+
+            log.info("Interface: {}, RX: {}, TX: {}, DiffRX: {}, DiffTX: {}", net.getName(), ifaceDownloadSpeed,
+                    ifaceUploadSpeed, diffRecv, diffSent);
         }
 
         // Global rates (sum of interfaces)

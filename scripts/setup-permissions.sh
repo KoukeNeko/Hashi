@@ -90,8 +90,9 @@ $HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/apt-get update
 # ==================== Package Management ====================
 $HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/dpkg
 
-# ==================== Disk Management ====================
+# ==================== Disk & Network Management ====================
 $HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/lsblk, /usr/bin/mount, /usr/bin/umount, /usr/sbin/mkfs*, /usr/sbin/parted, /usr/sbin/resize2fs
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/nmcli
 EOF
 
     chmod 440 "$SUDOERS_FILE"

@@ -9,4 +9,8 @@ public interface NetworkService {
     List<String> getDnsConfig();
 
     void updateDnsConfig(List<String> nameservers);
+
+    void configureInterface(String interfaceName, String ipv4Method, String ipAddress, String gateway);
+
+    void setInterfaceState(String interfaceName, String state);
 }

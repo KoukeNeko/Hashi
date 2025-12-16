@@ -650,4 +650,10 @@ export const NetworkService = {
     updateDns: async (nameservers: string[]) => {
         await api.post('/network/dns', nameservers);
     },
+    configureInterface: async (name: string, config: { ipv4Method: string; ipAddress?: string; gateway?: string }) => {
+        await api.post(`/network/interfaces/${name}/config`, config);
+    },
+    setInterfaceState: async (name: string, state: 'up' | 'down') => {
+        await api.post(`/network/interfaces/${name}/state`, null, { params: { state } });
+    },
 };

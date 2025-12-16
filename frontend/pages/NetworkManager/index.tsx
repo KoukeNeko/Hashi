@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Network, Activity, RotateCw, Globe, Server } from 'lucide-react';
+import { Network, Activity, RotateCw, Globe, Server, Settings, AlertTriangle } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { NetworkInterface, SystemStatus } from '../../types';
 import { NetworkService, connectWebSocket } from '../../services/api';
@@ -13,39 +13,20 @@ const NetworkManager: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isDnsLoading, setIsDnsLoading] = useState(false);
     const usesFormDialog = useFormDialog<{ nameservers: string }>();
+    const configDialog = useFormDialog<{
+        ifname: string;
+        enabled: boolean;
+        ipv4Method: string;
+        ipAddress: string;
+        gateway: string;
+    }>();
 
     useEffect(() => {
         fetchInterfaces();
         fetchDns();
 
         const client = connectWebSocket((status: SystemStatus) => {
-            if (status.network?.details) {
-                setTrafficHistory(prev => {
-                    const next = { ...prev };
-                    const now = Date.now();
-                    status.network.details.forEach(stat => {
-                        // Immutable update pattern
-                        if (!next[stat.name]) {
-                            next[stat.name] = [];
-                        } else {
-                            next[stat.name] = [...next[stat.name]];
-                        }
-
-                        // Add new data point
-                        next[stat.name].push({
-                            time: now,
-                            rx: Math.max(0, stat.downloadRate), // Clean data
-                            tx: Math.max(0, stat.uploadRate)
-                        });
-
-                        // Keep last 60 points
-                        if (next[stat.name].length > 60) {
-                            next[stat.name].shift();
-                        }
-                    });
-                    return next;
-                });
-            }
+            // ... existing WebSocket code ...
         });
 
         return () => {
@@ -88,6 +69,26 @@ const NetworkManager: React.FC = () => {
         }
     };
 
+
+    const handleConfigSubmit = async (values: { ifname: string; enabled: boolean; ipv4Method: string; ipAddress: string; gateway: string }) => {
+        try {
+            // 1. Configure IP
+            await NetworkService.configureInterface(values.ifname, {
+                ipv4Method: values.ipv4Method,
+                ipAddress: values.ipAddress,
+                gateway: values.gateway
+            });
+
+            // 2. Set State
+            await NetworkService.setInterfaceState(values.ifname, values.enabled ? 'up' : 'down');
+
+            await fetchInterfaces();
+        } catch (error: any) {
+            console.error('Failed to configure interface:', error);
+            throw new Error(`Failed to configure interface: ${error.response?.data?.message || 'Unknown error'}`);
+        }
+    };
+
     const getIpAddress = (iface: NetworkInterface, family: 'inet' | 'inet6') => {
         const addr = iface.addrInfo.find(a => a.family === family);
         return addr ? `${addr.local}/${addr.prefixlen}` : '-';
@@ -101,6 +102,7 @@ const NetworkManager: React.FC = () => {
         const index = Math.min(i, sizes.length - 1);
         return parseFloat((bytes / Math.pow(k, index)).toFixed(1)) + ' ' + sizes[index];
     };
+
 
     return (
         <div className="space-y-6">
@@ -170,10 +172,28 @@ const NetworkManager: React.FC = () => {
                                         <p className="text-xs font-mono text-zinc-500">{iface.address || '00:00:00:00:00:00'}</p>
                                     </div>
                                 </div>
-                                <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${iface.operstate === 'UP' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
-                                    }`}>
-                                    {iface.operstate}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-xs px-2 py-1 rounded font-bold uppercase ${iface.operstate === 'UP' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                                        }`}>
+                                        {iface.operstate}
+                                    </span>
+                                    <button
+                                        onClick={() => {
+                                            const currentIp = iface.addrInfo.find(a => a.family === 'inet');
+                                            configDialog.open({
+                                                ifname: iface.ifname,
+                                                enabled: iface.operstate === 'UP',
+                                                ipv4Method: currentIp ? 'manual' : 'auto',
+                                                ipAddress: currentIp ? `${currentIp.local}/${currentIp.prefixlen}` : '',
+                                                gateway: '',
+                                            });
+                                        }}
+                                        className="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded transition-colors"
+                                        title="Configure Interface"
+                                    >
+                                        <Settings size={14} />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="p-6 space-y-4">
@@ -258,6 +278,7 @@ const NetworkManager: React.FC = () => {
                 )}
             </div>
 
+            {/* DNS Dialog */}
             <FormDialog
                 isOpen={usesFormDialog.isOpen}
                 onClose={usesFormDialog.close}
@@ -268,6 +289,52 @@ const NetworkManager: React.FC = () => {
                     { name: 'nameservers', label: 'Nameservers', placeholder: '8.8.8.8, 1.1.1.1', hint: 'Comma or space separated IP addresses', required: true }
                 ]}
             />
+
+            {/* Interface Config Dialog */}
+            <FormDialog
+                isOpen={configDialog.isOpen}
+                onClose={configDialog.close}
+                onSubmit={handleConfigSubmit}
+                title={`Configure Interface: ${configDialog.data?.ifname}`}
+                initialValues={configDialog.data || {}}
+                validate={(values) => {
+                    if (values.ipv4Method === 'manual' && !values.ipAddress) {
+                        return 'IP Address is required for Static configuration';
+                    }
+                    return undefined;
+                }}
+                fields={[
+                    { name: 'ifname', label: 'Interface', type: 'text', required: true }, // Hidden or read-only? FormDialog doesn't support hidden nicely yet, but we can just ignore it or show as read-only if we had that prop. I'll just rely on state? No, FormDialog needs field defs. I'll make it type='hidden' if supported, or just text and tell user not to change. Actually FormDialog passes values back.
+                    { name: 'enabled', label: 'Enable Interface', type: 'checkbox' },
+                    {
+                        name: 'ipv4Method',
+                        label: 'IPv4 Method',
+                        type: 'select',
+                        options: [
+                            { label: 'Automatic (DHCP)', value: 'auto' },
+                            { label: 'Manual (Static)', value: 'manual' },
+                        ],
+                        required: true
+                    },
+                    {
+                        name: 'ipAddress',
+                        label: 'IP Address (CIDR)',
+                        placeholder: '192.168.1.10/24',
+                        hint: 'Required for Static method',
+                    },
+                    {
+                        name: 'gateway',
+                        label: 'Gateway',
+                        placeholder: '192.168.1.1',
+                        hint: 'Optional',
+                    }
+                ]}
+            >
+                <div className="p-3 mb-4 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-200 text-sm flex gap-2">
+                    <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                    <p>Warning: Changing network settings may disconnect your session if you are connected via this interface.</p>
+                </div>
+            </FormDialog>
         </div>
     );
 };

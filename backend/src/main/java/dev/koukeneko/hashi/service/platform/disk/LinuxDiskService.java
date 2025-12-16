@@ -61,8 +61,7 @@ public class LinuxDiskService implements DiskService {
 
             if (blockdevices != null && blockdevices.isArray()) {
                 for (JsonNode device : blockdevices) {
-                    // Only process actual disks, loop devices might be excluded or handled
-                    // differently if needed
+                    // Only process actual disks and loop devices
                     String type = device.path("type").asText();
                     if (!"disk".equals(type) && !"loop".equals(type))
                         continue;
@@ -100,6 +99,20 @@ public class LinuxDiskService implements DiskService {
         } catch (Exception e) {
             log.error("Failed to parse lsblk output", e);
         }
+
+        // Sort: Physical disks first, then loop/others. Within type, sort by name.
+        disks.sort((d1, d2) -> {
+            boolean d1IsDisk = "disk".equals(d1.getType());
+            boolean d2IsDisk = "disk".equals(d2.getType());
+
+            if (d1IsDisk && !d2IsDisk)
+                return -1;
+            if (!d1IsDisk && d2IsDisk)
+                return 1;
+
+            return d1.getName().compareToIgnoreCase(d2.getName());
+        });
+
         return disks;
     }
 

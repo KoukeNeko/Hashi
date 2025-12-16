@@ -83,6 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             label: 'System',
             items: [
                 { id: TabView.MONITOR, label: 'Monitor', icon: Network },
+                { id: TabView.NETWORK, label: 'Network', icon: Network },
                 { id: TabView.DISKS, label: 'Disks', icon: HardDrive },
                 { id: TabView.KVM, label: 'Virt Manager', icon: Monitor },
                 { id: TabView.SERVICES, label: 'Services', icon: Settings2 },

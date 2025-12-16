@@ -56,6 +56,7 @@ export enum TabView {
     SERVICES = 'services',
     CRON = 'cron',
     DISKS = 'disks',
+    NETWORK = 'network',
     USERS = 'users',
     TERMINAL = 'terminal',
     PACKAGES = 'packages',

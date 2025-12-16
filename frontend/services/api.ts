@@ -33,6 +33,7 @@ import {
     VncInfo,
     PackageInfo,
     SystemDisk,
+    NetworkInterface,
 } from '@/types';
 
 // ==================== Core Configuration ====================
@@ -618,6 +619,16 @@ export const DiskService = {
             label,
             confirmation: 'FORMAT',
         });
+        return response.data;
+    },
+};
+
+// ==================== Network Service ====================
+
+/** Network interface management API */
+export const NetworkService = {
+    listInterfaces: async (): Promise<NetworkInterface[]> => {
+        const response = await api.get<NetworkInterface[]>('/network/interfaces');
         return response.data;
     },
 };

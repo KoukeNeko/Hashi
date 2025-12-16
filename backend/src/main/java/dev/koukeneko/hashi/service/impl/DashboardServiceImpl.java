@@ -32,13 +32,10 @@ public class DashboardServiceImpl implements DashboardService {
         List<NetworkIF> networkIFs = hardware.getNetworkIFs();
 
         // 1. [Snapshot 1] 記錄起始狀態 (CPU ticks & Network bytes)
+        // 1. [Snapshot 1] 記錄起始狀態 (CPU ticks & Network bytes)
         long[] prevTicks = processor.getSystemCpuLoadTicks();
-        long prevRecv = 0;
-        long prevSent = 0;
         for (NetworkIF net : networkIFs) {
-            net.updateAttributes(); // 必須更新才能拿到最新數據
-            prevRecv += net.getBytesRecv();
-            prevSent += net.getBytesSent();
+            net.updateAttributes(); // 必須更新才能拿到最新數據 (T1)
         }
 
         // 2. [Wait] 等待取樣時間 (300ms)
@@ -58,13 +55,18 @@ public class DashboardServiceImpl implements DashboardService {
             long startRecv = net.getBytesRecv();
             long startSent = net.getBytesSent();
 
-            net.updateAttributes();
+            net.updateAttributes(); // (T2)
 
             long endRecv = net.getBytesRecv();
             long endSent = net.getBytesSent();
 
-            long ifaceDownloadSpeed = (long) ((endRecv - startRecv) * (1000.0 / 300.0));
-            long ifaceUploadSpeed = (long) ((endSent - startSent) * (1000.0 / 300.0));
+            // Saturated cast or clean calculation?
+            // If end < start (overflow), we should probably ignore or assume 0.
+            long diffRecv = endRecv >= startRecv ? endRecv - startRecv : 0;
+            long diffSent = endSent >= startSent ? endSent - startSent : 0;
+
+            long ifaceDownloadSpeed = (long) (diffRecv * (1000.0 / 300.0));
+            long ifaceUploadSpeed = (long) (diffSent * (1000.0 / 300.0));
 
             // Accumulate global stats
             currRecv += endRecv;
@@ -79,20 +81,14 @@ public class DashboardServiceImpl implements DashboardService {
                     .build());
         }
 
-        // Global rates (sum of interfaces) - Re-calculating correctly based on
-        // accumulated totals might be tricky due to timing,
-        // but summing up the individual rates is a reasonable approximation for
-        // display.
-        long downloadSpeed = interfaceStats.stream().mapToLong(SystemStatusDTO.NetworkInfo.InterfaceStat::downloadRate)
-                .sum();
-        long uploadSpeed = interfaceStats.stream().mapToLong(SystemStatusDTO.NetworkInfo.InterfaceStat::uploadRate)
-                .sum();
+        // Global rates (sum of interfaces)
+        long downloadSpeed = ifaceStats.stream().mapToLong(InterfaceStat::downloadRate).sum();
+        long uploadSpeed = ifaceStats.stream().mapToLong(InterfaceStat::uploadRate).sum();
 
         // 4. [Disk] 獲取磁碟資訊
         FileSystem fileSystem = os.getFileSystem();
         List<SystemStatusDTO.DiskInfo> diskInfos = fileSystem.getFileStores().stream()
                 // 過濾掉一些虛擬磁碟 (tmpfs, overlay)，只看實體硬碟
-                // TODO: 應該可以不用過濾1GB以下的，改成過濾掉 tmpfs 就好
                 .filter(store -> store.getTotalSpace() > 1024 * 1024 * 1024L) // 只顯示大於 1GB 的
                 .map(store -> SystemStatusDTO.DiskInfo.builder()
                         .name(store.getName())
@@ -121,6 +117,7 @@ public class DashboardServiceImpl implements DashboardService {
                         .uploadRate(uploadSpeed)
                         .totalRecv(currRecv)
                         .totalSent(currSent)
+                        .details(ifaceStats) // 加入個別介面詳細資訊
                         .build())
                 .build();
     }

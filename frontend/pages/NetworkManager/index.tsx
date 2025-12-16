@@ -19,15 +19,20 @@ const NetworkManager: React.FC = () => {
                     const next = { ...prev };
                     const now = Date.now();
                     status.network.details.forEach(stat => {
+                        // Immutable update pattern
                         if (!next[stat.name]) {
                             next[stat.name] = [];
+                        } else {
+                            next[stat.name] = [...next[stat.name]];
                         }
+
                         // Add new data point
                         next[stat.name].push({
                             time: now,
-                            rx: stat.downloadRate,
-                            tx: stat.uploadRate
+                            rx: Math.max(0, stat.downloadRate), // Clean data
+                            tx: Math.max(0, stat.uploadRate)
                         });
+
                         // Keep last 60 points
                         if (next[stat.name].length > 60) {
                             next[stat.name].shift();
@@ -61,11 +66,12 @@ const NetworkManager: React.FC = () => {
     };
 
     const formatSpeed = (bytes: number) => {
-        if (!bytes) return '0 B/s';
+        if (!bytes || bytes < 0) return '0 B/s';
         const k = 1024;
-        const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+        const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        const index = Math.min(i, sizes.length - 1);
+        return parseFloat((bytes / Math.pow(k, index)).toFixed(1)) + ' ' + sizes[index];
     };
 
     return (

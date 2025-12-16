@@ -26,7 +26,33 @@ const NetworkManager: React.FC = () => {
         fetchDns();
 
         const client = connectWebSocket((status: SystemStatus) => {
-            // ... existing WebSocket code ...
+            if (status.network?.details) {
+                setTrafficHistory(prev => {
+                    const next = { ...prev };
+                    const now = Date.now();
+                    status.network.details.forEach(stat => {
+                        // Immutable update pattern
+                        if (!next[stat.name]) {
+                            next[stat.name] = [];
+                        } else {
+                            next[stat.name] = [...next[stat.name]];
+                        }
+
+                        // Add new data point
+                        next[stat.name].push({
+                            time: now,
+                            rx: Math.max(0, stat.downloadRate), // Clean data
+                            tx: Math.max(0, stat.uploadRate)
+                        });
+
+                        // Keep last 60 points
+                        if (next[stat.name].length > 60) {
+                            next[stat.name].shift();
+                        }
+                    });
+                    return next;
+                });
+            }
         });
 
         return () => {

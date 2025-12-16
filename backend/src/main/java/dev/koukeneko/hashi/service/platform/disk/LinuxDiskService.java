@@ -171,6 +171,91 @@ public class LinuxDiskService implements DiskService {
         executeSudoCommand(command);
     }
 
+    @Override
+    public void createPartition(String diskPath, String fstype, String start, String end) {
+        validateDiskPath(diskPath);
+
+        List<String> command = new ArrayList<>();
+        command.add("sudo");
+        command.add("-n");
+        command.add("parted");
+        command.add("-s");
+        command.add(diskPath);
+        command.add("mkpart");
+        command.add("primary"); // Name/Type, usually 'primary' for MBR or name for GPT
+        if (fstype != null && !fstype.isEmpty()) {
+            command.add(fstype);
+        } else {
+            command.add("ext4");
+        }
+        command.add(start);
+        command.add(end);
+
+        executeSudoCommand(command);
+    }
+
+    @Override
+    public void deletePartition(String diskPath, int partitionNumber) {
+        validateDiskPath(diskPath);
+
+        List<String> command = new ArrayList<>();
+        command.add("sudo");
+        command.add("-n");
+        command.add("parted");
+        command.add("-s");
+        command.add(diskPath);
+        command.add("rm");
+        command.add(String.valueOf(partitionNumber));
+
+        executeSudoCommand(command);
+    }
+
+    @Override
+    public void resizePartition(String diskPath, int partitionNumber, String newEnd) {
+        validateDiskPath(diskPath);
+
+        // 1. Resize partition table
+        List<String> partedCmd = new ArrayList<>();
+        partedCmd.add("sudo");
+        partedCmd.add("-n");
+        partedCmd.add("parted");
+        partedCmd.add("-s");
+        partedCmd.add(diskPath);
+        partedCmd.add("resizepart");
+        partedCmd.add(String.valueOf(partitionNumber));
+        partedCmd.add(newEnd);
+        executeSudoCommand(partedCmd);
+
+        // 2. Resize filesystem (Try resize2fs for ext4)
+        // Construct partition path
+        String partPath = diskPath;
+        if (Character.isDigit(diskPath.charAt(diskPath.length() - 1))) {
+            partPath += "p" + partitionNumber;
+        } else {
+            partPath += partitionNumber;
+        }
+
+        try {
+            List<String> resizeCmd = new ArrayList<>();
+            resizeCmd.add("sudo");
+            resizeCmd.add("-n");
+            resizeCmd.add("resize2fs");
+            resizeCmd.add(partPath);
+            executeSudoCommand(resizeCmd);
+        } catch (Exception e) {
+            log.warn("Failed to resize filesystem on {}, possibly not ext4 or mounted/busy. Manually verify.", partPath,
+                    e);
+            // Don't fail the whole operation if just fs resize fails, as partition resize
+            // might have succeeded
+        }
+    }
+
+    private void validateDiskPath(String path) {
+        if (!path.startsWith("/dev/")) {
+            throw new IllegalArgumentException("Invalid device path: " + path);
+        }
+    }
+
     private void executeSudoCommand(List<String> command) {
         try {
             ProcessBuilder pb = new ProcessBuilder(command);

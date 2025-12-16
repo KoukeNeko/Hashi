@@ -621,6 +621,18 @@ export const DiskService = {
         });
         return response.data;
     },
+    createPartition: async (disk: string, fstype: string, start: string, end: string) => {
+        const response = await api.post('/disks/partition/create', { disk, fstype, start, end });
+        return response.data;
+    },
+    deletePartition: async (disk: string, partition: number) => {
+        const response = await api.post('/disks/partition/delete', { disk, partition });
+        return response.data;
+    },
+    resizePartition: async (disk: string, partition: number, end: string) => {
+        const response = await api.post('/disks/partition/resize', { disk, partition, end });
+        return response.data;
+    },
 };
 
 // ==================== Network Service ====================

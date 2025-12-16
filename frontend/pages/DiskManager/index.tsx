@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { HardDrive, RotateCw, Server, Usb, AlertTriangle } from 'lucide-react';
+import { HardDrive, RotateCw, Server, Usb, AlertTriangle, AlertCircle } from 'lucide-react';
 import { SystemDisk } from '../../types';
 import { DiskService } from '../../services/api';
 import { PageHeader } from '../../components/PageHeader';
+import { ConfirmDialog } from '../../components/ui/Dialog';
+import { FormDialog, FormDialogField } from '../../components/ui/Form';
 
 const DiskManager: React.FC = () => {
     const [disks, setDisks] = useState<SystemDisk[]>([]);
@@ -47,47 +49,154 @@ const DiskManager: React.FC = () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    // Dialog States
     const [mountDialog, setMountDialog] = useState<{ isOpen: boolean; partition: string | null }>({ isOpen: false, partition: null });
-    const [mountForm, setMountForm] = useState({ target: '', fstype: '', options: '' });
+    const [formatDialog, setFormatDialog] = useState<{ isOpen: boolean; partition: string | null }>({ isOpen: false, partition: null });
+    const [createDialog, setCreateDialog] = useState<{ isOpen: boolean; disk: SystemDisk | null }>({ isOpen: false, disk: null });
+    const [resizeDialog, setResizeDialog] = useState<{ isOpen: boolean; disk: SystemDisk | null; partitionName: string; partitionNumber: number }>({ isOpen: false, disk: null, partitionName: '', partitionNumber: 0 });
+    const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; disk: SystemDisk | null; partitionName: string; partitionNumber: number }>({ isOpen: false, disk: null, partitionName: '', partitionNumber: 0 });
 
-    const openMountDialog = (partitionName: string) => {
-        setMountDialog({ isOpen: true, partition: partitionName });
-        setMountForm({ target: '', fstype: '', options: '' });
+    const getPartitionNumber = (name: string): number => {
+        const match = name.match(/(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
     };
 
-    const handleMount = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!mountDialog.partition || !mountForm.target) return;
-
+    // Handlers
+    const handleMountSubmit = async (values: any) => {
+        if (!mountDialog.partition) return;
         setProcessing(mountDialog.partition);
-        // Find the full path for the partition name (approximate since we don't have the map handy here easily, 
-        // but backend expects 'source' which is usually device path like /dev/sda1)
-        // We need to pass the device path. Let's look it up from the disks data.
+
         let devicePath = '';
         disks.forEach(d => {
             d.partitions?.forEach(p => {
                 if (p.name === mountDialog.partition) {
-                    // Assuming partition name is like sda1, and path is like /dev/sda1
-                    // Actually lsblk output: name="sda1", path="/dev/sda1" (based on LinuxDiskService)
-                    // Wait, LinuxDiskService uses "path" from lsblk.
-                    // The Frontend "SystemPartition" type might need verification. 
-                    // Let's rely on finding it in the disks list.
                     devicePath = p.path || `/dev/${p.name}`;
                 }
             });
         });
 
         try {
-            await DiskService.mount(devicePath, mountForm.target, mountForm.fstype, mountForm.options);
+            await DiskService.mount(devicePath, values.target, values.fstype, values.options);
             await fetchDisks();
             setMountDialog({ isOpen: false, partition: null });
         } catch (error: any) {
             console.error('Failed to mount:', error);
-            alert(`Failed to mount: ${error.response?.data?.error || error.message}`);
+            throw new Error(`Failed to mount: ${error.response?.data?.error || error.message}`);
         } finally {
             setProcessing(null);
         }
     };
+
+    const handleFormatSubmit = async (values: any) => {
+        if (!formatDialog.partition) return;
+        setProcessing(formatDialog.partition);
+
+        let devicePath = '';
+        disks.forEach(d => {
+            d.partitions?.forEach(p => {
+                if (p.name === formatDialog.partition) {
+                    devicePath = p.path || `/dev/${p.name}`;
+                }
+            });
+            if (d.name === formatDialog.partition) {
+                devicePath = d.path || `/dev/${d.name}`;
+            }
+        });
+
+        try {
+            await DiskService.format(devicePath, values.fstype, values.label);
+            alert(`Format started for ${devicePath}. This may take a while.`);
+            setFormatDialog({ isOpen: false, partition: null });
+            setTimeout(fetchDisks, 2000);
+        } catch (error: any) {
+            console.error('Failed to format:', error);
+            throw new Error(`Failed to format: ${error.response?.data?.error || error.message}`);
+        } finally {
+            setProcessing(null);
+        }
+    };
+
+    const handleCreateSubmit = async (values: any) => {
+        if (!createDialog.disk) return;
+        setProcessing(`create-${createDialog.disk.name}`);
+        try {
+            await DiskService.createPartition(createDialog.disk.path, values.fstype, values.start, values.end);
+            await fetchDisks();
+            setCreateDialog({ isOpen: false, disk: null });
+        } catch (error: any) {
+            console.error('Failed to create partition:', error);
+            throw new Error(`Failed to create partition: ${error.response?.data?.error || error.message}`);
+        } finally {
+            setProcessing(null);
+        }
+    };
+
+    const handleResizeSubmit = async (values: any) => {
+        if (!resizeDialog.disk) return;
+        setProcessing(`resize-${resizeDialog.partitionName}`);
+        try {
+            await DiskService.resizePartition(resizeDialog.disk.path, resizeDialog.partitionNumber, values.end);
+            alert('Resize completed. Check filesystem status.');
+            await fetchDisks();
+            setResizeDialog({ isOpen: false, disk: null, partitionName: '', partitionNumber: 0 });
+        } catch (error: any) {
+            console.error('Failed to resize partition:', error);
+            throw new Error(`Failed to resize partition: ${error.response?.data?.error || error.message}`);
+        } finally {
+            setProcessing(null);
+        }
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deleteDialog.disk) return;
+        setProcessing(`delete-${deleteDialog.partitionName}`);
+        try {
+            await DiskService.deletePartition(deleteDialog.disk.path, deleteDialog.partitionNumber);
+            await fetchDisks();
+            setDeleteDialog({ isOpen: false, disk: null, partitionName: '', partitionNumber: 0 });
+        } catch (error: any) {
+            console.error('Failed to delete partition:', error);
+            alert(`Failed to delete partition: ${error.response?.data?.error || error.message}`);
+        } finally {
+            setProcessing(null);
+        }
+    };
+
+    // Field Definitions
+    const mountFields: FormDialogField[] = [
+        { name: 'target', label: 'Mount Point (Target)', placeholder: '/mnt/data', required: true },
+        { name: 'fstype', label: 'Filesystem Type', placeholder: 'ext4, ntfs, etc.', hint: 'Optional' },
+        { name: 'options', label: 'Mount Options', placeholder: 'defaults, noatime', hint: 'Optional' },
+    ];
+
+    const formatFields: FormDialogField[] = [
+        {
+            name: 'fstype', label: 'Filesystem Type', type: 'select', options: [
+                { value: 'ext4', label: 'ext4 (Linux Default)' },
+                { value: 'xfs', label: 'xfs' },
+                { value: 'vfat', label: 'vfat (Universal)' },
+                { value: 'ntfs', label: 'ntfs (Windows)' },
+            ], required: true, defaultValue: 'ext4'
+        },
+        { name: 'label', label: 'Label', placeholder: 'DATA_DISK', hint: 'Optional' },
+        { name: 'confirmation', label: 'Confirmation', placeholder: 'Type FORMAT to confirm', required: true },
+    ];
+
+    const createFields: FormDialogField[] = [
+        {
+            name: 'fstype', label: 'Filesystem Type', type: 'select', options: [
+                { value: 'ext4', label: 'ext4' },
+                { value: 'xfs', label: 'xfs' },
+                { value: 'btrfs', label: 'btrfs' },
+            ], required: true, defaultValue: 'ext4'
+        },
+        { name: 'start', label: 'Start Position', placeholder: '0%, 10GB', required: true, defaultValue: '0%' },
+        { name: 'end', label: 'End Position', placeholder: '100%, 50GB', required: true, defaultValue: '100%' },
+    ];
+
+    const resizeFields: FormDialogField[] = [
+        { name: 'end', label: 'New End Position', placeholder: '100%, 50GB', required: true, defaultValue: '100%' },
+    ];
 
     return (
         <div className="space-y-6">
@@ -129,11 +238,17 @@ const DiskManager: React.FC = () => {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right flex items-center gap-3">
                                     <span className={`text-xs px-2 py-1 rounded border ${disk.type === 'disk' ? 'border-zinc-700 text-zinc-400' : 'border-blue-500/30 text-blue-400'
                                         }`}>
                                         {disk.type.toUpperCase()}
                                     </span>
+                                    <button
+                                        onClick={() => setCreateDialog({ isOpen: true, disk })}
+                                        className="text-emerald-400 hover:text-emerald-300 text-xs font-medium px-2 py-1 hover:bg-emerald-500/10 rounded"
+                                    >
+                                        + Partition
+                                    </button>
                                 </div>
                             </div>
 
@@ -156,7 +271,7 @@ const DiskManager: React.FC = () => {
                                                 <td className="px-6 py-3 text-zinc-400">{formatBytes(part.size)}</td>
                                                 <td className="px-6 py-3 text-emerald-400">{part.fstype || '-'}</td>
                                                 <td className="px-6 py-3 text-zinc-300">{part.mountpoint || '-'}</td>
-                                                <td className="px-6 py-3 text-right">
+                                                <td className="px-6 py-3 text-right flex justify-end gap-2">
                                                     {part.mountpoint ? (
                                                         <button
                                                             onClick={() => handleUnmount(part.mountpoint!)}
@@ -166,13 +281,46 @@ const DiskManager: React.FC = () => {
                                                             Unmount
                                                         </button>
                                                     ) : (
-                                                        <button
-                                                            onClick={() => openMountDialog(part.name)}
-                                                            className="text-emerald-400 hover:text-emerald-300 text-xs font-medium px-2 py-1 hover:bg-emerald-500/10 rounded"
-                                                            disabled={!!processing}
-                                                        >
-                                                            Mount
-                                                        </button>
+                                                        <>
+                                                            <button
+                                                                onClick={() => setMountDialog({ isOpen: true, partition: part.name })}
+                                                                className="text-emerald-400 hover:text-emerald-300 text-xs font-medium px-2 py-1 hover:bg-emerald-500/10 rounded"
+                                                                disabled={!!processing}
+                                                            >
+                                                                Mount
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setResizeDialog({
+                                                                    isOpen: true,
+                                                                    disk,
+                                                                    partitionName: part.name,
+                                                                    partitionNumber: getPartitionNumber(part.name)
+                                                                })}
+                                                                className="text-blue-400 hover:text-blue-300 text-xs font-medium px-2 py-1 hover:bg-blue-500/10 rounded"
+                                                                disabled={!!processing}
+                                                            >
+                                                                Resize
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setDeleteDialog({
+                                                                    isOpen: true,
+                                                                    disk,
+                                                                    partitionName: part.name,
+                                                                    partitionNumber: getPartitionNumber(part.name)
+                                                                })}
+                                                                className="text-rose-400 hover:text-rose-300 text-xs font-medium px-2 py-1 hover:bg-rose-500/10 rounded"
+                                                                disabled={!!processing}
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setFormatDialog({ isOpen: true, partition: part.name })}
+                                                                className="text-amber-400 hover:text-amber-300 text-xs font-medium px-2 py-1 hover:bg-amber-500/10 rounded"
+                                                                disabled={!!processing}
+                                                            >
+                                                                Format
+                                                            </button>
+                                                        </>
                                                     )}
                                                 </td>
                                             </tr>
@@ -183,6 +331,20 @@ const DiskManager: React.FC = () => {
                                 <div className="px-6 py-8 text-center text-zinc-500 flex flex-col items-center">
                                     <AlertTriangle size={24} className="mb-2 opacity-50" />
                                     No partitions found. Uninitialized disk?
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={() => setCreateDialog({ isOpen: true, disk })}
+                                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium"
+                                        >
+                                            Create First Partition
+                                        </button>
+                                        <button
+                                            onClick={() => setFormatDialog({ isOpen: true, partition: disk.name })}
+                                            className="ml-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg text-sm font-medium"
+                                        >
+                                            Format Disk
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -191,62 +353,76 @@ const DiskManager: React.FC = () => {
             </div>
 
             {/* Mount Dialog */}
-            {mountDialog.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-                        <h3 className="text-xl font-bold text-white mb-4">Mount Partition: {mountDialog.partition}</h3>
-                        <form onSubmit={handleMount} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Mount Point (Target)</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="/mnt/data"
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                                    value={mountForm.target}
-                                    onChange={e => setMountForm({ ...mountForm, target: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Filesystem Type <span className="text-zinc-600">(Optional)</span></label>
-                                <input
-                                    type="text"
-                                    placeholder="ext4, ntfs, etc."
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                                    value={mountForm.fstype}
-                                    onChange={e => setMountForm({ ...mountForm, fstype: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Mount Options <span className="text-zinc-600">(Optional)</span></label>
-                                <input
-                                    type="text"
-                                    placeholder="defaults, noatime"
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                                    value={mountForm.options}
-                                    onChange={e => setMountForm({ ...mountForm, options: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setMountDialog({ isOpen: false, partition: null })}
-                                    className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={!!processing}
-                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-                                >
-                                    {processing ? 'Mounting...' : 'Mount'}
-                                </button>
-                            </div>
-                        </form>
+            <FormDialog
+                isOpen={mountDialog.isOpen}
+                onClose={() => setMountDialog({ isOpen: false, partition: null })}
+                onSubmit={handleMountSubmit}
+                title={`Mount Partition: ${mountDialog.partition}`}
+                submitText="Mount"
+                fields={mountFields}
+            />
+
+            {/* Format Dialog */}
+            <FormDialog
+                isOpen={formatDialog.isOpen}
+                onClose={() => setFormatDialog({ isOpen: false, partition: null })}
+                onSubmit={handleFormatSubmit}
+                title={`Format: ${formatDialog.partition}`}
+                titleIcon={<AlertTriangle size={20} />}
+                submitText="Format Drive"
+                submitVariant="danger"
+                fields={formatFields}
+                validate={(values: any) => values.confirmation !== 'FORMAT' ? 'Please type FORMAT to confirm.' : null}
+                header={
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4">
+                        <p className="text-sm text-red-200">
+                            <strong>WARNING:</strong> This will erase ALL data on <code>{formatDialog.partition}</code>.
+                            This action cannot be undone.
+                        </p>
                     </div>
-                </div>
-            )}
+                }
+            />
+
+            {/* Create Partition Dialog */}
+            <FormDialog
+                isOpen={createDialog.isOpen}
+                onClose={() => setCreateDialog({ isOpen: false, disk: null })}
+                onSubmit={handleCreateSubmit}
+                title={`Create Partition on ${createDialog.disk?.name}`}
+                submitText="Create"
+                fields={createFields}
+            />
+
+            {/* Resize Partition Dialog */}
+            <FormDialog
+                isOpen={resizeDialog.isOpen}
+                onClose={() => setResizeDialog({ isOpen: false, disk: null, partitionName: '', partitionNumber: 0 })}
+                onSubmit={handleResizeSubmit}
+                title={`Resize: ${resizeDialog.partitionName}`}
+                submitText="Resize"
+                fields={resizeFields}
+                header={
+                    <p className="text-sm text-zinc-400 mb-4">
+                        Adjust partition size by setting a new end position (e.g., 100%, 50GB). Growing is generally safe. Shrinking requires unmounting and has risks!
+                    </p>
+                }
+            />
+
+            {/* Delete Partition Confirmation */}
+            <ConfirmDialog
+                isOpen={deleteDialog.isOpen}
+                onClose={() => setDeleteDialog({ isOpen: false, disk: null, partitionName: '', partitionNumber: 0 })}
+                onConfirm={handleDeleteConfirm}
+                title={`Delete Partition: ${deleteDialog.partitionName}`}
+                message={
+                    <span>
+                        Are you sure you want to delete partition <strong>{deleteDialog.partitionName}</strong>?
+                        This will destroy the partition table entry and all data will be lost.
+                    </span>
+                }
+                confirmText="Delete Partition"
+                confirmColor="red"
+            />
         </div>
     );
 };

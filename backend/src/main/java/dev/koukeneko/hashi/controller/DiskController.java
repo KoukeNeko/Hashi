@@ -82,4 +82,61 @@ public class DiskController {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @PostMapping("/partition/create")
+    public ResponseEntity<?> createPartition(@RequestBody Map<String, String> request) {
+        String disk = request.get("disk");
+        String fstype = request.get("fstype");
+        String start = request.get("start");
+        String end = request.get("end");
+
+        if (disk == null || start == null || end == null) {
+            return ResponseEntity.badRequest().body("Disk, Start, and End are required");
+        }
+
+        try {
+            diskService.createPartition(disk, fstype, start, end);
+            return ResponseEntity.ok().body(Map.of("message", "Partition created successfully"));
+        } catch (Exception e) {
+            log.error("Create partition failed", e);
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/partition/delete")
+    public ResponseEntity<?> deletePartition(@RequestBody Map<String, Object> request) {
+        String disk = (String) request.get("disk");
+        Integer partition = (Integer) request.get("partition");
+
+        if (disk == null || partition == null) {
+            return ResponseEntity.badRequest().body("Disk and Partition number are required");
+        }
+
+        try {
+            diskService.deletePartition(disk, partition);
+            return ResponseEntity.ok().body(Map.of("message", "Partition deleted successfully"));
+        } catch (Exception e) {
+            log.error("Delete partition failed", e);
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/partition/resize")
+    public ResponseEntity<?> resizePartition(@RequestBody Map<String, Object> request) {
+        String disk = (String) request.get("disk");
+        Integer partition = (Integer) request.get("partition");
+        String end = (String) request.get("end");
+
+        if (disk == null || partition == null || end == null) {
+            return ResponseEntity.badRequest().body("Disk, Partition number, and New End size are required");
+        }
+
+        try {
+            diskService.resizePartition(disk, partition, end);
+            return ResponseEntity.ok().body(Map.of("message", "Partition resized successfully"));
+        } catch (Exception e) {
+            log.error("Resize partition failed", e);
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

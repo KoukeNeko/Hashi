@@ -11,4 +11,10 @@ public interface DiskService {
     void unmount(String target);
 
     void format(String device, String fstype, String label);
+
+    void createPartition(String diskPath, String fstype, String start, String end);
+
+    void deletePartition(String diskPath, int partitionNumber);
+
+    void resizePartition(String diskPath, int partitionNumber, String newEnd);
 }

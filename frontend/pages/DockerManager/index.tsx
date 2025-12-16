@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ContainerDTO } from '../../types';
-import { MOCK_IMAGES, MOCK_NETWORKS, MOCK_VOLUMES } from '../../constants';
+import { ContainerDTO, DockerImage, DockerNetwork, DockerVolume } from '../../types';
+import { MOCK_IMAGES, MOCK_NETWORKS, MOCK_VOLUMES } from '../../constants'; // Keep for safety if removal breaks verify, but actually I should remove usage.
+// Actually receiving "MOCK_... is defined but never used" is fine or I can remove it.
+// Let's remove it from imports if I remove usages.
 import { PageHeader, Tabs } from '../../components';
 import { ActionButton } from '../../components/ui';
 import { DockerService } from '../../services/api';
@@ -18,30 +20,60 @@ import {
     Trash2,
 } from 'lucide-react';
 import { DockerSetupGuide } from './components/DockerSetupGuide';
+import { useFormDialog } from '../../components/ui/Form';
+import {
+    PullImageDialog,
+    CreateNetworkDialog,
+    CreateVolumeDialog,
+} from './components/DockerActionDialogs';
 
 type DockerTab = 'containers' | 'images' | 'networks' | 'volumes';
 
 const DockerManager: React.FC = () => {
     const [activeTab, setActiveTab] = useState<DockerTab>('containers');
     const [containers, setContainers] = useState<ContainerDTO[]>([]);
+    const [images, setImages] = useState<DockerImage[]>([]);
+    const [networks, setNetworks] = useState<DockerNetwork[]>([]);
+    const [volumes, setVolumes] = useState<DockerVolume[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [dockerNotInstalled, setDockerNotInstalled] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+    // Dialog states
+    const pullImageDialog = useFormDialog();
+    const networkDialog = useFormDialog();
+    const volumeDialog = useFormDialog();
+
     // Fetch containers from API
-    const fetchContainers = async () => {
+    // Fetch data based on active tab
+    const fetchData = async () => {
         try {
             setLoading(true);
-            const data = await DockerService.getContainers();
-            setContainers(data);
             setError(null);
+
+            // Always fetch containers to check Docker status
+            // Or maybe only if tab is containers? But we need to know if docker is installed.
+            // Let's stick to fetching what's needed, but verify docker first?
+
+            if (activeTab === 'containers') {
+                const data = await DockerService.getContainers();
+                setContainers(data);
+            } else if (activeTab === 'images') {
+                const data = await DockerService.listImages();
+                setImages(data);
+            } else if (activeTab === 'networks') {
+                const data = await DockerService.listNetworks();
+                setNetworks(data);
+            } else if (activeTab === 'volumes') {
+                const data = await DockerService.listVolumes();
+                setVolumes(data);
+            }
+
             setDockerNotInstalled(false);
         } catch (err: any) {
-            console.error('Failed to fetch containers:', err);
-            // Check if it's a Docker not installed error
-            const errorMsg =
-                err.response?.data?.message || err.message || 'Failed to load containers';
+            console.error('Failed to fetch docker data:', err);
+            const errorMsg = err.response?.data?.message || err.message || 'Failed to load data';
             if (errorMsg.toLowerCase().includes('docker') || err.response?.status === 500) {
                 setDockerNotInstalled(true);
             } else {
@@ -57,7 +89,7 @@ const DockerManager: React.FC = () => {
         setActionLoading(id);
         try {
             await DockerService.startContainer(id);
-            await fetchContainers();
+            await fetchData();
         } catch (err) {
             console.error('Failed to start container:', err);
         } finally {
@@ -69,7 +101,7 @@ const DockerManager: React.FC = () => {
         setActionLoading(id);
         try {
             await DockerService.stopContainer(id);
-            await fetchContainers();
+            await fetchData();
         } catch (err) {
             console.error('Failed to stop container:', err);
         } finally {
@@ -81,7 +113,7 @@ const DockerManager: React.FC = () => {
         setActionLoading(id);
         try {
             await DockerService.restartContainer(id);
-            await fetchContainers();
+            await fetchData();
         } catch (err) {
             console.error('Failed to restart container:', err);
         } finally {
@@ -89,16 +121,55 @@ const DockerManager: React.FC = () => {
         }
     };
 
+    const handleRemoveImage = async (id: string) => {
+        if (!confirm('Are you sure you want to remove this image?')) return;
+        try {
+            setLoading(true);
+            await DockerService.removeImage(id);
+            await fetchData();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRemoveNetwork = async (id: string) => {
+        if (!confirm('Are you sure you want to remove this network?')) return;
+        try {
+            setLoading(true);
+            await DockerService.removeNetwork(id);
+            await fetchData();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRemoveVolume = async (name: string) => {
+        if (!confirm('Are you sure you want to remove this volume?')) return;
+        try {
+            setLoading(true);
+            await DockerService.removeVolume(name);
+            await fetchData();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Initial fetch and polling
     useEffect(() => {
-        fetchContainers();
+        fetchData();
 
         const interval = setInterval(() => {
-            fetchContainers();
+            fetchData();
         }, 10000); // Refresh every 10 seconds
 
         return () => clearInterval(interval);
-    }, []);
+    }, [activeTab]);
 
     const getStateColor = (state: string) => {
         switch (state.toLowerCase()) {
@@ -135,6 +206,23 @@ const DockerManager: React.FC = () => {
         }
     };
 
+    const handleAddResource = () => {
+        switch (activeTab) {
+            case 'containers':
+                // TODO: Add Container Dialog
+                break;
+            case 'images':
+                pullImageDialog.open();
+                break;
+            case 'networks':
+                networkDialog.open();
+                break;
+            case 'volumes':
+                volumeDialog.open();
+                break;
+        }
+    };
+
     return (
         <div className="space-y-6 animate-fade-in">
             <PageHeader
@@ -161,13 +249,14 @@ const DockerManager: React.FC = () => {
                             </div>
                             <ActionButton
                                 variant="outline"
-                                onClick={fetchContainers}
+                                onClick={fetchData}
                                 icon={<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />}
                             >
                                 <span className="hidden sm:inline">Refresh</span>
                             </ActionButton>
                             <ActionButton
                                 variant="primary"
+                                onClick={handleAddResource}
                                 icon={<Plus size={16} />}
                             >
                                 <span className="hidden sm:inline">{getAddButtonLabel()}</span>
@@ -180,7 +269,7 @@ const DockerManager: React.FC = () => {
 
             {/* Show setup guide when Docker is not installed */}
             {dockerNotInstalled ? (
-                <DockerSetupGuide onRetry={fetchContainers} />
+                <DockerSetupGuide onRetry={fetchData} />
             ) : (
                 <>
                     <Tabs
@@ -216,7 +305,7 @@ const DockerManager: React.FC = () => {
                                             className="animate-spin mx-auto mb-2"
                                             size={24}
                                         />
-                                        Loading containers...
+                                        Loading data...
                                     </div>
                                 )}
 
@@ -356,7 +445,7 @@ const DockerManager: React.FC = () => {
                                 </div>
 
                                 <div className="divide-y divide-border">
-                                    {MOCK_IMAGES.map((img) => (
+                                    {images.map((img) => (
                                         <div
                                             key={img.id}
                                             className="grid grid-cols-2 lg:grid-cols-12 gap-3 lg:gap-4 p-4 hover:bg-zinc-800/50 transition-colors items-center"
@@ -399,6 +488,7 @@ const DockerManager: React.FC = () => {
 
                                             <div className="col-span-1 lg:col-span-1 lg:order-6 order-2 text-right">
                                                 <button
+                                                    onClick={() => handleRemoveImage(img.id)}
                                                     className="p-1.5 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
                                                     title="Delete Image"
                                                 >
@@ -422,7 +512,7 @@ const DockerManager: React.FC = () => {
                                 </div>
 
                                 <div className="divide-y divide-border">
-                                    {MOCK_NETWORKS.map((net) => (
+                                    {networks.map((net) => (
                                         <div
                                             key={net.id}
                                             className="grid grid-cols-2 lg:grid-cols-12 gap-3 lg:gap-4 p-4 hover:bg-zinc-800/50 transition-colors items-center"
@@ -450,7 +540,7 @@ const DockerManager: React.FC = () => {
                                                     Subnet
                                                 </div>
                                                 <div className="text-zinc-400 font-mono text-xs">
-                                                    {net.subnet}
+                                                    {net.subnet || '-'}
                                                 </div>
                                             </div>
 
@@ -459,12 +549,13 @@ const DockerManager: React.FC = () => {
                                                     Gateway
                                                 </div>
                                                 <div className="text-zinc-400 font-mono text-xs">
-                                                    {net.gateway}
+                                                    {net.gateway || '-'}
                                                 </div>
                                             </div>
 
                                             <div className="col-span-1 lg:col-span-1 text-right absolute top-4 right-4 lg:static">
                                                 <button
+                                                    onClick={() => handleRemoveNetwork(net.id)}
                                                     className="p-1.5 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
                                                     title="Remove Network"
                                                 >
@@ -488,7 +579,7 @@ const DockerManager: React.FC = () => {
                                 </div>
 
                                 <div className="divide-y divide-border">
-                                    {MOCK_VOLUMES.map((vol) => (
+                                    {volumes.map((vol) => (
                                         <div
                                             key={vol.name}
                                             className="grid grid-cols-2 lg:grid-cols-12 gap-3 lg:gap-4 p-4 hover:bg-zinc-800/50 transition-colors items-center relative"
@@ -525,12 +616,13 @@ const DockerManager: React.FC = () => {
                                                     Created
                                                 </div>
                                                 <div className="text-zinc-400 text-sm">
-                                                    {vol.created}
+                                                    {vol.created || '-'}
                                                 </div>
                                             </div>
 
                                             <div className="col-span-1 lg:col-span-1 text-right absolute top-4 right-4 lg:static">
                                                 <button
+                                                    onClick={() => handleRemoveVolume(vol.name)}
                                                     className="p-1.5 hover:bg-rose-500/20 hover:text-rose-400 rounded transition-colors"
                                                     title="Remove Volume"
                                                 >
@@ -545,6 +637,31 @@ const DockerManager: React.FC = () => {
                     </div>
                 </>
             )}
+            {/* Dialogs */}
+            <PullImageDialog
+                isOpen={pullImageDialog.isOpen}
+                onClose={pullImageDialog.close}
+                onSuccess={() => {
+                    pullImageDialog.close();
+                    fetchData();
+                }}
+            />
+            <CreateNetworkDialog
+                isOpen={networkDialog.isOpen}
+                onClose={networkDialog.close}
+                onSuccess={() => {
+                    networkDialog.close();
+                    fetchData();
+                }}
+            />
+            <CreateVolumeDialog
+                isOpen={volumeDialog.isOpen}
+                onClose={volumeDialog.close}
+                onSuccess={() => {
+                    volumeDialog.close();
+                    fetchData();
+                }}
+            />
         </div>
     );
 };

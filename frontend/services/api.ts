@@ -15,6 +15,9 @@ import {
     CreateNginxHostRequest,
     CreateVmRequest,
     CronJob,
+    DockerImage,
+    DockerNetwork,
+    DockerVolume,
     FileItem,
     FirewallRule,
     FtpServerInfo,
@@ -470,6 +473,42 @@ export const DockerService = {
     },
     restartContainer: async (id: string) => {
         return api.post(`/docker/containers/${id}/restart`);
+    },
+
+    // Images
+    listImages: async () => {
+        const response = await api.get<DockerImage[]>('/docker/images');
+        return response.data;
+    },
+    pullImage: async (repository: string, tag: string) => {
+        await api.post('/docker/images/pull', null, { params: { repository, tag } });
+    },
+    removeImage: async (id: string) => {
+        await api.delete(`/docker/images/${id}`);
+    },
+
+    // Networks
+    listNetworks: async () => {
+        const response = await api.get<DockerNetwork[]>('/docker/networks');
+        return response.data;
+    },
+    createNetwork: async (name: string, driver: string) => {
+        await api.post('/docker/networks', null, { params: { name, driver } });
+    },
+    removeNetwork: async (id: string) => {
+        await api.delete(`/docker/networks/${id}`);
+    },
+
+    // Volumes
+    listVolumes: async () => {
+        const response = await api.get<DockerVolume[]>('/docker/volumes');
+        return response.data;
+    },
+    createVolume: async (name: string) => {
+        await api.post('/docker/volumes', null, { params: { name } });
+    },
+    removeVolume: async (name: string) => {
+        await api.delete(`/docker/volumes/${name}`);
     },
 };
 

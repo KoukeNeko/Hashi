@@ -1,6 +1,9 @@
 package dev.koukeneko.hashi.controller;
 
 import dev.koukeneko.hashi.model.dto.ContainerDTO;
+import dev.koukeneko.hashi.model.dto.DockerImageDTO;
+import dev.koukeneko.hashi.model.dto.DockerNetworkDTO;
+import dev.koukeneko.hashi.model.dto.DockerVolumeDTO;
 import dev.koukeneko.hashi.service.DockerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +36,7 @@ public class DockerController {
      * 啟動指定容器
      *
      * @param id
-     *            容器 ID
+     *           容器 ID
      * @return 成功回傳 200 OK
      */
     @PostMapping("/containers/{id}/start")
@@ -46,7 +49,7 @@ public class DockerController {
      * 停止指定容器
      *
      * @param id
-     *            容器 ID
+     *           容器 ID
      * @return 成功回傳 200 OK
      */
     @PostMapping("/containers/{id}/stop")
@@ -59,12 +62,70 @@ public class DockerController {
      * 重啟指定容器
      *
      * @param id
-     *            容器 ID
+     *           容器 ID
      * @return 成功回傳 200 OK
      */
     @PostMapping("/containers/{id}/restart")
     public ResponseEntity<Void> restartContainer(@PathVariable String id) {
         dockerService.restartContainer(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // ==================== Images ====================
+
+    @GetMapping("/images")
+    public ResponseEntity<List<DockerImageDTO>> listImages() {
+        return ResponseEntity.ok(dockerService.listImages());
+    }
+
+    @PostMapping("/images/pull")
+    public ResponseEntity<Void> pullImage(@RequestParam String repository, @RequestParam String tag) {
+        dockerService.pullImage(repository, tag);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/images/{id}")
+    public ResponseEntity<Void> removeImage(@PathVariable String id) {
+        dockerService.removeImage(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // ==================== Networks ====================
+
+    @GetMapping("/networks")
+    public ResponseEntity<List<DockerNetworkDTO>> listNetworks() {
+        return ResponseEntity.ok(dockerService.listNetworks());
+    }
+
+    @PostMapping("/networks")
+    public ResponseEntity<Void> createNetwork(@RequestParam String name,
+            @RequestParam(defaultValue = "bridge") String driver) {
+        dockerService.createNetwork(name, driver);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/networks/{id}")
+    public ResponseEntity<Void> removeNetwork(@PathVariable String id) {
+        dockerService.removeNetwork(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // ==================== Volumes ====================
+
+    @GetMapping("/volumes")
+    public ResponseEntity<List<DockerVolumeDTO>> listVolumes() {
+        return ResponseEntity.ok(dockerService.listVolumes());
+    }
+
+    @PostMapping("/volumes")
+    public ResponseEntity<Void> createVolume(@RequestParam String name) {
+        dockerService.createVolume(name);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/volumes/{name}")
+    public ResponseEntity<Void> removeVolume(@PathVariable String name) {
+        dockerService.removeVolume(name);
         return ResponseEntity.ok().build();
     }
 }

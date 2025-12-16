@@ -31,6 +31,7 @@ import {
     UserInfo,
     VM,
     VncInfo,
+    PackageInfo,
 } from '@/types';
 
 // ==================== Core Configuration ====================
@@ -559,6 +560,36 @@ export const UpdateService = {
     /** Force check for updates (bypass cache) */
     checkForUpdates: async (): Promise<UpdateInfo> => {
         const response = await api.post<UpdateInfo>('/update/check');
+        return response.data;
+    },
+};
+
+// ==================== Package Service ====================
+
+/** System package management API */
+export const PackageService = {
+    search: async (query: string): Promise<PackageInfo[]> => {
+        const response = await api.get<PackageInfo[]>('/packages/search', { params: { q: query } });
+        return response.data;
+    },
+    listUpdates: async (): Promise<PackageInfo[]> => {
+        const response = await api.get<PackageInfo[]>('/packages/updates');
+        return response.data;
+    },
+    install: async (name: string) => {
+        const response = await api.post('/packages/install', null, { params: { name } });
+        return response.data;
+    },
+    remove: async (name: string) => {
+        const response = await api.post('/packages/remove', null, { params: { name } });
+        return response.data;
+    },
+    upgrade: async (name: string) => {
+        const response = await api.post('/packages/upgrade', null, { params: { name } });
+        return response.data;
+    },
+    updateCache: async () => {
+        const response = await api.post('/packages/cache/update');
         return response.data;
     },
 };

@@ -32,3 +32,6 @@ export * from './common';
 
 // Update-related
 export * from './update';
+
+// Package management
+export * from './packages';

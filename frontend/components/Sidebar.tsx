@@ -21,6 +21,7 @@ import {
     Network,
     User,
     Users,
+    Package,
 } from 'lucide-react';
 import { TabView, UserInfo } from '../types';
 import { UpdateService } from '../services/api';
@@ -85,6 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 { id: TabView.KVM, label: 'Virt Manager', icon: Monitor },
                 { id: TabView.SERVICES, label: 'Services', icon: Settings2 },
                 { id: TabView.CRON, label: 'Cron', icon: Clock },
+                { id: TabView.PACKAGES, label: 'Packages', icon: Package },
                 { id: TabView.LOGS, label: 'Logs', icon: ScrollText },
                 { id: TabView.TERMINAL, label: 'Terminal', icon: TerminalSquare },
             ],

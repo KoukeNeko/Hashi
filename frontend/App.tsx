@@ -16,6 +16,7 @@ import FtpManager from './pages/FtpManager/index';
 import UserManager from './pages/UserManager/index';
 import SettingsPage from './pages/Settings/index';
 import Login from './pages/Login/index';
+import PackageManager from './pages/PackageManager/index';
 import { TabView, UserInfo } from './types';
 import { AuthService, SessionStorage } from './services/api';
 import { Menu, Command, Construction, Loader2 } from 'lucide-react';
@@ -118,6 +119,8 @@ const App: React.FC = () => {
                 return <ServiceManager />;
             case TabView.CRON:
                 return <CronManager />;
+            case TabView.PACKAGES:
+                return <PackageManager />;
             case TabView.LOGS:
                 return <LogManager />;
             case TabView.FTP:

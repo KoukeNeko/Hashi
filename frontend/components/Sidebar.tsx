@@ -15,13 +15,13 @@ import {
     FileText,
     Clock,
     ScrollText,
-    HardDrive,
     Lock,
     Server,
     Network,
     User,
     Users,
     Package,
+    HardDrive,
 } from 'lucide-react';
 import { TabView, UserInfo } from '../types';
 import { UpdateService } from '../services/api';
@@ -83,6 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             label: 'System',
             items: [
                 { id: TabView.MONITOR, label: 'Monitor', icon: Network },
+                { id: TabView.DISKS, label: 'Disks', icon: HardDrive },
                 { id: TabView.KVM, label: 'Virt Manager', icon: Monitor },
                 { id: TabView.SERVICES, label: 'Services', icon: Settings2 },
                 { id: TabView.CRON, label: 'Cron', icon: Clock },

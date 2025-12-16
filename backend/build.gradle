@@ -94,6 +94,9 @@ dependencies {
     // 驗證支援 - 提供 @Valid, @NotNull 等驗證註解
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+    // JSON 支援 - 提供 ObjectMapper
+    implementation 'org.springframework.boot:spring-boot-starter-json'
+
     // Web MVC - REST API 核心，提供 @RestController, @GetMapping 等
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 

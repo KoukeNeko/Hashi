@@ -88,9 +88,10 @@ $HASHI_USER ALL=(ALL) NOPASSWD: /usr/sbin/pure-ftpd
 $HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/apt-get update
 
 # ==================== Package Management ====================
-$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/apt-get
-$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/apt
-$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/dpkg
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/dpkg
+
+# ==================== Disk Management ====================
+$HASHI_USER ALL=(ALL) NOPASSWD: /usr/bin/lsblk, /usr/bin/mount, /usr/bin/umount, /usr/sbin/mkfs*
 EOF
 
     chmod 440 "$SUDOERS_FILE"

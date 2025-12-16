@@ -14,6 +14,7 @@ import LogManager from './pages/LogManager/index';
 import TerminalManager from './pages/TerminalManager/index';
 import FtpManager from './pages/FtpManager/index';
 import UserManager from './pages/UserManager/index';
+import DiskManager from './pages/DiskManager/index';
 import SettingsPage from './pages/Settings/index';
 import Login from './pages/Login/index';
 import PackageManager from './pages/PackageManager/index';
@@ -103,6 +104,8 @@ const App: React.FC = () => {
                 return <DockerManager />;
             case TabView.DATABASES:
                 return <DatabaseManager />;
+            case TabView.DISKS:
+                return <DiskManager />;
             case TabView.FILES:
                 return <FileManager />;
             case TabView.SECURITY:

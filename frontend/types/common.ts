@@ -55,6 +55,7 @@ export enum TabView {
     KVM = 'kvm',
     SERVICES = 'services',
     CRON = 'cron',
+    DISKS = 'disks',
     USERS = 'users',
     TERMINAL = 'terminal',
     PACKAGES = 'packages',

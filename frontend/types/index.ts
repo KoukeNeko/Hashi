@@ -35,3 +35,6 @@ export * from './update';
 
 // Package management
 export * from './packages';
+
+// Disk management
+export * from './disks';

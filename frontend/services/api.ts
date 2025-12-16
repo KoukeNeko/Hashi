@@ -32,6 +32,7 @@ import {
     VM,
     VncInfo,
     PackageInfo,
+    SystemDisk,
 } from '@/types';
 
 // ==================== Core Configuration ====================
@@ -590,6 +591,33 @@ export const PackageService = {
     },
     updateCache: async () => {
         const response = await api.post('/packages/cache/update');
+        return response.data;
+    },
+};
+
+// ==================== Disk Service ====================
+
+/** System disk and partition management API */
+export const DiskService = {
+    list: async (): Promise<SystemDisk[]> => {
+        const response = await api.get<SystemDisk[]>('/disks');
+        return response.data;
+    },
+    mount: async (source: string, target: string, fstype?: string, options?: string) => {
+        const response = await api.post('/disks/mount', { source, target, fstype, options });
+        return response.data;
+    },
+    unmount: async (target: string) => {
+        const response = await api.post('/disks/unmount', { target });
+        return response.data;
+    },
+    format: async (device: string, fstype: string, label: string) => {
+        const response = await api.post('/disks/format', {
+            device,
+            fstype,
+            label,
+            confirmation: 'FORMAT',
+        });
         return response.data;
     },
 };

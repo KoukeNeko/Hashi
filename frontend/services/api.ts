@@ -15,6 +15,7 @@ import {
     CreateNginxHostRequest,
     CreateVmRequest,
     CronJob,
+    Database,
     DockerImage,
     DockerNetwork,
     DockerVolume,
@@ -694,5 +695,21 @@ export const NetworkService = {
     },
     setInterfaceState: async (name: string, state: 'up' | 'down') => {
         await api.post(`/network/interfaces/${name}/state`, null, { params: { state } });
+    },
+};
+
+// ==================== Database Service ====================
+
+/** Database management API */
+export const DatabaseService = {
+    list: async (): Promise<Database[]> => {
+        const response = await api.get<Database[]>('/databases');
+        return response.data;
+    },
+    create: async (name: string, type: string): Promise<void> => {
+        await api.post('/databases', { name, type });
+    },
+    remove: async (name: string, type: string): Promise<void> => {
+        await api.delete(`/databases/${type}/${name}`);
     },
 };

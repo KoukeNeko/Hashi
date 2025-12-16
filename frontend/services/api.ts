@@ -643,4 +643,11 @@ export const NetworkService = {
         const response = await api.get<NetworkInterface[]>('/network/interfaces');
         return response.data;
     },
+    getDns: async (): Promise<string[]> => {
+        const response = await api.get<string[]>('/network/dns');
+        return response.data;
+    },
+    updateDns: async (nameservers: string[]) => {
+        await api.post('/network/dns', nameservers);
+    },
 };

@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Network, Activity, RotateCw, Globe } from 'lucide-react';
+import { Network, Activity, RotateCw, Globe, Server } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { NetworkInterface, SystemStatus } from '../../types';
 import { NetworkService, connectWebSocket } from '../../services/api';
 import { PageHeader } from '../../components/PageHeader';
+import { FormDialog, useFormDialog } from '../../components/ui/Form';
 
 const NetworkManager: React.FC = () => {
     const [interfaces, setInterfaces] = useState<NetworkInterface[]>([]);
     const [trafficHistory, setTrafficHistory] = useState<Record<string, { time: number; rx: number; tx: number }[]>>({});
+    const [dnsConfig, setDnsConfig] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isDnsLoading, setIsDnsLoading] = useState(false);
+    const usesFormDialog = useFormDialog<{ nameservers: string }>();
 
     useEffect(() => {
         fetchInterfaces();
+        fetchDns();
 
         const client = connectWebSocket((status: SystemStatus) => {
             if (status.network?.details) {
@@ -60,6 +65,29 @@ const NetworkManager: React.FC = () => {
         }
     };
 
+    const fetchDns = async () => {
+        setIsDnsLoading(true);
+        try {
+            const data = await NetworkService.getDns();
+            setDnsConfig(data);
+        } catch (error) {
+            console.error('Failed to fetch DNS config:', error);
+        } finally {
+            setIsDnsLoading(false);
+        }
+    };
+
+    const handleUpdateDns = async (values: { nameservers: string }) => {
+        const servers = values.nameservers.split(/[,\s]+/).filter(Boolean);
+        try {
+            await NetworkService.updateDns(servers);
+            await fetchDns();
+        } catch (error: any) {
+            console.error('Failed to update DNS:', error);
+            throw new Error(`Failed to update DNS: ${error.response?.data?.message || 'Unknown error'}`);
+        }
+    };
+
     const getIpAddress = (iface: NetworkInterface, family: 'inet' | 'inet6') => {
         const addr = iface.addrInfo.find(a => a.family === family);
         return addr ? `${addr.local}/${addr.prefixlen}` : '-';
@@ -82,7 +110,7 @@ const NetworkManager: React.FC = () => {
                 description="Monitor network interfaces and connectivity"
                 actions={
                     <button
-                        onClick={fetchInterfaces}
+                        onClick={() => { fetchInterfaces(); fetchDns(); }}
                         disabled={isLoading}
                         className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
                     >
@@ -91,6 +119,40 @@ const NetworkManager: React.FC = () => {
                     </button>
                 }
             />
+
+            {/* DNS Configuration Card */}
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                            <Server size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white">DNS Configuration</h3>
+                            <p className="text-sm text-zinc-500">System Nameservers ({dnsConfig.length})</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => usesFormDialog.open({ nameservers: dnsConfig.join(', ') })}
+                        className="text-emerald-400 hover:text-emerald-300 text-sm font-medium px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 rounded transition-colors"
+                    >
+                        Edit Configuration
+                    </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {isDnsLoading ? (
+                        <span className="text-zinc-500 text-sm animate-pulse">Loading DNS...</span>
+                    ) : dnsConfig.length > 0 ? (
+                        dnsConfig.map((ns, i) => (
+                            <span key={i} className="px-3 py-1 bg-zinc-800 rounded-full text-sm font-mono text-zinc-300 border border-zinc-700">
+                                {ns}
+                            </span>
+                        ))
+                    ) : (
+                        <span className="text-zinc-500 text-sm italic">No nameservers configured</span>
+                    )}
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {isLoading && interfaces.length === 0 ? (
@@ -195,6 +257,17 @@ const NetworkManager: React.FC = () => {
                     ))
                 )}
             </div>
+
+            <FormDialog
+                isOpen={usesFormDialog.isOpen}
+                onClose={usesFormDialog.close}
+                onSubmit={handleUpdateDns}
+                title="Configure DNS"
+                initialValues={usesFormDialog.data || {}}
+                fields={[
+                    { name: 'nameservers', label: 'Nameservers', placeholder: '8.8.8.8, 1.1.1.1', hint: 'Comma or space separated IP addresses', required: true }
+                ]}
+            />
         </div>
     );
 };

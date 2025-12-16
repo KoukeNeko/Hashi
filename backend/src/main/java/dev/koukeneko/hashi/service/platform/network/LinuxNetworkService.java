@@ -50,4 +50,64 @@ public class LinuxNetworkService implements NetworkService {
             return Collections.emptyList();
         }
     }
+
+    @Override
+    public List<String> getDnsConfig() {
+        java.util.List<String> nameservers = new java.util.ArrayList<>();
+        try {
+            java.nio.file.Path path = java.nio.file.Paths.get("/etc/resolv.conf");
+            if (java.nio.file.Files.exists(path)) {
+                List<String> lines = java.nio.file.Files.readAllLines(path);
+                for (String line : lines) {
+                    if (line.trim().startsWith("nameserver")) {
+                        String[] parts = line.trim().split("\\s+");
+                        if (parts.length > 1) {
+                            nameservers.add(parts[1]);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to read /etc/resolv.conf", e);
+        }
+        return nameservers;
+    }
+
+    @Override
+    public void updateDnsConfig(List<String> nameservers) {
+        StringBuilder content = new StringBuilder();
+        try {
+            java.nio.file.Path path = java.nio.file.Paths.get("/etc/resolv.conf");
+            if (java.nio.file.Files.exists(path)) {
+                List<String> existing = java.nio.file.Files.readAllLines(path);
+                for (String line : existing) {
+                    if (!line.trim().startsWith("nameserver")) {
+                        content.append(line).append("\n");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to read existing /etc/resolve.conf", e);
+        }
+
+        for (String ns : nameservers) {
+            content.append("nameserver ").append(ns).append("\n");
+        }
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder("sudo", "/usr/bin/tee", "/etc/resolv.conf");
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            try (java.io.OutputStream os = process.getOutputStream()) {
+                os.write(content.toString().getBytes());
+            }
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                String error = new String(process.getInputStream().readAllBytes());
+                throw new RuntimeException("Failed to update DNS: " + error);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to execute sudo tee", e);
+        }
+    }
 }

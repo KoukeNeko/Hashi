@@ -23,4 +23,21 @@ public class NetworkController {
     public ResponseEntity<List<NetworkInterfaceDTO>> listInterfaces() {
         return ResponseEntity.ok(networkService.listInterfaces());
     }
+
+    @GetMapping("/dns")
+    public ResponseEntity<List<String>> getDnsConfig() {
+        return ResponseEntity.ok(networkService.getDnsConfig());
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/dns")
+    public ResponseEntity<?> updateDnsConfig(
+            @org.springframework.web.bind.annotation.RequestBody List<String> nameservers) {
+        try {
+            networkService.updateDnsConfig(nameservers);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Failed to update DNS", e);
+            return ResponseEntity.internalServerError().body("Failed to update DNS: " + e.getMessage());
+        }
+    }
 }

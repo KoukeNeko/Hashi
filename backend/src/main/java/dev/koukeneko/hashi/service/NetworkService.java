@@ -5,4 +5,8 @@ import java.util.List;
 
 public interface NetworkService {
     List<NetworkInterfaceDTO> listInterfaces();
+
+    List<String> getDnsConfig();
+
+    void updateDnsConfig(List<String> nameservers);
 }

@@ -196,8 +196,16 @@ public class LinuxDiskService implements DiskService {
     public void createPartition(String diskPath, String fstype, String start, String end) {
         validateDiskPath(diskPath);
 
-        // Detect partition table type (GPT or MBR)
-        boolean isGpt = isGptDisk(diskPath);
+        // Detect partition table type
+        String labelType = getPartitionTableType(diskPath);
+
+        // If loop or unknown, we choose safe default syntax (name) but do not force
+        // wipe label
+        if ("loop".equals(labelType) || "unknown".equals(labelType)) {
+            log.warn(
+                    "Disk {} has {} label, attempting to create partition without re-labeling (may fail if uninitialized)",
+                    diskPath, labelType);
+        }
 
         List<String> command = new ArrayList<>();
         command.add("sudo");
@@ -207,12 +215,12 @@ public class LinuxDiskService implements DiskService {
         command.add(diskPath);
         command.add("mkpart");
 
-        if (isGpt) {
-            // GPT syntax: mkpart PARTITION_NAME FSTYPE START END
-            command.add("data"); // Partition label/name for GPT
-        } else {
+        if ("msdos".equals(labelType)) {
             // MBR syntax: mkpart primary FSTYPE START END
             command.add("primary");
+        } else {
+            // GPT syntax: mkpart PARTITION_NAME FSTYPE START END
+            command.add("data"); // Partition label/name for GPT
         }
 
         if (fstype != null && !fstype.isEmpty()) {
@@ -227,9 +235,9 @@ public class LinuxDiskService implements DiskService {
     }
 
     /**
-     * Detect if disk uses GPT or MBR partition table
+     * Detect partition table type: gpt, msdos, loop, or unknown
      */
-    private boolean isGptDisk(String diskPath) {
+    private String getPartitionTableType(String diskPath) {
         try {
             ProcessBuilder pb = new ProcessBuilder(
                     "sudo", "-n", "parted", "-s", diskPath, "print");
@@ -246,10 +254,16 @@ public class LinuxDiskService implements DiskService {
             process.waitFor();
 
             String result = output.toString().toLowerCase();
-            return result.contains("partition table: gpt");
+            if (result.contains("partition table: gpt"))
+                return "gpt";
+            if (result.contains("partition table: msdos"))
+                return "msdos";
+            if (result.contains("partition table: loop"))
+                return "loop";
+            return "unknown";
         } catch (Exception e) {
-            log.warn("Failed to detect partition table type for {}, assuming GPT", diskPath, e);
-            return true; // Default to GPT for modern disks
+            log.warn("Failed to detect partition table type for {}, assuming unknown", diskPath, e);
+            return "unknown";
         }
     }
 

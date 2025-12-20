@@ -368,18 +368,33 @@ const StorageManager: React.FC = () => {
                             <div className="flex-1">
                                 {/* RAID Level Selector */}
                                 <div className="flex gap-2 mb-4">
-                                    {(['raid0', 'raid1', 'raid5', 'raid6', 'raid10'] as const).map((level) => (
-                                        <button
-                                            key={level}
-                                            onClick={() => setCreateForm({ ...createForm, level })}
-                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${createForm.level === level
-                                                    ? 'bg-emerald-600 text-white'
-                                                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                                                }`}
-                                        >
-                                            {level.toUpperCase()}
-                                        </button>
-                                    ))}
+                                    {([
+                                        { level: 'raid0', minDisks: 1, label: 'RAID0' },
+                                        { level: 'raid1', minDisks: 2, label: 'RAID1' },
+                                        { level: 'raid5', minDisks: 3, label: 'RAID5' },
+                                        { level: 'raid6', minDisks: 4, label: 'RAID6' },
+                                        { level: 'raid10', minDisks: 4, label: 'RAID10' },
+                                    ] as const).map(({ level, minDisks, label }) => {
+                                        const isDisabled = createForm.disks.length < minDisks;
+                                        const isSelected = createForm.level === level;
+                                        return (
+                                            <button
+                                                key={level}
+                                                onClick={() => !isDisabled && setCreateForm({ ...createForm, level })}
+                                                disabled={isDisabled}
+                                                title={isDisabled ? `Requires at least ${minDisks} disks` : undefined}
+                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${isDisabled
+                                                    ? 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed'
+                                                    : isSelected
+                                                        ? 'bg-emerald-600 text-white'
+                                                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                                    }`}
+                                            >
+                                                {label}
+                                                {isDisabled && <span className="ml-1 text-xs">({minDisks}+)</span>}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* Selected Disks - Slot Cards */}
@@ -439,8 +454,8 @@ const StorageManager: React.FC = () => {
                                                 key={disk.path}
                                                 onClick={() => toggleDiskSelection(disk.path)}
                                                 className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-all ${isSelected
-                                                        ? 'bg-emerald-600/20 border-emerald-500'
-                                                        : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600'
+                                                    ? 'bg-emerald-600/20 border-emerald-500'
+                                                    : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600'
                                                     }`}
                                             >
                                                 <div className={`w-3 h-3 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
@@ -554,7 +569,8 @@ const StorageManager: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Delete Confirmation */}
             <ConfirmDialog
@@ -571,7 +587,7 @@ const StorageManager: React.FC = () => {
                 confirmText="Delete Array"
                 confirmColor="red"
             />
-        </div>
+        </div >
     );
 };
 

@@ -109,7 +109,10 @@ const StorageManager: React.FC = () => {
                 DiskService.list(),
             ]);
             setPools(poolsData);
-            setAvailableDisks(disksData.filter((d: SystemDisk) => d.type === 'disk' && !d.name.startsWith('loop')));
+            // Include both whole disks and partitions (exclude loop devices)
+            setAvailableDisks(disksData.filter((d: SystemDisk) =>
+                (d.type === 'disk' || d.type === 'part') && !d.name.startsWith('loop')
+            ));
 
             if (activeTab === 'health') {
                 const smartData = await StorageService.listDiskHealth();
@@ -449,30 +452,39 @@ const StorageManager: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Right: Available Disks */}
-                        <div className="w-64 space-y-2">
-                            <div className="text-sm text-zinc-400">Available Disks</div>
+                        {/* Right: Available Disks & Partitions */}
+                        <div className="w-72 space-y-2">
+                            <div className="text-sm text-zinc-400">Available Disks & Partitions</div>
                             <div className="space-y-2 max-h-[280px] overflow-y-auto">
                                 {availableDisks.map((disk) => {
                                     const isSelected = createForm.disks.includes(disk.path);
+                                    const isPartition = disk.type === 'part';
                                     return (
                                         <div
                                             key={disk.path}
                                             onClick={() => toggleDiskSelection(disk.path)}
                                             className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-all ${isSelected
-                                                    ? 'bg-emerald-600/20 border-emerald-500'
-                                                    : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600'
+                                                ? 'bg-emerald-600/20 border-emerald-500'
+                                                : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600'
                                                 }`}
                                         >
                                             <div className={`w-3 h-3 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
-                                            <div className="font-medium text-white">{disk.name.replace('/dev/', '')}</div>
-                                            <div className="ml-auto text-sm text-zinc-400">{formatBytes(disk.size)}</div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium text-white">{disk.name.replace('/dev/', '')}</span>
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${isPartition ? 'bg-blue-500/20 text-blue-400' : 'bg-zinc-700 text-zinc-400'}`}>
+                                                        {isPartition ? 'PART' : 'DISK'}
+                                                    </span>
+                                                </div>
+                                                {disk.model && <div className="text-xs text-zinc-500 truncate">{disk.model}</div>}
+                                            </div>
+                                            <div className="text-sm text-zinc-400">{formatBytes(disk.size)}</div>
                                         </div>
                                     );
                                 })}
                             </div>
                             {availableDisks.length === 0 && (
-                                <p className="text-sm text-zinc-500 text-center py-4">No available disks</p>
+                                <p className="text-sm text-zinc-500 text-center py-4">No available disks or partitions</p>
                             )}
                         </div>
                     </div>

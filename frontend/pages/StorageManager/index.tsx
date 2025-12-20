@@ -382,12 +382,12 @@ const StorageManager: React.FC = () => {
                 titleIcon={<Database size={20} />}
                 maxWidth="max-w-4xl"
             >
-                <DialogBody className="space-y-6">
-                    <div className="flex gap-6">
+                <DialogBody className="space-y-4 sm:space-y-6">
+                    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
                         {/* Left: Disk Slots */}
                         <div className="flex-1 space-y-4">
                             {/* RAID Level Selector */}
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                                 {RAID_LEVELS.map(({ level, minDisks, label }) => {
                                     const isDisabled = createForm.disks.length < minDisks;
                                     const isSelected = createForm.level === level;
@@ -409,12 +409,12 @@ const StorageManager: React.FC = () => {
                             </div>
 
                             {/* Selected Disks - Slot Cards */}
-                            <div className="bg-zinc-950/50 rounded-xl p-4 border border-zinc-800 min-h-[200px]">
-                                <div className="flex gap-3 flex-wrap">
+                            <div className="bg-zinc-950/50 rounded-xl p-3 sm:p-4 border border-zinc-800 min-h-[160px] sm:min-h-[200px]">
+                                <div className="flex gap-2 sm:gap-3 flex-wrap">
                                     {createForm.disks.length === 0 ? (
-                                        <div className="w-full text-center py-8 text-zinc-500">
-                                            <HardDrive size={32} className="mx-auto mb-2 opacity-30" />
-                                            <p className="text-sm">Select disks from the right panel</p>
+                                        <div className="w-full text-center py-6 sm:py-8 text-zinc-500">
+                                            <HardDrive size={28} className="mx-auto mb-2 opacity-30 sm:w-8 sm:h-8" />
+                                            <p className="text-xs sm:text-sm">Select disks from the list below</p>
                                         </div>
                                     ) : (
                                         createForm.disks.map((diskPath, index) => {
@@ -422,10 +422,10 @@ const StorageManager: React.FC = () => {
                                             return (
                                                 <div
                                                     key={diskPath}
-                                                    className="w-20 h-32 bg-gradient-to-b from-emerald-600 to-emerald-700 rounded-lg p-2 flex flex-col justify-between shadow-lg relative group cursor-pointer"
+                                                    className="w-16 h-24 sm:w-20 sm:h-32 bg-gradient-to-b from-emerald-600 to-emerald-700 rounded-lg p-1.5 sm:p-2 flex flex-col justify-between shadow-lg relative group cursor-pointer"
                                                     onClick={() => toggleDiskSelection(diskPath)}
                                                 >
-                                                    <div className="text-center text-white font-bold text-lg">{index + 1}</div>
+                                                    <div className="text-center text-white font-bold text-sm sm:text-lg">{index + 1}</div>
                                                     <div className="bg-white/20 rounded p-1.5 flex-1 mx-1 my-2" />
                                                     <div className="text-center">
                                                         <div className="text-xs text-emerald-100 font-medium">
@@ -453,9 +453,9 @@ const StorageManager: React.FC = () => {
                         </div>
 
                         {/* Right: Available Disks & Partitions */}
-                        <div className="w-72 space-y-2">
+                        <div className="w-full lg:w-72 space-y-2">
                             <div className="text-sm text-zinc-400">Available Disks & Partitions</div>
-                            <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                            <div className="space-y-2 max-h-[200px] lg:max-h-[280px] overflow-y-auto">
                                 {availableDisks.map((disk) => {
                                     const isSelected = createForm.disks.includes(disk.path);
                                     const isPartition = disk.type === 'part';
@@ -489,15 +489,14 @@ const StorageManager: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Capacity Estimation */}
                     {createForm.disks.length > 0 && (
-                        <div className="p-4 bg-zinc-950/50 rounded-xl border border-zinc-800">
-                            <div className="flex items-center justify-between mb-3">
+                        <div className="p-3 sm:p-4 bg-zinc-950/50 rounded-xl border border-zinc-800">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-3">
                                 <div>
-                                    <div className="text-2xl font-bold text-white">{formatBytes(capacity.available)}</div>
-                                    <div className="text-sm text-zinc-400">Estimated available storage</div>
+                                    <div className="text-xl sm:text-2xl font-bold text-white">{formatBytes(capacity.available)}</div>
+                                    <div className="text-xs sm:text-sm text-zinc-400">Estimated available storage</div>
                                 </div>
-                                <div className="flex gap-4 text-sm">
+                                <div className="flex gap-4 text-xs sm:text-sm">
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 bg-emerald-500 rounded" />
                                         <span className="text-zinc-400">Available</span>

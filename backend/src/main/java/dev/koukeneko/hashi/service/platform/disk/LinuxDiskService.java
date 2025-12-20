@@ -196,6 +196,9 @@ public class LinuxDiskService implements DiskService {
     public void createPartition(String diskPath, String fstype, String start, String end) {
         validateDiskPath(diskPath);
 
+        // Detect partition table type (GPT or MBR)
+        boolean isGpt = isGptDisk(diskPath);
+
         List<String> command = new ArrayList<>();
         command.add("sudo");
         command.add("-n");
@@ -203,7 +206,15 @@ public class LinuxDiskService implements DiskService {
         command.add("-s");
         command.add(diskPath);
         command.add("mkpart");
-        command.add("primary"); // Name/Type, usually 'primary' for MBR or name for GPT
+
+        if (isGpt) {
+            // GPT syntax: mkpart PARTITION_NAME FSTYPE START END
+            command.add("data"); // Partition label/name for GPT
+        } else {
+            // MBR syntax: mkpart primary FSTYPE START END
+            command.add("primary");
+        }
+
         if (fstype != null && !fstype.isEmpty()) {
             command.add(fstype);
         } else {
@@ -213,6 +224,33 @@ public class LinuxDiskService implements DiskService {
         command.add(end);
 
         executeSudoCommand(command);
+    }
+
+    /**
+     * Detect if disk uses GPT or MBR partition table
+     */
+    private boolean isGptDisk(String diskPath) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                    "sudo", "-n", "parted", "-s", diskPath, "print");
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
+            process.waitFor();
+
+            String result = output.toString().toLowerCase();
+            return result.contains("partition table: gpt");
+        } catch (Exception e) {
+            log.warn("Failed to detect partition table type for {}, assuming GPT", diskPath, e);
+            return true; // Default to GPT for modern disks
+        }
     }
 
     @Override

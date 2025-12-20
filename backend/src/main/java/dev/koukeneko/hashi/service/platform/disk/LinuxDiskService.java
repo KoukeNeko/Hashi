@@ -199,12 +199,13 @@ public class LinuxDiskService implements DiskService {
         // Detect partition table type
         String labelType = getPartitionTableType(diskPath);
 
-        // If loop or unknown, we choose safe default syntax (name) but do not force
-        // wipe label
-        if ("loop".equals(labelType) || "unknown".equals(labelType)) {
-            log.warn(
-                    "Disk {} has {} label, attempting to create partition without re-labeling (may fail if uninitialized)",
-                    diskPath, labelType);
+        if ("loop".equals(labelType)) {
+            throw new IllegalArgumentException("Cannot partition a 'loop' device (raw filesystem) on " + diskPath
+                    + ". The disk behaves as a single large file. You must wipe/initialize it with a partition table (GPT/MBR) first.");
+        }
+
+        if ("unknown".equals(labelType)) {
+            log.warn("Disk {} has unknown label, attempting to create partition (may fail if uninitialized)", diskPath);
         }
 
         List<String> command = new ArrayList<>();

@@ -66,11 +66,14 @@ public class LinuxDiskService implements DiskService {
                     if (!"disk".equals(type) && !"loop".equals(type))
                         continue;
 
+                    String diskModel = device.path("model").asText(null);
+                    String diskSerial = device.path("serial").asText(null);
+
                     SystemDiskDTO disk = SystemDiskDTO.builder()
                             .name(device.path("name").asText())
                             .path(device.path("path").asText())
-                            .model(device.path("model").asText(null))
-                            .serial(device.path("serial").asText(null))
+                            .model(diskModel)
+                            .serial(diskSerial)
                             .size(device.path("size").asLong(0))
                             .type(type)
                             .removable(device.path("rm").asBoolean(false))
@@ -81,6 +84,9 @@ public class LinuxDiskService implements DiskService {
                     JsonNode children = device.get("children");
                     if (children != null && children.isArray()) {
                         for (JsonNode child : children) {
+                            String childType = child.path("type").asText();
+
+                            // Add partition info to disk's partitions list
                             SystemPartitionDTO partition = SystemPartitionDTO.builder()
                                     .name(child.path("name").asText())
                                     .path(child.path("path").asText())
@@ -91,6 +97,21 @@ public class LinuxDiskService implements DiskService {
                                     .label(child.path("label").asText(null))
                                     .build();
                             disk.getPartitions().add(partition);
+
+                            // Also add partition as a separate top-level entry for RAID selection
+                            if ("part".equals(childType)) {
+                                SystemDiskDTO partAsDisk = SystemDiskDTO.builder()
+                                        .name(child.path("name").asText())
+                                        .path(child.path("path").asText())
+                                        .model(diskModel) // Inherit parent disk model
+                                        .serial(diskSerial) // Inherit parent disk serial
+                                        .size(child.path("size").asLong(0))
+                                        .type("part")
+                                        .removable(device.path("rm").asBoolean(false))
+                                        .partitions(Collections.emptyList())
+                                        .build();
+                                disks.add(partAsDisk);
+                            }
                         }
                     }
                     disks.add(disk);

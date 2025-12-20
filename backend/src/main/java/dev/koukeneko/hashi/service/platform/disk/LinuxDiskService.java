@@ -205,7 +205,17 @@ public class LinuxDiskService implements DiskService {
         }
 
         if ("unknown".equals(labelType)) {
-            log.warn("Disk {} has unknown label, attempting to create partition (may fail if uninitialized)", diskPath);
+            log.info("Initializing disk {} with GPT label (was unknown)", diskPath);
+            List<String> initCmd = new ArrayList<>();
+            initCmd.add("sudo");
+            initCmd.add("-n");
+            initCmd.add("parted");
+            initCmd.add("-s");
+            initCmd.add(diskPath);
+            initCmd.add("mklabel");
+            initCmd.add("gpt");
+            executeSudoCommand(initCmd);
+            labelType = "gpt"; // Update type for next step
         }
 
         List<String> command = new ArrayList<>();

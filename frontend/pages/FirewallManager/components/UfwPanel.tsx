@@ -165,6 +165,57 @@ const UfwPanel: React.FC = () => {
     const ipv4Rules = rules.filter((r) => !r.ipv6);
     const ipv6Rules = rules.filter((r) => r.ipv6);
 
+    // Action badge 顏色映射
+    const actionColors: Record<string, string> = {
+        ALLOW: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+        DENY: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+        REJECT: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+        LIMIT: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    };
+
+    // 共用表格欄位定義
+    const columns: DataTableColumn<FirewallRule>[] = useMemo(() => [
+        {
+            key: 'index',
+            header: '#',
+            width: '64px',
+            mono: true,
+            render: (rule) => <span className="text-zinc-500">{rule.index}</span>,
+        },
+        {
+            key: 'to',
+            header: 'To (Port)',
+            mono: true,
+            render: (rule) => <span className="text-zinc-200">{rule.to}</span>,
+        },
+        {
+            key: 'action',
+            header: 'Action',
+            render: (rule) => badgeCell(rule.action, actionColors),
+        },
+        {
+            key: 'from',
+            header: 'From (Source)',
+            mono: true,
+            render: (rule) => rule.from.replace(' (v6)', ''),
+        },
+        {
+            key: 'manage',
+            header: 'Manage',
+            width: '80px',
+            align: 'right',
+            render: (rule) => (
+                <button
+                    onClick={() => handleDeleteClick(rule)}
+                    className="text-zinc-500 hover:text-rose-400 transition-colors"
+                    title="Delete rule"
+                >
+                    <Trash2 size={16} />
+                </button>
+            ),
+        },
+    ], []);
+
     return (
         <div className="space-y-6">
             {/* Header Actions */}
@@ -230,124 +281,31 @@ const UfwPanel: React.FC = () => {
             </div>
 
             {/* IPv4 Rules */}
-            <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-xl">
-                <div className="px-4 py-3 bg-zinc-900 border-b border-border">
-                    <h3 className="text-sm font-medium text-zinc-300">IPv4 Rules</h3>
+            {loading ? (
+                <div className="flex items-center justify-center py-16">
+                    <Loader2 size={32} className="animate-spin text-zinc-500" />
                 </div>
-                {loading ? (
-                    <div className="flex items-center justify-center py-16">
-                        <Loader2 size={32} className="animate-spin text-zinc-500" />
-                    </div>
-                ) : ipv4Rules.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
-                        <Shield size={40} className="mb-3 opacity-50" />
-                        <p className="text-sm">No IPv4 rules configured</p>
-                    </div>
-                ) : (
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-zinc-900/50 border-b border-border text-xs uppercase text-zinc-500">
-                                <th className="p-4 font-medium w-16">#</th>
-                                <th className="p-4 font-medium">To (Port)</th>
-                                <th className="p-4 font-medium">Action</th>
-                                <th className="p-4 font-medium">From (Source)</th>
-                                <th className="p-4 font-medium text-right">Manage</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm divide-y divide-border">
-                            {ipv4Rules.map((rule) => (
-                                <tr
-                                    key={rule.index}
-                                    className="hover:bg-zinc-800/50 transition-colors"
-                                >
-                                    <td className="p-4 text-zinc-500 font-mono text-xs">
-                                        {rule.index}
-                                    </td>
-                                    <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
-                                    <td className="p-4">
-                                        <span
-                                            className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
-                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                : rule.action.includes('DENY')
-                                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                }`}
-                                        >
-                                            {rule.action}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 font-mono text-zinc-300">{rule.from}</td>
-                                    <td className="p-4 text-right">
-                                        <button
-                                            onClick={() => handleDeleteClick(rule)}
-                                            className="text-zinc-500 hover:text-rose-400 transition-colors"
-                                            title="Delete rule"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+            ) : (
+                <DataTable
+                    data={ipv4Rules}
+                    columns={columns}
+                    rowKey={(rule) => rule.index}
+                    groupHeader="IPv4 Rules"
+                    groupCount={ipv4Rules.length}
+                    emptyMessage="No IPv4 rules configured"
+                />
+            )}
 
             {/* IPv6 Rules */}
             {ipv6Rules.length > 0 && (
-                <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-xl">
-                    <div className="px-4 py-3 bg-zinc-900 border-b border-border">
-                        <h3 className="text-sm font-medium text-zinc-300">IPv6 Rules</h3>
-                    </div>
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-zinc-900/50 border-b border-border text-xs uppercase text-zinc-500">
-                                <th className="p-4 font-medium w-16">#</th>
-                                <th className="p-4 font-medium">To (Port)</th>
-                                <th className="p-4 font-medium">Action</th>
-                                <th className="p-4 font-medium">From (Source)</th>
-                                <th className="p-4 font-medium text-right">Manage</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm divide-y divide-border">
-                            {ipv6Rules.map((rule) => (
-                                <tr
-                                    key={rule.index}
-                                    className="hover:bg-zinc-800/50 transition-colors"
-                                >
-                                    <td className="p-4 text-zinc-500 font-mono text-xs">
-                                        {rule.index}
-                                    </td>
-                                    <td className="p-4 font-mono text-zinc-200">{rule.to}</td>
-                                    <td className="p-4">
-                                        <span
-                                            className={`px-2 py-0.5 rounded text-xs font-bold ${rule.action.includes('ALLOW')
-                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                : rule.action.includes('DENY')
-                                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                }`}
-                                        >
-                                            {rule.action}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 font-mono text-zinc-300">
-                                        {rule.from.replace(' (v6)', '')}
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <button
-                                            onClick={() => handleDeleteClick(rule)}
-                                            className="text-zinc-500 hover:text-rose-400 transition-colors"
-                                            title="Delete rule"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <DataTable
+                    data={ipv6Rules}
+                    columns={columns}
+                    rowKey={(rule) => rule.index}
+                    groupHeader="IPv6 Rules"
+                    groupCount={ipv6Rules.length}
+                    emptyMessage="No IPv6 rules configured"
+                />
             )}
 
             {/* UFW Not Installed Guide */}

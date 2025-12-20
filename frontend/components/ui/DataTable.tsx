@@ -77,7 +77,7 @@ export function DataTable<T>({
             ) : (
                 <table className="w-full text-left border-collapse table-fixed">
                     <thead>
-                        <tr className="bg-zinc-900/50 border-t border-border text-xs uppercase text-zinc-500">
+                        <tr className="bg-zinc-900/50 border-b border-border text-xs uppercase text-zinc-500">
                             {columns.map((col) => (
                                 <th
                                     key={col.key}

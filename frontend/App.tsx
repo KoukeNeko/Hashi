@@ -15,6 +15,7 @@ import TerminalManager from './pages/TerminalManager/index';
 import FtpManager from './pages/FtpManager/index';
 import UserManager from './pages/UserManager/index';
 import DiskManager from './pages/DiskManager/index';
+import StorageManager from './pages/StorageManager/index';
 import NetworkManager from './pages/NetworkManager/index';
 import SettingsPage from './pages/Settings/index';
 import Login from './pages/Login/index';
@@ -107,6 +108,8 @@ const App: React.FC = () => {
                 return <DatabaseManager />;
             case TabView.DISKS:
                 return <DiskManager />;
+            case TabView.STORAGE:
+                return <StorageManager />;
             case TabView.NETWORK:
                 return <NetworkManager />;
             case TabView.FILES:

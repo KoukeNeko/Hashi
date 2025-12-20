@@ -717,3 +717,76 @@ export const DatabaseService = {
         await api.delete(`/databases/${type}/${name}`);
     },
 };
+
+// ==================== Storage Service ====================
+
+import {
+    StoragePool,
+    CreatePoolRequest,
+    SmartInfo,
+} from '@/types';
+
+/** Storage pool (mdadm RAID) management API */
+export const StorageService = {
+    /** Get storage provider name */
+    getProvider: async (): Promise<{ name: string }> => {
+        const response = await api.get<{ name: string }>('/storage/provider');
+        return response.data;
+    },
+
+    /** List all storage pools */
+    listPools: async (): Promise<StoragePool[]> => {
+        const response = await api.get<StoragePool[]>('/storage/pools');
+        return response.data;
+    },
+
+    /** Get single pool details */
+    getPool: async (name: string): Promise<StoragePool> => {
+        const response = await api.get<StoragePool>(`/storage/pools/${name}`);
+        return response.data;
+    },
+
+    /** Create new storage pool */
+    createPool: async (request: CreatePoolRequest): Promise<{ message: string; pool: string }> => {
+        const response = await api.post<{ message: string; pool: string }>('/storage/pools', request);
+        return response.data;
+    },
+
+    /** Destroy storage pool */
+    destroyPool: async (name: string): Promise<void> => {
+        await api.delete(`/storage/pools/${name}`, { params: { confirmation: 'DESTROY' } });
+    },
+
+    /** Add disk to pool */
+    addDisk: async (poolName: string, disk: string): Promise<void> => {
+        await api.post(`/storage/pools/${poolName}/disks`, { disk });
+    },
+
+    /** Remove disk from pool */
+    removeDisk: async (poolName: string, disk: string): Promise<void> => {
+        await api.delete(`/storage/pools/${poolName}/disks/${disk}`);
+    },
+
+    /** Mark disk as faulty */
+    markDiskFaulty: async (poolName: string, disk: string): Promise<void> => {
+        await api.post(`/storage/pools/${poolName}/disks/${disk}/fail`);
+    },
+
+    // S.M.A.R.T. Health Monitoring
+    /** Get disk health info */
+    getDiskHealth: async (device: string): Promise<SmartInfo> => {
+        const response = await api.get<SmartInfo>('/storage/smart', { params: { device } });
+        return response.data;
+    },
+
+    /** List all disks health */
+    listDiskHealth: async (): Promise<SmartInfo[]> => {
+        const response = await api.get<SmartInfo[]>('/storage/smart/all');
+        return response.data;
+    },
+
+    /** Run S.M.A.R.T. test */
+    runSmartTest: async (device: string, testType: 'short' | 'long'): Promise<void> => {
+        await api.post('/storage/smart/test', null, { params: { device, testType } });
+    },
+};

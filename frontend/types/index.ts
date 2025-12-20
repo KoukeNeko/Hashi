@@ -41,3 +41,6 @@ export * from './disks';
 
 // Network management
 export * from './network';
+
+// Storage pool management
+export * from './storage';

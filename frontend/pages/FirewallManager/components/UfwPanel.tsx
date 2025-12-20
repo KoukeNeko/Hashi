@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Toast, ActionButton } from '../../../components';
 import { FirewallService } from '../../../services/api';
 import { FirewallRule } from '../../../types';
 import { Alert } from '../../../components/ui';
+import { DataTable, DataTableColumn, badgeCell } from '../../../components/ui/DataTable';
 import {
     Shield,
     ShieldOff,

@@ -7,3 +7,4 @@ frontend/dist/*
 .env.*.local
 /frontend/.env.local
 /聖經.md
+frontend/.env

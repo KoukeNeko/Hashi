@@ -63,26 +63,29 @@ public class LinuxUfwFirewallManager implements UfwFirewallManager {
             String line;
 
             // 解析邏輯
-            // 範例輸出: [ 1] 22/tcp ALLOW IN Anywhere
+            // 範例輸出: [ 1] 3847/tcp ALLOW IN Anywhere
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                    "^\\[\\s*(\\d+)\\]\\s+(.+?)\\s{2,}(ALLOW|DENY|REJECT|LIMIT)(?: IN)?\\s{2,}(.+)$");
+
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
                 // 必須以 "[" 開頭才是有編號的規則行
                 if (!line.startsWith("["))
                     continue;
 
-                // 移除中括號，把 "[ 1]" 變成 "1"
-                String cleanLine = line.replaceAll("^\\[\\s*(\\d+)\\]", "$1");
+                java.util.regex.Matcher matcher = pattern.matcher(line);
+                if (matcher.find()) {
+                    int index = Integer.parseInt(matcher.group(1));
+                    String to = matcher.group(2).trim();
+                    String action = matcher.group(3).trim();
+                    String from = matcher.group(4).trim();
 
-                // 用 "至少兩個空格" 來切割欄位，避免切到單一空格
-                String[] parts = cleanLine.split("\\s{2,}");
-
-                if (parts.length >= 4) {
                     rules.add(FirewallRuleDTO.builder()
-                            .index(Integer.parseInt(parts[0].trim()))
-                            .to(parts[1].trim())
-                            .action(parts[2].trim())
-                            .from(parts[3].trim())
-                            .ipv6(parts[3].contains("(v6)"))
+                            .index(index)
+                            .to(to)
+                            .action(action)
+                            .from(from)
+                            .ipv6(from.contains("(v6)") || to.contains("(v6)"))
                             .build());
                 }
             }

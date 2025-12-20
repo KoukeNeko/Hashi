@@ -81,8 +81,9 @@ public class DashboardServiceImpl implements DashboardService {
                     .totalSent(endSent)
                     .build());
 
-            log.info("Interface: {}, RX: {}, TX: {}, DiffRX: {}, DiffTX: {}", net.getName(), ifaceDownloadSpeed,
-                    ifaceUploadSpeed, diffRecv, diffSent);
+            // log.info("Interface: {}, RX: {}, TX: {}, DiffRX: {}, DiffTX: {}",
+            // net.getName(), ifaceDownloadSpeed,
+            // ifaceUploadSpeed, diffRecv, diffSent);
         }
 
         // Global rates (sum of interfaces)

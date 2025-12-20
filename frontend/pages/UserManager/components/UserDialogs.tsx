@@ -504,7 +504,7 @@ export const EditUserDialog: React.FC<{
                 <DialogBody>
                     {error && <FormError message={error} />}
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormInput
                             label="UID"
                             type="text"
@@ -647,13 +647,12 @@ export const UsersTab: React.FC<{
                                 <td className="p-4">
                                     <div className="flex items-center gap-3">
                                         <div
-                                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                                user.uid === 0
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center ${user.uid === 0
                                                     ? 'bg-rose-500/20 text-rose-400'
                                                     : user.uid < 1000
-                                                      ? 'bg-amber-500/20 text-amber-400'
-                                                      : 'bg-emerald-500/20 text-emerald-400'
-                                            }`}
+                                                        ? 'bg-amber-500/20 text-amber-400'
+                                                        : 'bg-emerald-500/20 text-emerald-400'
+                                                }`}
                                         >
                                             {user.uid === 0 ? (
                                                 <Shield size={16} />
@@ -837,11 +836,10 @@ export const GroupsTab: React.FC<{
                                 <td className="p-4">
                                     <div className="flex items-center gap-3">
                                         <div
-                                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                                group.gid < 1000
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center ${group.gid < 1000
                                                     ? 'bg-amber-500/20 text-amber-400'
                                                     : 'bg-blue-500/20 text-blue-400'
-                                            }`}
+                                                }`}
                                         >
                                             <UsersRound size={16} />
                                         </div>

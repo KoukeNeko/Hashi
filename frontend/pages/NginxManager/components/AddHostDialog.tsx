@@ -105,17 +105,16 @@ const AddHostDialog: React.FC<AddHostDialogProps> = ({ isOpen, onClose, onSucces
                     {/* Host Type Selection */}
                     <div className="space-y-2">
                         <label className="block text-xs font-medium text-zinc-400">Host Type</label>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {HOST_TYPE_OPTIONS.map((option) => (
                                 <button
                                     key={option.value}
                                     type="button"
                                     onClick={() => setType(option.value)}
-                                    className={`p-3 rounded-lg border text-left transition-colors ${
-                                        type === option.value
+                                    className={`p-3 rounded-lg border text-left transition-colors ${type === option.value
                                             ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
                                             : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                                    }`}
+                                        }`}
                                 >
                                     <option.icon size={20} className="mb-2" />
                                     <div className="font-medium text-sm">{option.label}</div>

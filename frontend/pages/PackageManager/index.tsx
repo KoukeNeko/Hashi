@@ -9,23 +9,34 @@ const PackageManager: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [packages, setPackages] = useState<PackageInfo[]>([]);
     const [updates, setUpdates] = useState<PackageInfo[]>([]);
+    const [installed, setInstalled] = useState<PackageInfo[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState('updates');
+    const [activeTab, setActiveTab] = useState('installed');
     const [processing, setProcessing] = useState<string | null>(null);
 
     useEffect(() => {
+        fetchInstalled();
         fetchUpdates();
     }, []);
 
-    const fetchUpdates = async () => {
+    const fetchInstalled = async () => {
         setIsLoading(true);
+        try {
+            const data = await PackageService.listInstalled();
+            setInstalled(data);
+        } catch (error) {
+            console.error('Failed to fetch installed packages:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchUpdates = async () => {
         try {
             const data = await PackageService.listUpdates();
             setUpdates(data);
         } catch (error) {
             console.error('Failed to fetch updates:', error);
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -65,7 +76,9 @@ const PackageManager: React.FC = () => {
         setProcessing(name);
         try {
             await PackageService.remove(name);
-            alert(`Package ${name} removal started.`);
+            alert(`Package ${name} removed successfully.`);
+            // Optimistically remove from installed list
+            setInstalled(prev => prev.filter(p => p.name !== name));
         } catch (error) {
             console.error('Failed to remove package:', error);
             alert('Failed to remove package.');
@@ -94,6 +107,7 @@ const PackageManager: React.FC = () => {
         try {
             await PackageService.updateCache();
             await fetchUpdates();
+            await fetchInstalled();
         } catch (error) {
             alert('Failed to update package cache.');
         } finally {
@@ -102,6 +116,7 @@ const PackageManager: React.FC = () => {
     };
 
     const tabItems = [
+        { id: 'installed', label: `Installed (${installed.length})`, icon: List },
         { id: 'updates', label: `Updates (${updates.length})`, icon: ArrowUpCircle },
         { id: 'search', label: 'Search & Install', icon: SearchIcon },
     ];
@@ -170,6 +185,33 @@ const PackageManager: React.FC = () => {
                                         Loading...
                                     </td>
                                 </tr>
+                            ) : activeTab === 'installed' ? (
+                                installed.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
+                                            No packages installed
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    installed.map((pkg) => (
+                                        <tr key={pkg.name} className="hover:bg-zinc-800/50 transition-colors">
+                                            <td className="px-6 py-4 font-medium text-white">{pkg.name}</td>
+                                            <td className="px-6 py-4 text-zinc-400">{pkg.architecture}</td>
+                                            <td className="px-6 py-4 text-zinc-400">{pkg.version}</td>
+                                            <td className="px-6 py-4 text-zinc-500">{pkg.description}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => handleRemove(pkg.name)}
+                                                    disabled={!!processing}
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 rounded-lg text-xs font-medium transition-colors"
+                                                >
+                                                    {processing === pkg.name ? <RotateCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                                    Remove
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )
                             ) : activeTab === 'updates' ? (
                                 updates.length === 0 ? (
                                     <tr>

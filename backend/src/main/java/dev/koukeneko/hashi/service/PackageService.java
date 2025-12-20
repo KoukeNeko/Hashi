@@ -15,4 +15,6 @@ public interface PackageService {
     boolean upgradePackage(String packageName);
 
     boolean updateCache(); // apt update
+
+    List<PackageInfoDTO> listInstalled();
 }

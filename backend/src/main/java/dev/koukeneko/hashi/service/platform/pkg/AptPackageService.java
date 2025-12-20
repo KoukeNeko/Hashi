@@ -98,6 +98,44 @@ public class AptPackageService implements PackageService {
         return executeSudoCommand("apt-get", "update");
     }
 
+    @Override
+    public List<PackageInfoDTO> listInstalled() {
+        List<PackageInfoDTO> packages = new ArrayList<>();
+        try {
+            // dpkg-query -W -f='${Package}\t${Version}\t${Architecture}\t${Status}\n'
+            // Output: package\tversion\tarch\tstatus
+            List<String> output = executeCommandAndGetOutput(
+                    "dpkg-query", "-W", "-f=${Package}\t${Version}\t${Architecture}\t${db:Status-Abbrev}\n");
+
+            for (String line : output) {
+                if (line.isEmpty())
+                    continue;
+
+                String[] parts = line.split("\t");
+                if (parts.length >= 3) {
+                    String name = parts[0].trim();
+                    String version = parts[1].trim();
+                    String arch = parts[2].trim();
+                    // Status is optional, default to "installed"
+                    String status = parts.length >= 4 ? parts[3].trim() : "ii";
+
+                    // Only include fully installed packages (status starts with "ii")
+                    if (status.startsWith("ii")) {
+                        packages.add(new PackageInfoDTO(
+                                name,
+                                version,
+                                "Installed",
+                                "installed",
+                                arch));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to list installed packages: {}", e.getMessage());
+        }
+        return packages;
+    }
+
     // ================== Helpers ==================
 
     private boolean executeSudoCommand(String... command) {

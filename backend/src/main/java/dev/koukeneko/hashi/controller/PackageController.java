@@ -34,6 +34,14 @@ public class PackageController {
     }
 
     /**
+     * List all installed packages
+     */
+    @GetMapping("/installed")
+    public ResponseEntity<List<PackageInfoDTO>> listInstalled() {
+        return ResponseEntity.ok(packageService.listInstalled());
+    }
+
+    /**
      * Install a package
      */
     @PostMapping("/install")

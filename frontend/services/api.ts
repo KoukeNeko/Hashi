@@ -634,6 +634,10 @@ export const PackageService = {
         const response = await api.post('/packages/cache/update');
         return response.data;
     },
+    listInstalled: async (): Promise<PackageInfo[]> => {
+        const response = await api.get<PackageInfo[]>('/packages/installed');
+        return response.data;
+    },
 };
 
 // ==================== Disk Service ====================

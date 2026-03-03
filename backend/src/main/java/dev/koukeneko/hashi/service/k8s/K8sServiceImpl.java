@@ -221,7 +221,9 @@ public class K8sServiceImpl implements K8sService {
             List<K8sPodDTO> pods = list.getItems().stream().map(pod -> {
                 V1PodStatus status = pod.getStatus();
                 String podStatus = status != null && status.getPhase() != null ? status.getPhase() : "Unknown";
-                String node = status != null ? status.getNodeName() : "-";
+                String node = pod.getSpec() != null && pod.getSpec().getNodeName() != null
+                        ? pod.getSpec().getNodeName()
+                        : "-";
 
                 List<V1ContainerStatus> containerStatuses = status != null ? status.getContainerStatuses() : null;
                 int readyCount = 0;
@@ -231,7 +233,9 @@ public class K8sServiceImpl implements K8sService {
 
                 if (containerStatuses != null) {
                     totalCount = containerStatuses.size();
-                    readyCount = (int) containerStatuses.stream().filter(V1ContainerStatus::isReady).count();
+                    readyCount = (int) containerStatuses.stream()
+                            .filter(containerStatus -> Boolean.TRUE.equals(containerStatus.getReady()))
+                            .count();
                     restartCount = containerStatuses.stream()
                             .map(V1ContainerStatus::getRestartCount)
                             .filter(v -> v != null)
@@ -517,6 +521,7 @@ public class K8sServiceImpl implements K8sService {
                     ? api.listDeploymentForAllNamespaces(null, null, null, null, null, null, null, null, null, null,
                             false)
                     : api.listNamespacedDeployment(namespace, null, null, null, null, null, null, null, null, null,
+                            null,
                             false);
 
             return list.getItems().stream()
@@ -548,6 +553,7 @@ public class K8sServiceImpl implements K8sService {
                     ? api.listStatefulSetForAllNamespaces(null, null, null, null, null, null, null, null, null,
                             null, false)
                     : api.listNamespacedStatefulSet(namespace, null, null, null, null, null, null, null, null, null,
+                            null,
                             false);
 
             return list.getItems().stream()
@@ -579,6 +585,7 @@ public class K8sServiceImpl implements K8sService {
                     ? api.listDaemonSetForAllNamespaces(null, null, null, null, null, null, null, null, null, null,
                             false)
                     : api.listNamespacedDaemonSet(namespace, null, null, null, null, null, null, null, null, null,
+                            null,
                             false);
 
             return list.getItems().stream()

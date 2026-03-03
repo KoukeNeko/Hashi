@@ -342,14 +342,14 @@ jobs:
       - name: Move DEB packages
         run: |
           mkdir -p pkg-repo/apt/pool/stable/hashi
-          find ./incoming-deb -name "*.deb" -exec mv {} pkg-repo/apt/pool/stable/hashi/ \; 2>/dev/null || true
+          find ./incoming-deb -name "*.deb" -exec cp -f {} pkg-repo/apt/pool/stable/hashi/ \; 2>/dev/null || true
           echo "📦 DEB packages:"
           ls -la pkg-repo/apt/pool/stable/hashi/ 2>/dev/null || echo "No DEB packages"
 
       - name: Move RPM packages
         run: |
           mkdir -p pkg-repo/rpm/packages/hashi
-          find ./incoming-rpm -name "*.rpm" -exec mv {} pkg-repo/rpm/packages/hashi/ \; 2>/dev/null || true
+          find ./incoming-rpm -name "*.rpm" -exec cp -f {} pkg-repo/rpm/packages/hashi/ \; 2>/dev/null || true
           echo "📦 RPM packages:"
           ls -la pkg-repo/rpm/packages/hashi/ 2>/dev/null || echo "No RPM packages"
 
@@ -369,10 +369,44 @@ jobs:
       - name: Commit and push
         working-directory: pkg-repo
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "📦 Add ${{ needs.build-jar.outputs.pkg_name }} ${{ needs.build-jar.outputs.version }} (DEB + RPM, amd64 + arm64)" || echo "No changes"
-          git pull --rebase origin main || true
-          git push
-
+          
+          COMMIT_MSG="📦 Add ${{ needs.build-jar.outputs.pkg_name }} ${{ needs.build-jar.outputs.version }} (DEB + RPM, amd64 + arm64)"
+          MAX_RETRIES=3
+          ATTEMPT=1
+          
+          while [ "$ATTEMPT" -le "$MAX_RETRIES" ]; do
+            git add .
+            if git diff --cached --quiet; then
+              echo "No changes to commit"
+              exit 0
+            fi
+          
+            git commit -m "$COMMIT_MSG"
+          
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $ATTEMPT"
+              exit 0
+            fi
+          
+            if [ "$ATTEMPT" -ge "$MAX_RETRIES" ]; then
+              echo "Push failed after $MAX_RETRIES attempts"
+              exit 1
+            fi
+          
+            echo "Push rejected due remote updates. Re-sync and regenerate indexes (attempt $ATTEMPT/$MAX_RETRIES)"
+            ATTEMPT=$((ATTEMPT + 1))
+          
+            git fetch origin main
+            git reset --hard origin/main
+          
+            mkdir -p apt/pool/stable/hashi
+            mkdir -p rpm/packages/hashi
+            find ../incoming-deb -name "*.deb" -exec cp -f {} apt/pool/stable/hashi/ \; 2>/dev/null || true
+            find ../incoming-rpm -name "*.rpm" -exec cp -f {} rpm/packages/hashi/ \; 2>/dev/null || true
+          
+            chmod +x scripts/update-repo.sh
+            ./scripts/update-repo.sh
+          done

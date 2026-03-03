@@ -13,6 +13,7 @@ export {
     // Services
     VirtService,
     AuthService,
+    PlatformService,
     UserManagementService,
     FirewallService,
     IptablesService,
@@ -23,4 +24,5 @@ export {
     DockerService,
     DashboardService,
     NginxApiService,
+    K8sService,
 } from './api';

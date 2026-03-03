@@ -2,6 +2,7 @@ package dev.koukeneko.hashi.config;
 
 import dev.koukeneko.hashi.handler.TerminalSocketHandler;
 import dev.koukeneko.hashi.handler.LogSocketHandler;
+import dev.koukeneko.hashi.handler.K8sLogSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -16,6 +17,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSoc
     private final TerminalSocketHandler terminalSocketHandler;
 
     private final LogSocketHandler logSocketHandler;
+
+    private final K8sLogSocketHandler k8sLogSocketHandler;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -41,6 +44,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSoc
 
         // Log 端點
         registry.addHandler(logSocketHandler, "/logs")
+                .setAllowedOrigins("*");
+
+        // K8s Pod Log 端點
+        registry.addHandler(k8sLogSocketHandler, "/k8s/logs")
                 .setAllowedOrigins("*");
     }
 }

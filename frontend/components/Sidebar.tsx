@@ -22,8 +22,9 @@ import {
     Users,
     Package,
     HardDrive,
+    Boxes,
 } from 'lucide-react';
-import { TabView, UserInfo } from '../types';
+import { PlatformFeatures, TabView, UserInfo } from '../types';
 import { UpdateService } from '../services/api';
 
 interface SidebarProps {
@@ -33,6 +34,7 @@ interface SidebarProps {
     onClose: () => void;
     onLogout?: () => void;
     user?: UserInfo | null;
+    features?: PlatformFeatures | null;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -42,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     onClose,
     onLogout,
     user,
+    features,
 }) => {
     const [version, setVersion] = useState<string>('...');
 
@@ -63,6 +66,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 { id: TabView.DOCKER, label: 'Docker', icon: Box },
             ],
         },
+        ...(features?.k8sManager
+            ? [
+                {
+                    label: 'Kubernetes',
+                    items: [{ id: TabView.K8S, label: 'K3s', icon: Boxes }],
+                },
+            ]
+            : []),
         {
             label: 'Data',
             items: [

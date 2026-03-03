@@ -46,6 +46,7 @@ export enum TabView {
     FTP = 'ftp',
     DATABASES = 'databases',
     DOCKER = 'docker',
+    K8S = 'k8s',
     MONITOR = 'monitor',
     SECURITY = 'security',
     WAF = 'waf',

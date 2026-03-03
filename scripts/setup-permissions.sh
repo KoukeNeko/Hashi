@@ -168,6 +168,12 @@ main() {
         echo ""
         log_success "Permission setup complete!"
         log_warning "Please log out and log back in for group changes."
+        echo ""
+        log_info "K3s kubeconfig tip (optional for Kubernetes feature):"
+        log_info "  sudo mkdir -p /home/$HASHI_USER/.kube"
+        log_info "  sudo cp /etc/rancher/k3s/k3s.yaml /home/$HASHI_USER/.kube/config"
+        log_info "  sudo chown -R $HASHI_USER:$HASHI_USER /home/$HASHI_USER/.kube"
+        log_info "  sudo chmod 600 /home/$HASHI_USER/.kube/config"
     else
         remove_permissions
     fi

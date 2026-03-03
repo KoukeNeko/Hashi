@@ -44,3 +44,6 @@ export * from './network';
 
 // Storage pool management
 export * from './storage';
+
+// Kubernetes and platform features
+export * from './k8s';

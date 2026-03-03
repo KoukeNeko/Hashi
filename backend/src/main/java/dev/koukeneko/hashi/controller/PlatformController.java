@@ -59,6 +59,7 @@ public class PlatformController {
                 "scheduler", isLinux || isWindows,
                 "terminal", isLinux || isWindows,
                 "logStream", isLinux || isWindows,
-                "userManagement", isLinux || isWindows));
+                "userManagement", isLinux || isWindows,
+                "k8sManager", isLinux));
     }
 }

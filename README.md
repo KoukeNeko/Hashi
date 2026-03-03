@@ -24,6 +24,7 @@
 - **Node.js**: 22+
 - **Docker**: 20.10+ (optional)
 - **KVM/Libvirt**: (optional, for VM management)
+- **K3s/Kubernetes**: (optional, for K8s management)
 
 ## 🚀 Quick Start
 
@@ -64,6 +65,30 @@ The script will:
 - Configure passwordless sudo for `ufw` (firewall management)
 - Configure passwordless sudo for `systemctl` (service management)
 - Add your user to `docker` and `libvirt` groups
+
+### Optional: K3s / Kubernetes Setup
+
+Hashi supports Kubernetes management (K3s-first) through kubeconfig.
+
+Kubeconfig resolution order:
+1. UI override (`~/.config/hashi/k8s-config.json`)
+2. `HASHI_KUBECONFIG` environment variable
+3. `${HOME}/.kube/config`
+4. `/etc/rancher/k3s/k3s.yaml`
+
+If Hashi runs as user `hashi`, you can make K3s config readable by that user:
+
+```bash
+sudo mkdir -p /home/hashi/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml /home/hashi/.kube/config
+sudo chown -R hashi:hashi /home/hashi/.kube
+sudo chmod 600 /home/hashi/.kube/config
+```
+
+Common issues:
+- `Permission denied`: kubeconfig file is not readable by backend service user
+- `Unauthorized`: kubeconfig points to cluster but credentials are invalid/expired
+- `Connection refused`: cluster API server endpoint is unreachable
 
 ### 2. Start Development Servers
 

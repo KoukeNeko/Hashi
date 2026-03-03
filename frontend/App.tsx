@@ -20,8 +20,9 @@ import NetworkManager from './pages/NetworkManager/index';
 import SettingsPage from './pages/Settings/index';
 import Login from './pages/Login/index';
 import PackageManager from './pages/PackageManager/index';
-import { TabView, UserInfo } from './types';
-import { AuthService, SessionStorage } from './services/api';
+import K8sManager from './pages/K8sManager/index';
+import { PlatformFeatures, TabView, UserInfo } from './types';
+import { AuthService, PlatformService, SessionStorage } from './services/api';
 import { Menu, Command, Construction, Loader2 } from 'lucide-react';
 
 // Placeholder for items not yet fully implemented
@@ -40,6 +41,7 @@ const App: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [currentTab, setCurrentTab] = useState<TabView>(TabView.DASHBOARD);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [platformFeatures, setPlatformFeatures] = useState<PlatformFeatures | null>(null);
 
     // 頁面載入時檢查 localStorage 中的登入狀態
     useEffect(() => {
@@ -60,6 +62,14 @@ const App: React.FC = () => {
                     // 如果後端無法連接，暫時保留登入狀態
                     setUser(storedUser);
                 }
+            }
+
+            try {
+                const features = await PlatformService.getFeatures();
+                setPlatformFeatures(features);
+            } catch (error) {
+                console.error('Failed to load platform features:', error);
+                setPlatformFeatures(null);
             }
             setIsLoading(false);
         };
@@ -104,6 +114,8 @@ const App: React.FC = () => {
                 return <NginxManager />;
             case TabView.DOCKER:
                 return <DockerManager />;
+            case TabView.K8S:
+                return <K8sManager />;
             case TabView.DATABASES:
                 return <DatabaseManager />;
             case TabView.DISKS:
@@ -163,6 +175,7 @@ const App: React.FC = () => {
                 onClose={() => setIsSidebarOpen(false)}
                 onLogout={handleLogout}
                 user={user}
+                features={platformFeatures}
             />
 
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">

@@ -33,6 +33,11 @@ export default defineConfig(({ mode }) => {
                     changeOrigin: true,
                     ws: true,
                 },
+                '/k8s/logs': {
+                    target: wsTarget,
+                    changeOrigin: true,
+                    ws: true,
+                },
                 '/novnc': {
                     target: httpTarget,
                     changeOrigin: true,

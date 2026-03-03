@@ -126,6 +126,14 @@ dependencies {
     implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.7.0'
 
     // -------------------------------------------------------------------------
+    // Kubernetes / K3s 管理
+    // -------------------------------------------------------------------------
+
+    // Kubernetes Java Client - 用於管理 K8s 資源（Pods/Deployments/Services 等）
+    implementation 'io.kubernetes:client-java:20.0.1-legacy'
+    implementation 'io.kubernetes:client-java-extended:20.0.1-legacy'
+
+    // -------------------------------------------------------------------------
     // 終端機模擬 (PTY)
     // -------------------------------------------------------------------------
 

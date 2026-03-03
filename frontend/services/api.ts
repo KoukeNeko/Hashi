@@ -38,6 +38,21 @@ import {
     PackageInfo,
     SystemDisk,
     NetworkInterface,
+    StoragePool,
+    CreatePoolRequest,
+    SmartInfo,
+    K8sClusterStatus,
+    K8sNamespace,
+    K8sNode,
+    K8sWorkload,
+    K8sPod,
+    K8sService as K8sServiceItem,
+    K8sPagedResponse,
+    K8sApplyRequest,
+    K8sApplyResponse,
+    K8sConfig,
+    K8sActionResponse,
+    PlatformFeatures,
 } from '@/types';
 
 // ==================== Core Configuration ====================
@@ -115,6 +130,16 @@ export const AuthService = {
     },
     validateSession: async (username: string): Promise<AuthResponse> => {
         const response = await api.get<AuthResponse>('/auth/validate', { params: { username } });
+        return response.data;
+    },
+};
+
+// ==================== Platform ====================
+
+/** Platform capabilities API */
+export const PlatformService = {
+    getFeatures: async (): Promise<PlatformFeatures> => {
+        const response = await api.get<PlatformFeatures>('/platform/features');
         return response.data;
     },
 };
@@ -720,12 +745,6 @@ export const DatabaseService = {
 
 // ==================== Storage Service ====================
 
-import {
-    StoragePool,
-    CreatePoolRequest,
-    SmartInfo,
-} from '@/types';
-
 /** Storage pool (mdadm RAID) management API */
 export const StorageService = {
     /** Get storage provider name */
@@ -788,5 +807,120 @@ export const StorageService = {
     /** Run S.M.A.R.T. test */
     runSmartTest: async (device: string, testType: 'short' | 'long'): Promise<void> => {
         await api.post('/storage/smart/test', null, { params: { device, testType } });
+    },
+};
+
+// ==================== Kubernetes / K3s Service ====================
+
+/** Kubernetes (K3s) management API */
+export const K8sService = {
+    getStatus: async (): Promise<K8sClusterStatus> => {
+        const response = await api.get<K8sClusterStatus>('/k8s/status');
+        return response.data;
+    },
+    listNamespaces: async (): Promise<K8sNamespace[]> => {
+        const response = await api.get<K8sNamespace[]>('/k8s/namespaces');
+        return response.data;
+    },
+    listNodes: async (): Promise<K8sNode[]> => {
+        const response = await api.get<K8sNode[]>('/k8s/nodes');
+        return response.data;
+    },
+    listWorkloads: async (params: {
+        namespace?: string;
+        kind?: string;
+        search?: string;
+        page?: number;
+        pageSize?: number;
+    }): Promise<K8sPagedResponse<K8sWorkload>> => {
+        const response = await api.get<K8sPagedResponse<K8sWorkload>>('/k8s/workloads', { params });
+        return response.data;
+    },
+    listPods: async (params: {
+        namespace?: string;
+        search?: string;
+        page?: number;
+        pageSize?: number;
+    }): Promise<K8sPagedResponse<K8sPod>> => {
+        const response = await api.get<K8sPagedResponse<K8sPod>>('/k8s/pods', { params });
+        return response.data;
+    },
+    listServices: async (params: {
+        namespace?: string;
+        search?: string;
+        page?: number;
+        pageSize?: number;
+    }): Promise<K8sPagedResponse<K8sServiceItem>> => {
+        const response = await api.get<K8sPagedResponse<K8sServiceItem>>('/k8s/services', { params });
+        return response.data;
+    },
+    restartWorkload: async (
+        namespace: string,
+        kind: 'deployment' | 'statefulset' | 'daemonset',
+        name: string
+    ): Promise<K8sActionResponse> => {
+        const response = await api.post<K8sActionResponse>(
+            `/k8s/workloads/${namespace}/${kind}/${name}/restart`
+        );
+        return response.data;
+    },
+    scaleWorkload: async (
+        namespace: string,
+        kind: 'deployment' | 'statefulset' | 'daemonset',
+        name: string,
+        replicas: number
+    ): Promise<K8sActionResponse> => {
+        const response = await api.post<K8sActionResponse>(
+            `/k8s/workloads/${namespace}/${kind}/${name}/scale`,
+            { replicas }
+        );
+        return response.data;
+    },
+    deletePod: async (
+        namespace: string,
+        name: string,
+        graceSeconds?: number
+    ): Promise<K8sActionResponse> => {
+        const response = await api.delete<K8sActionResponse>(`/k8s/pods/${namespace}/${name}`, {
+            params: graceSeconds !== undefined ? { graceSeconds } : undefined,
+        });
+        return response.data;
+    },
+    applyManifest: async (payload: K8sApplyRequest): Promise<K8sApplyResponse> => {
+        const response = await api.post<K8sApplyResponse>('/k8s/apply', payload);
+        return response.data;
+    },
+    getConfig: async (): Promise<K8sConfig> => {
+        const response = await api.get<K8sConfig>('/k8s/config');
+        return response.data;
+    },
+    updateConfig: async (kubeconfigPath: string): Promise<K8sActionResponse> => {
+        const response = await api.put<K8sActionResponse>('/k8s/config', { kubeconfigPath });
+        return response.data;
+    },
+    testConfig: async (kubeconfigPath: string): Promise<K8sActionResponse> => {
+        const response = await api.post<K8sActionResponse>('/k8s/config/test', { kubeconfigPath });
+        return response.data;
+    },
+    clearConfigOverride: async (): Promise<K8sActionResponse> => {
+        const response = await api.delete<K8sActionResponse>('/k8s/config/override');
+        return response.data;
+    },
+    createPodLogsWebSocket: (params: {
+        namespace: string;
+        pod: string;
+        container?: string;
+        tailLines?: number;
+        sinceSeconds?: number;
+    }): WebSocket => {
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const query = new URLSearchParams({
+            namespace: params.namespace,
+            pod: params.pod,
+        });
+        if (params.container) query.set('container', params.container);
+        if (params.tailLines !== undefined) query.set('tailLines', String(params.tailLines));
+        if (params.sinceSeconds !== undefined) query.set('sinceSeconds', String(params.sinceSeconds));
+        return new WebSocket(`${wsProtocol}//${window.location.host}/k8s/logs?${query.toString()}`);
     },
 };

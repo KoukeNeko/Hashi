@@ -25,6 +25,7 @@ import io.kubernetes.client.util.Yaml;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -126,7 +127,12 @@ public class K8sYamlApplyService {
             String defaultNamespace,
             boolean dryRun) {
 
-        Object loaded = Yaml.load(document);
+        Object loaded;
+        try {
+            loaded = Yaml.load(document);
+        } catch (IOException e) {
+            throw new K8sException(400, "Failed to parse YAML document: " + e.getMessage(), e);
+        }
         if (!(loaded instanceof Map<?, ?> rawMap)) {
             throw new K8sException(400, "Invalid YAML document. Expected a Kubernetes object.");
         }

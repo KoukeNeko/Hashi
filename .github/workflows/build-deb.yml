@@ -310,103 +310,129 @@ jobs:
           retention-days: 30
 
   # ===========================================================================
-  # Publish to Package Repository
+  # Publish to GitHub Releases
   # ===========================================================================
-  publish-to-pkg-repo:
-    name: Publish to Package Repository
+  # Tag push (v*)       → versioned release (e.g. v0.0.1)
+  # dev branch push     → rolling pre-release "dev-latest"  (assets replaced)
+  # beta branch push    → rolling pre-release "beta-latest" (assets replaced)
+  # Other branches      → skipped (artifacts still available from the run)
+  # ===========================================================================
+  publish-release:
+    name: Publish to GitHub Releases
     needs: [build-jar, build-deb, build-rpm]
     runs-on: ubuntu-latest
+    if: |
+      startsWith(github.ref, 'refs/tags/v') ||
+      github.ref == 'refs/heads/dev' ||
+      github.ref == 'refs/heads/beta'
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout pkg-repo
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
         with:
-          repository: KoukeNeko/pkg-repo
-          token: ${{ secrets.APT_REPO_TOKEN }}
-          path: pkg-repo
+          name: hashi-jar
+          path: ./release-assets
 
       - name: Download all DEB artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: hashi-*-deb-*
-          path: ./incoming-deb
+          path: ./release-assets
           merge-multiple: true
 
       - name: Download all RPM artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: hashi-*-rpm-*
-          path: ./incoming-rpm
+          path: ./release-assets
           merge-multiple: true
 
-      - name: Move DEB packages
-        run: |
-          mkdir -p pkg-repo/apt/pool/stable/hashi
-          find ./incoming-deb -name "*.deb" -exec cp -f {} pkg-repo/apt/pool/stable/hashi/ \; 2>/dev/null || true
-          echo "📦 DEB packages:"
-          ls -la pkg-repo/apt/pool/stable/hashi/ 2>/dev/null || echo "No DEB packages"
-
-      - name: Move RPM packages
-        run: |
-          mkdir -p pkg-repo/rpm/packages/hashi
-          find ./incoming-rpm -name "*.rpm" -exec cp -f {} pkg-repo/rpm/packages/hashi/ \; 2>/dev/null || true
-          echo "📦 RPM packages:"
-          ls -la pkg-repo/rpm/packages/hashi/ 2>/dev/null || echo "No RPM packages"
-
-      - name: Install createrepo
-        run: sudo apt-get update && sudo apt-get install -y createrepo-c
-
-      - name: Import GPG key
-        run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-
-      - name: Update repository index
-        working-directory: pkg-repo
-        run: |
-          chmod +x scripts/update-repo.sh
-          ./scripts/update-repo.sh
-
-      - name: Commit and push
-        working-directory: pkg-repo
+      - name: Determine release tag and metadata
+        id: release_info
+        env:
+          BUILD_VERSION: ${{ needs.build-jar.outputs.version }}
+          PKG_NAME: ${{ needs.build-jar.outputs.pkg_name }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          COMMIT_MSG="📦 Add ${{ needs.build-jar.outputs.pkg_name }} ${{ needs.build-jar.outputs.version }} (DEB + RPM, amd64 + arm64)"
-          MAX_RETRIES=3
-          ATTEMPT=1
-          
-          while [ "$ATTEMPT" -le "$MAX_RETRIES" ]; do
-            git add .
-            if git diff --cached --quiet; then
-              echo "No changes to commit"
-              exit 0
-            fi
-          
-            git commit -m "$COMMIT_MSG"
-          
-            if git push origin HEAD:main; then
-              echo "Push succeeded on attempt $ATTEMPT"
-              exit 0
-            fi
-          
-            if [ "$ATTEMPT" -ge "$MAX_RETRIES" ]; then
-              echo "Push failed after $MAX_RETRIES attempts"
-              exit 1
-            fi
-          
-            echo "Push rejected due remote updates. Re-sync and regenerate indexes (attempt $ATTEMPT/$MAX_RETRIES)"
-            ATTEMPT=$((ATTEMPT + 1))
-          
-            git fetch origin main
-            git reset --hard origin/main
-          
-            mkdir -p apt/pool/stable/hashi
-            mkdir -p rpm/packages/hashi
-            find ../incoming-deb -name "*.deb" -exec cp -f {} apt/pool/stable/hashi/ \; 2>/dev/null || true
-            find ../incoming-rpm -name "*.rpm" -exec cp -f {} rpm/packages/hashi/ \; 2>/dev/null || true
-          
-            chmod +x scripts/update-repo.sh
-            ./scripts/update-repo.sh
-          done
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            TITLE="Hashi ${TAG_NAME}"
+            PRERELEASE=false
+            ROLLING=false
+          elif [[ "${GITHUB_REF}" == refs/heads/beta ]]; then
+            TAG_NAME="beta-latest"
+            TITLE="Hashi beta build (${BUILD_VERSION})"
+            PRERELEASE=true
+            ROLLING=true
+          else
+            TAG_NAME="dev-latest"
+            TITLE="Hashi dev build (${BUILD_VERSION})"
+            PRERELEASE=true
+            ROLLING=true
+          fi
+
+          {
+            echo "tag_name=${TAG_NAME}"
+            echo "title=${TITLE}"
+            echo "prerelease=${PRERELEASE}"
+            echo "rolling=${ROLLING}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "📦 Will publish ${PKG_NAME} ${BUILD_VERSION} as ${TAG_NAME}"
+
+      - name: Show release assets
+        run: |
+          echo "📦 Release assets:"
+          ls -la release-assets/
+
+      - name: Reset rolling release
+        if: steps.release_info.outputs.rolling == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ steps.release_info.outputs.tag_name }}
+        run: |
+          gh release delete "$TAG_NAME" \
+            --repo "$GH_REPO" \
+            --yes --cleanup-tag || true
+          echo "🧹 Cleared previous $TAG_NAME release if it existed"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ steps.release_info.outputs.tag_name }}
+          RELEASE_TITLE: ${{ steps.release_info.outputs.title }}
+          IS_PRERELEASE: ${{ steps.release_info.outputs.prerelease }}
+          BUILD_VERSION: ${{ needs.build-jar.outputs.version }}
+          PKG_NAME: ${{ needs.build-jar.outputs.pkg_name }}
+        run: |
+          set -euo pipefail
+
+          NOTES_FILE="$(mktemp)"
+          {
+            echo "Automated build for commit \`${GITHUB_SHA}\` on \`${GITHUB_REF_NAME}\`."
+            echo
+            echo "- **Version:** ${BUILD_VERSION}"
+            echo "- **Channel:** ${PKG_NAME}"
+            echo
+            echo "Packages built for \`amd64\` and \`arm64\`."
+          } > "$NOTES_FILE"
+
+          EXTRA_FLAGS=()
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            EXTRA_FLAGS+=( --prerelease )
+          fi
+
+          gh release create "$TAG_NAME" \
+            --repo "$GH_REPO" \
+            --title "$RELEASE_TITLE" \
+            --notes-file "$NOTES_FILE" \
+            "${EXTRA_FLAGS[@]}" \
+            release-assets/*

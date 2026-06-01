@@ -216,7 +216,7 @@ public class K8sServiceImpl implements K8sService {
             V1PodList list = normalizedNamespace == null
                     ? api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null, null, false)
                     : api.listNamespacedPod(normalizedNamespace, null, null, null, null, null, null, null, null, null,
-                            false);
+                            null, false);
 
             List<K8sPodDTO> pods = list.getItems().stream().map(pod -> {
                 V1PodStatus status = pod.getStatus();
@@ -287,7 +287,7 @@ public class K8sServiceImpl implements K8sService {
                     ? api.listServiceForAllNamespaces(null, null, null, null, null, null, null, null, null, null,
                             false)
                     : api.listNamespacedService(normalizedNamespace, null, null, null, null, null, null, null, null,
-                            null, false);
+                            null, null, false);
 
             List<K8sServiceDTO> services = list.getItems().stream().map(svc -> {
                 V1ServiceSpec spec = svc.getSpec();

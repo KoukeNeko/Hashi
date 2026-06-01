@@ -45,16 +45,21 @@ const DockerManager: React.FC = () => {
     const networkDialog = useFormDialog();
     const volumeDialog = useFormDialog();
 
-    // Fetch containers from API
-    // Fetch data based on active tab
     const fetchData = async () => {
         try {
             setLoading(true);
             setError(null);
 
-            // Always fetch containers to check Docker status
-            // Or maybe only if tab is containers? But we need to know if docker is installed.
-            // Let's stick to fetching what's needed, but verify docker first?
+            const status = await DockerService.getStatus();
+            if (!status.installed) {
+                setDockerNotInstalled(true);
+                setContainers([]);
+                setImages([]);
+                setNetworks([]);
+                setVolumes([]);
+                return;
+            }
+            setDockerNotInstalled(false);
 
             if (activeTab === 'containers') {
                 const data = await DockerService.getContainers();
@@ -69,16 +74,10 @@ const DockerManager: React.FC = () => {
                 const data = await DockerService.listVolumes();
                 setVolumes(data);
             }
-
-            setDockerNotInstalled(false);
         } catch (err: any) {
             console.error('Failed to fetch docker data:', err);
             const errorMsg = err.response?.data?.message || err.message || 'Failed to load data';
-            if (errorMsg.toLowerCase().includes('docker') || err.response?.status === 500) {
-                setDockerNotInstalled(true);
-            } else {
-                setError(errorMsg);
-            }
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }

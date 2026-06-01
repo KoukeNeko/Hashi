@@ -3,6 +3,7 @@ package dev.koukeneko.hashi.controller;
 import dev.koukeneko.hashi.model.dto.ContainerDTO;
 import dev.koukeneko.hashi.model.dto.DockerImageDTO;
 import dev.koukeneko.hashi.model.dto.DockerNetworkDTO;
+import dev.koukeneko.hashi.model.dto.DockerStatusDTO;
 import dev.koukeneko.hashi.model.dto.DockerVolumeDTO;
 import dev.koukeneko.hashi.service.DockerService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,16 @@ import java.util.List;
 public class DockerController {
 
     private final DockerService dockerService;
+
+    /**
+     * 探測 Docker 守護程序狀態 永遠回傳 200，由前端依 installed 欄位決定行為
+     *
+     * @return Docker 連線狀態 DTO
+     */
+    @GetMapping("/status")
+    public ResponseEntity<DockerStatusDTO> getStatus() {
+        return ResponseEntity.ok(dockerService.getStatus());
+    }
 
     /**
      * 列出所有容器

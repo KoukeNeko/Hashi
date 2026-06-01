@@ -2,6 +2,15 @@
  * Docker and container related types
  */
 
+/** Docker daemon connectivity probe result */
+export interface DockerStatus {
+    installed: boolean;
+    daemonVersion: string | null;
+    apiVersion: string | null;
+    socketPath: string | null;
+    message: string | null;
+}
+
 /** Container status enum */
 export enum ContainerStatus {
     RUNNING = 'running',

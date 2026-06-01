@@ -13,11 +13,14 @@ import java.time.Duration;
 @Configuration
 public class DockerConfig {
 
+    public static final String DOCKER_SOCKET_PATH = "/var/run/docker.sock";
+    public static final String DOCKER_HOST_URI = "unix://" + DOCKER_SOCKET_PATH;
+
     @Bean
     public DockerClient dockerClient() {
         // 1. 強制指定 Docker Socket 路徑，避免它去連 localhost:2375
         DefaultDockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost("unix:///var/run/docker.sock")
+                .withDockerHost(DOCKER_HOST_URI)
                 .build();
 
         // 2. 設定傳輸層 (使用 Apache HttpClient 5)

@@ -18,6 +18,7 @@ import {
     Database,
     DockerImage,
     DockerNetwork,
+    DockerStatus,
     DockerVolume,
     FileItem,
     FirewallRule,
@@ -487,6 +488,10 @@ export const FileService = {
 
 /** Docker container management API */
 export const DockerService = {
+    getStatus: async (): Promise<DockerStatus> => {
+        const response = await api.get<DockerStatus>('/docker/status');
+        return response.data;
+    },
     getContainers: async () => {
         const response = await api.get('/docker/containers');
         return response.data;

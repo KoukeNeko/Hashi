@@ -1,27 +1,70 @@
 package dev.koukeneko.hashi.service.impl;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.InspectVolumeResponse;
+import com.github.dockerjava.api.command.VersionCmd;
 import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.Network;
+import com.github.dockerjava.api.model.Version;
+import dev.koukeneko.hashi.config.DockerConfig;
 import dev.koukeneko.hashi.model.dto.ContainerDTO;
 import dev.koukeneko.hashi.model.dto.DockerImageDTO;
 import dev.koukeneko.hashi.model.dto.DockerNetworkDTO;
+import dev.koukeneko.hashi.model.dto.DockerStatusDTO;
 import dev.koukeneko.hashi.model.dto.DockerVolumeDTO;
 import dev.koukeneko.hashi.service.DockerService;
-import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.Network;
-import com.github.dockerjava.api.command.InspectVolumeResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DockerServiceImpl implements DockerService {
 
     private final DockerClient dockerClient;
+
+    @Override
+    public DockerStatusDTO getStatus() {
+        String socketPath = DockerConfig.DOCKER_SOCKET_PATH;
+
+        if (!Files.exists(Path.of(socketPath))) {
+            return DockerStatusDTO.builder()
+                    .installed(false)
+                    .socketPath(socketPath)
+                    .message("Docker socket not found at " + socketPath + ". Docker may not be installed.")
+                    .build();
+        }
+
+        try {
+            VersionCmd versionCmd = dockerClient.versionCmd();
+            Callable<Version> probe = versionCmd::exec;
+            Version version = probe.call();
+            return DockerStatusDTO.builder()
+                    .installed(true)
+                    .daemonVersion(version.getVersion())
+                    .apiVersion(version.getApiVersion())
+                    .socketPath(socketPath)
+                    .message("Connected")
+                    .build();
+        } catch (Exception e) {
+            log.debug("Docker status probe failed", e);
+            String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            return DockerStatusDTO.builder()
+                    .installed(false)
+                    .socketPath(socketPath)
+                    .message("Docker daemon unreachable: " + reason)
+                    .build();
+        }
+    }
 
     @Override
     public List<ContainerDTO> listContainers() {

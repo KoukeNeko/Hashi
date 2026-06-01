@@ -3,6 +3,7 @@ package dev.koukeneko.hashi.service;
 import dev.koukeneko.hashi.model.dto.ContainerDTO;
 import dev.koukeneko.hashi.model.dto.DockerImageDTO;
 import dev.koukeneko.hashi.model.dto.DockerNetworkDTO;
+import dev.koukeneko.hashi.model.dto.DockerStatusDTO;
 import dev.koukeneko.hashi.model.dto.DockerVolumeDTO;
 
 import java.util.List;
@@ -11,6 +12,13 @@ import java.util.List;
  * Docker 容器管理服務介面
  */
 public interface DockerService {
+    /**
+     * 探測 Docker 守護程序是否可連線 失敗時不拋出例外，而是回傳 installed=false 與原因，讓前端可以直接渲染安裝指引
+     *
+     * @return Docker 連線狀態
+     */
+    DockerStatusDTO getStatus();
+
     /**
      * 列出所有容器
      *

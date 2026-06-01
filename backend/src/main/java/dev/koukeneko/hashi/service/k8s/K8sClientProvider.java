@@ -102,8 +102,6 @@ public class K8sClientProvider {
             return new ConnectionTestResult(true, versionStr, testClient.context(), "Connection successful");
         } catch (ApiException e) {
             throw mapApiException(e, "Failed to connect using specified kubeconfig");
-        } catch (IOException e) {
-            throw new K8sException(500, "Failed to load kubeconfig: " + e.getMessage(), e);
         }
     }
 
